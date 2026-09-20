@@ -39,7 +39,7 @@ def ensure_api_usage_table():
 
 
 def provider_for_path(path):
-    if "/kis/" in path: return "KIS"
+    if "/kis/" in path or "/kis-chart/" in path or "/kis-explorer/" in path: return "KIS"
     if "/kb/" in path: return "KB증권"
     if "alpaca" in path: return "Alpaca"
     if "/binance/" in path: return "Binance"

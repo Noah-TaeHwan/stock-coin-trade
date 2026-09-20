@@ -11,6 +11,7 @@ import socket
 import threading
 import time
 import uuid
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
@@ -23,9 +24,14 @@ KB_API_BASE_URL = "https://developer.kbsec.com:32484"
 KIS_TESTBED_URL = "https://openapivts.koreainvestment.com:29443"
 _kis_token_cache: dict[str, Any] = {"value": None, "expires_at": 0.0}
 _kis_token_lock = threading.Lock()
-_kis_quote_cache: dict[str, dict[str, Any]] = {}
+_kis_quote_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _kis_quote_lock = threading.Lock()
 _kis_order_flow_lock = threading.Lock()
+_kis_api_rate_lock = threading.Lock()
+_kis_last_api_call_at = 0.0
+_KIS_API_CALL_GAP_SECONDS = 1.05
+_KIS_RATE_LIMIT_CODE = "EGW00201"
+_KIS_QUOTE_CACHE_MAX = 256
 _KIS_ORDER_TEST_SYMBOL = "005930"
 # 지정가는 현재가의 90%(호가 단위 내림)로 계산해 비시장성 매수 주문만 낸다. 고정
 # 가격을 쓰면 주가 구간이 바뀔 때 하한가(-30%) 밖이 되거나 체결 위험이 생긴다.
@@ -35,6 +41,10 @@ _KIS_ORDER_TEST_MAX_PRICE_RATIO = 0.95  # 이 비율 이상이면 체결 위험�
 
 class BrokerApiError(RuntimeError):
     """A user-safe error that never includes credentials or access tokens."""
+
+    def __init__(self, message: str, status_code: int = 502):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def _read_key_file(filename: str, key_names: tuple[str, ...], secret_names: tuple[str, ...]) -> tuple[str, str]:
@@ -175,11 +185,19 @@ def get_kb_stock_chart(symbol: str) -> dict[str, Any]:
 
 
 def _kis_credentials() -> tuple[str, str]:
+    if os.environ.get("KIS_ENVIRONMENT", "paper").strip().lower() != "paper":
+        raise BrokerApiError("이 서비스는 KIS 모의투자(paper) 환경만 허용합니다.", 503)
+    paper_key = os.environ.get("KIS_PAPER_APP_KEY")
+    paper_secret = os.environ.get("KIS_PAPER_APP_SECRET")
+    if paper_key or paper_secret:
+        if not paper_key or not paper_secret:
+            raise BrokerApiError("KIS_PAPER_APP_KEY와 KIS_PAPER_APP_SECRET을 함께 설정하세요.", 503)
+        return paper_key, paper_secret
     return _credentials("KIS", "kis.key", ("app_key",), ("secret", "app_secret"))
 
 
 def _kis_account() -> tuple[str, str]:
-    account_no = os.environ.get("KIS_ACCOUNT_NO")
+    account_no = os.environ.get("KIS_PAPER_ACCOUNT_NO") or os.environ.get("KIS_ACCOUNT_NO")
     if not account_no:
         values: dict[str, str] = {}
         path = next((c for c in (SECRETS_DIR / "kis.key", ROOT_DIR / "kis.key") if c.is_file()), None)
@@ -192,10 +210,13 @@ def _kis_account() -> tuple[str, str]:
             account_no = values.get("account") or values.get("account_no") or values.get("cano")
     if not account_no or "-" not in account_no:
         raise BrokerApiError(
-            "모의투자 계좌번호가 설정되지 않았습니다. KIS_ACCOUNT_NO 환경변수 또는 kis.key의 account 항목에 "
-            "'CANO-계좌상품코드'(예: 12345678-01) 형식으로 설정하세요."
+            "모의투자 계좌번호가 설정되지 않았습니다. KIS_PAPER_ACCOUNT_NO(또는 기존 KIS_ACCOUNT_NO) "
+            "환경변수나 kis.key의 account 항목에 'CANO-계좌상품코드'(예: 12345678-01) 형식으로 설정하세요.",
+            503,
         )
     cano, _, acnt_prdt_cd = account_no.partition("-")
+    if not (cano.isdigit() and len(cano) == 8 and acnt_prdt_cd.isdigit() and len(acnt_prdt_cd) == 2):
+        raise BrokerApiError("KIS 계좌번호는 '8자리 CANO-2자리 상품코드' 형식이어야 합니다.", 503)
     return cano, acnt_prdt_cd
 
 
@@ -234,23 +255,66 @@ def _kis_headers(tr_id: str) -> dict[str, str]:
     }
 
 
+def kis_request(
+    method: str,
+    path: str,
+    tr_id: str,
+    *,
+    params: dict[str, str] | None = None,
+    payload: dict[str, str] | None = None,
+    label: str,
+    extra_headers: dict[str, str] | None = None,
+    retries: int = 2,
+    raise_for_api_error: bool = True,
+) -> tuple[requests.Response, dict[str, Any]]:
+    """Send every authenticated KIS call through one process-wide limiter.
+
+    Keeping the limiter here prevents the chart, explorer, HTS and order-flow
+    modules from independently exceeding the Testbed's shared App Key limit.
+    """
+    global _kis_last_api_call_at
+    response = None
+    body: dict[str, Any] = {}
+    for attempt in range(retries + 1):
+        with _kis_api_rate_lock:
+            wait = _KIS_API_CALL_GAP_SECONDS - (time.monotonic() - _kis_last_api_call_at)
+            if wait > 0:
+                time.sleep(wait)
+            _kis_last_api_call_at = time.monotonic()
+        if attempt:
+            time.sleep(0.8 * attempt)
+        response = requests.request(
+            method,
+            f"{KIS_TESTBED_URL}{path}",
+            headers={**_kis_headers(tr_id), **(extra_headers or {})},
+            params=params,
+            json=payload,
+            timeout=15,
+        )
+        body = _json(response, "한국투자증권")
+        if body.get("msg_cd") != _KIS_RATE_LIMIT_CODE:
+            break
+    if raise_for_api_error and body.get("rt_cd") != "0":
+        raise BrokerApiError(
+            f"한국투자증권 {label} 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
+        )
+    return response, body
+
+
 def get_kis_quote(symbol: str) -> dict[str, Any]:
     with _kis_quote_lock:
         cached_quote = _kis_quote_cache.get(symbol)
         if cached_quote and cached_quote["expires_at"] > time.time():
+            _kis_quote_cache.move_to_end(symbol)
             return cached_quote["quote"]
+        if cached_quote:
+            _kis_quote_cache.pop(symbol, None)
 
-    quote_response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-price",
-        headers=_kis_headers("FHKST01010100"),
+    _, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-price", "FHKST01010100",
         params={"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": symbol},
-        timeout=15,
+        label="시세 조회",
     )
-    body = _json(quote_response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 시세 조회 실패 (HTTP {quote_response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     output = body.get("output", {})
     quote = {
         "broker": "한국투자증권 Testbed", "symbol": symbol,
@@ -262,28 +326,25 @@ def get_kis_quote(symbol: str) -> dict[str, Any]:
     # double click safe without presenting stale data as a long-lived quote.
     with _kis_quote_lock:
         _kis_quote_cache[symbol] = {"quote": quote, "expires_at": time.time() + 3}
+        _kis_quote_cache.move_to_end(symbol)
+        while len(_kis_quote_cache) > _KIS_QUOTE_CACHE_MAX:
+            _kis_quote_cache.popitem(last=False)
     return quote
 
 
 def get_kis_balance() -> dict[str, Any]:
     """Read-only 모의투자 계좌 잔고/평가액 조회 (inquire-balance, VTTC8434R)."""
     cano, acnt_prdt_cd = _kis_account()
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/trading/inquire-balance",
-        headers=_kis_headers("VTTC8434R"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/trading/inquire-balance", "VTTC8434R",
         params={
             "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
             "AFHR_FLPR_YN": "N", "OFL_YN": "", "INQR_DVSN": "02", "UNPR_DVSN": "01",
             "FUND_STTL_ICLD_YN": "N", "FNCG_AMT_AUTO_RDPT_YN": "N", "PRCS_DVSN": "01",
             "CTX_AREA_FK100": "", "CTX_AREA_NK100": "",
         },
-        timeout=15,
+        label="잔고 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 잔고 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     summary = (body.get("output2") or [{}])[0]
     holdings = [
         {
@@ -308,21 +369,15 @@ def get_kis_daily_chart(symbol: str, days: int = 20) -> dict[str, Any]:
     """Read-only 일봉 캔들 조회 (inquire-daily-itemchartprice, FHKST03010100)."""
     end = time.strftime("%Y%m%d")
     start = time.strftime("%Y%m%d", time.localtime(time.time() - days * 4 * 86400))
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
-        headers=_kis_headers("FHKST03010100"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice", "FHKST03010100",
         params={
             "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": symbol,
             "FID_INPUT_DATE_1": start, "FID_INPUT_DATE_2": end,
             "FID_PERIOD_DIV_CODE": "D", "FID_ORG_ADJ_PRC": "1",
         },
-        timeout=15,
+        label="일봉 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 일봉 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     candles = [
         {
             "date": row.get("stck_bsop_date"), "open": row.get("stck_oprc"),
@@ -336,17 +391,11 @@ def get_kis_daily_chart(symbol: str, days: int = 20) -> dict[str, Any]:
 
 def get_kis_orderbook(symbol: str) -> dict[str, Any]:
     """Read-only 매도/매수 10단계 호가 조회 (inquire-asking-price-exp-ccn, FHKST01010200)."""
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn",
-        headers=_kis_headers("FHKST01010200"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn", "FHKST01010200",
         params={"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": symbol},
-        timeout=15,
+        label="호가 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 호가 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     output1 = body.get("output1") or {}
     levels = [
         {
@@ -367,17 +416,11 @@ _KIS_INDEX_NAMES = {"0001": "코스피", "1001": "코스닥"}
 
 def get_kis_index(index_code: str = "0001") -> dict[str, Any]:
     """Read-only 업종 현재지수 조회 (inquire-index-price, FHPUP02100000). 0001=코스피, 1001=코스닥."""
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-index-price",
-        headers=_kis_headers("FHPUP02100000"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-index-price", "FHPUP02100000",
         params={"FID_COND_MRKT_DIV_CODE": "U", "FID_INPUT_ISCD": index_code},
-        timeout=15,
+        label="지수 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 지수 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     output = body.get("output", {})
     return {
         "broker": "한국투자증권 Testbed", "index": _KIS_INDEX_NAMES.get(index_code, index_code),
@@ -386,27 +429,13 @@ def get_kis_index(index_code: str = "0001") -> dict[str, Any]:
     }
 
 
-_KIS_ORDER_CALL_GAP_SECONDS = 0.6  # Testbed 초당 거래건수 제한(EGW00201) 회피용 최소 간격
-_kis_last_order_call_at = 0.0
-
-
 def _kis_order_post(path: str, tr_id: str, payload: dict[str, str], label: str) -> dict[str, Any]:
-    global _kis_last_order_call_at
-    wait = _KIS_ORDER_CALL_GAP_SECONDS - (time.time() - _kis_last_order_call_at)
-    if wait > 0:
-        time.sleep(wait)
-    _kis_last_order_call_at = time.time()
-    response = requests.post(
-        f"{KIS_TESTBED_URL}{path}",
-        headers={**_kis_headers(tr_id), "custtype": "P"},
-        json=payload,
-        timeout=15,
+    _, body = kis_request(
+        "POST", path, tr_id,
+        payload=payload,
+        label=label,
+        extra_headers={"custtype": "P"},
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 {label} 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     return body
 
 
@@ -444,9 +473,8 @@ def _kis_order_test_prices(current_price: int) -> tuple[int, int]:
 def _kis_open_orders_today(cano: str, acnt_prdt_cd: str, symbol: str) -> list[dict[str, Any]]:
     """오늘 미체결 주문 조회 (inquire-daily-ccld, 모의 VTTC8001R). 보정 단계에서만 사용한다."""
     today = time.strftime("%Y%m%d", time.localtime())
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/trading/inquire-daily-ccld",
-        headers=_kis_headers("VTTC8001R"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/trading/inquire-daily-ccld", "VTTC8001R",
         params={
             "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
             "INQR_STRT_DT": today, "INQR_END_DT": today,
@@ -455,13 +483,8 @@ def _kis_open_orders_today(cano: str, acnt_prdt_cd: str, symbol: str) -> list[di
             "INQR_DVSN_3": "00", "INQR_DVSN_1": "",
             "CTX_AREA_FK100": "", "CTX_AREA_NK100": "",
         },
-        timeout=15,
+        label="미체결 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 미체결 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     rows = body.get("output1") or []
     open_orders = []
     for row in rows:
@@ -502,7 +525,6 @@ def run_kis_mock_order_flow_test() -> dict[str, Any]:
     정정이나 취소가 실패하면 오늘 미체결 조회로 남은 주문을 찾아 모두 취소하는
     보정 단계를 거친다. 정정·취소 결과와 사유는 응답 필드로 그대로 전달한다.
     """
-    global _kis_last_order_call_at
     if not _kis_order_flow_lock.acquire(blocking=False):
         raise BrokerApiError("모의 주문 흐름 테스트가 이미 실행 중입니다. 완료된 뒤 다시 시도하세요.")
     try:
@@ -514,8 +536,6 @@ def run_kis_mock_order_flow_test() -> dict[str, Any]:
         if current_price <= 0:
             raise BrokerApiError("한국투자증권 현재가가 0원으로 조회되어 주문 테스트를 중단했습니다.")
         test_price, amended_price = _kis_order_test_prices(current_price)
-        _kis_last_order_call_at = time.time()  # 시세 조회와 첫 주문 사이에도 간격을 둔다.
-
         cano, acnt_prdt_cd = _kis_account()
         order = _kis_order_post(
             "/uapi/domestic-stock/v1/trading/order-cash",

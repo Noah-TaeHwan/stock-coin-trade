@@ -11,6 +11,8 @@ import stock_trading
 from db import engine, session_scope
 from models import AlternativeOrder, CryptoOrder, HoldCrypto, HtsWatchMemo, Member, StockOrder, StockPosition, UpbitMarket
 from alternatives import get_positions as get_alternative_positions, position_value
+from authz import can_use_kis_account, is_admin_member
+from security import csrf_token
 from stock_market import cached_price
 
 LEVERAGED_ALT_CATEGORIES = {"선물", "옵션", "파생상품"}
@@ -38,12 +40,16 @@ def _check_password(password: str, hashed: str) -> bool:
 def me():
     member_id = session.get("member_id")
     if not member_id:
-        return jsonify({"loggedIn": False})
+        return jsonify({"loggedIn": False, "csrfToken": csrf_token()})
     with session_scope() as db:
         member = db.get(Member, member_id)
         if not member:
-            return jsonify({"loggedIn": False})
-        return jsonify({"loggedIn": True, "username": member.username, "asset": member.asset})
+            return jsonify({"loggedIn": False, "csrfToken": csrf_token()})
+        return jsonify({
+            "loggedIn": True, "username": member.username, "asset": member.asset,
+            "isAdmin": is_admin_member(member_id), "canUseKisAccount": can_use_kis_account(member_id),
+            "csrfToken": csrf_token(),
+        })
 
 
 @member_bp.get("/hts-memos")

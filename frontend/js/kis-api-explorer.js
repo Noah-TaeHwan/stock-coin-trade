@@ -42,7 +42,7 @@
       `분석한 REST API ${catalog.apis.length}개`,
       `Testbed 지원 ${demo.length}개 (조회 ${demo.length - post} · 주문 ${post})`,
       `분류 ${new Set(catalog.apis.map((a) => a.category)).size}개`,
-      user?.loggedIn ? `로그인: ${esc(user.username)} (계좌 API 호출 가능)` : '로그아웃 상태: 계좌 API 는 로그인 필요',
+      user?.loggedIn ? `로그인: ${esc(user.username)} (계좌 API 호출 가능)` : '계좌 API: 로그인한 회원만 호출 가능',
     ].map((t) => `<span>${t}</span>`).join('');
   }
 
@@ -69,11 +69,11 @@
     lastResult = null;
     renderList();
     const fixed = api.params.filter((p) => p.source === 'fixed' || p.source === 'blank');
-    const callable = api.demoSupported && api.method === 'GET';
+    const callable = api.demoSupported && api.method === 'GET' && (api.category !== '주문/계좌' || user?.loggedIn);
     let gate = '';
     if (api.method === 'POST') gate = `<div class="danger"><strong>주문성 API 입니다.</strong> 탐색기는 주문·정정·취소를 직접 보내지 않습니다. 파라미터 구조만 확인하고, 실행은 로그인 후 <a href="/kis-order-flow-test.html" style="text-decoration:underline">모의 주문 흐름 테스트</a>(주문 → 정정 → 취소, 안전장치 포함)에서만 합니다.</div>`;
     else if (!api.demoSupported) gate = `<div class="notice"><strong>모의투자(Testbed) 미지원 API 입니다.</strong> 공식 예제에 모의 분기(demo)가 없어 실전 계좌·실전 키가 필요합니다. 이 웹앱은 Testbed 만 호출하므로 목록과 파라미터 구조만 제공합니다.</div>`;
-    else if (api.category === '주문/계좌' && !user?.loggedIn) gate = `<div class="notice">계좌 관련 API 는 이 웹앱에 <a href="/member/login.html" style="text-decoration:underline">로그인</a>한 뒤 호출할 수 있습니다. 조회 결과는 서버의 kis.key 에 설정된 모의 계좌 기준입니다.</div>`;
+    else if (api.category === '주문/계좌' && !user?.loggedIn) gate = `<div class="notice">계좌 관련 API 는 이 웹앱에 로그인한 회원만 호출할 수 있습니다.</div>`;
 
     $('main').innerHTML = `
       <div class="kicker">${esc(api.category)} · ${esc(api.apiId || '국내주식')}</div>
@@ -115,7 +115,7 @@
     $('resultSec').innerHTML = '<h3>응답</h3><div class="empty">서버가 KIS Testbed 를 호출하는 중…</div>';
     try {
       const response = await fetch(`${apiBase}/api/kis-explorer/call`, {
-        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': user?.csrfToken || '' },
         body: JSON.stringify({ id: current.id, params, variant }),
       });
       const text = await response.text();

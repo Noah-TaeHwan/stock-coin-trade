@@ -95,7 +95,7 @@ function renderHeader(user) {
       { href: '/trade/history.html', label: '내 거래이력',   icon: 'fa-solid fa-clock-rotate-left' },
       { href: '/trade/avg-down.html', label: '물타기 계산기', icon: 'fa-solid fa-calculator' },
     ]},
-    { type: 'group', label: 'KIS 실전연습', items: [
+    { type: 'group', label: 'KIS 모의투자 실습', items: [
       { href: '/learning/kis-regist.html', label: '1단계 · 가입', icon: 'fa-solid fa-user-plus' },
       { href: '/learning/kis-dev.html', label: '2단계 · 키 발급', icon: 'fa-solid fa-key' },
       { href: '/learning/kis-test.html', label: '3단계 · 테스트', icon: 'fa-solid fa-plug-circle-check' },
@@ -716,7 +716,7 @@ function mountApiTestGuide() {
       title: '이 화면의 API 호출과 기대 결과',
       rate: '<strong>KIS Testbed: 분당 60건</strong> — 모의투자 REST 기준 초당 1건입니다. 이 화면은 한 번 클릭에 주문·정정·취소를 순차 실행하므로 중복 클릭하지 마세요.',
       rows: [
-        ['모의 주문 흐름', 'POST /api/broker-test/kis/order-flow-test', '로그인 세션 + 확인 체크 + 서버의 Testbed 계좌', 'ok: true, test.environment·symbol·currentPrice·testPrice·amendedPrice. 서버가 모의 주문→정정→취소까지 완료'],
+        ['모의 주문 흐름', 'POST 승인 → POST /api/broker-test/kis/order-flow-test', '로그인 회원 + CSRF + 1회 승인 + 서버 Testbed 계좌', 'ok: true, test.environment·symbol·currentPrice·testPrice·amendedPrice. 서버가 모의 주문→정정→취소까지 완료'],
       ],
       note: '이 호출만 상태를 변경합니다. 현재가의 90%(호가 단위 내림) 지정가로 1주 매수 주문 후 한 호가 아래로 정정하고 취소합니다. 정정·취소가 실패하면 미체결을 조회해 정리하며, 이미 실행 중이면 거부합니다.',
     },

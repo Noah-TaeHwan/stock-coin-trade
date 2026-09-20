@@ -13,35 +13,27 @@ from __future__ import annotations
 
 import threading
 import time
+from collections import OrderedDict
 from datetime import date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import requests
 from flask import Blueprint, jsonify, request
 
-from broker_test import KIS_TESTBED_URL, BrokerApiError, _json, _kis_headers
+from broker_test import BrokerApiError, kis_request
 
 kis_chart_bp = Blueprint("kis_chart", __name__, url_prefix="/api/kis-chart")
 
 _PERIOD_WINDOW_DAYS = {"D": 150, "W": 730, "M": 3300, "Y": 40000}  # 호출당 100건을 채울 만한 달력 일수
 _MAX_CANDLES = 300
 _MAX_MINUTES = 240
-_CALL_GAP_SECONDS = 1.05  # Testbed 는 초당 1건 수준으로 제한되어 연속 호출 간격을 1초 이상 둔다
-_RATE_LIMIT_MSG_CD = "EGW00201"
 _CACHE_TTL_SECONDS = 30
+_CACHE_MAX_ENTRIES = 256
+_SEOUL = ZoneInfo("Asia/Seoul")
 
-_lock = threading.Lock()
-_last_call_at = 0.0
-_cache: dict[str, tuple[float, dict[str, Any]]] = {}
-
-
-def _throttle() -> None:
-    global _last_call_at
-    with _lock:
-        wait = _CALL_GAP_SECONDS - (time.time() - _last_call_at)
-        if wait > 0:
-            time.sleep(wait)
-        _last_call_at = time.time()
+_cache_lock = threading.Lock()
+_cache: OrderedDict[str, tuple[float, dict[str, Any]]] = OrderedDict()
 
 
 def _num(value: Any) -> float | None:
@@ -59,33 +51,32 @@ def _int(value: Any) -> int | None:
 def _symbol() -> str:
     symbol = request.args.get("symbol", "005930").strip()
     if len(symbol) != 6 or not symbol.isdigit():
-        raise BrokerApiError("종목코드는 6자리 KRX 숫자 코드여야 합니다.")
+        raise BrokerApiError("종목코드는 6자리 KRX 숫자 코드여야 합니다.", 400)
     return symbol
 
 
 def _cached(key: str, build):
     now = time.time()
-    hit = _cache.get(key)
-    if hit and hit[0] > now:
-        return hit[1]
+    with _cache_lock:
+        hit = _cache.get(key)
+        if hit and hit[0] > now:
+            _cache.move_to_end(key)
+            return hit[1]
+        _cache.pop(key, None)
     data = build()
-    _cache[key] = (now + _CACHE_TTL_SECONDS, data)
+    with _cache_lock:
+        _cache[key] = (time.time() + _CACHE_TTL_SECONDS, data)
+        _cache.move_to_end(key)
+        while len(_cache) > _CACHE_MAX_ENTRIES:
+            _cache.popitem(last=False)
     return data
 
 
 def _kis_get(path: str, tr_id: str, params: dict[str, str], label: str) -> dict[str, Any]:
-    body: dict[str, Any] = {}
-    response = None
-    for attempt in range(3):  # 초당 건수 초과(EGW00201)면 간격을 늘려 최대 2회 재시도
-        _throttle()
-        if attempt:
-            time.sleep(0.8 * attempt)
-        response = requests.get(f"{KIS_TESTBED_URL}{path}", headers={**_kis_headers(tr_id), "custtype": "P"}, params=params, timeout=15)
-        body = _json(response, "한국투자증권")
-        if body.get("msg_cd") != _RATE_LIMIT_MSG_CD:
-            break
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(f"한국투자증권 {label} 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}")
+    _, body = kis_request(
+        "GET", path, tr_id, params=params, label=label,
+        extra_headers={"custtype": "P"},
+    )
     return body
 
 
@@ -169,7 +160,7 @@ def _minute_candles(symbol: str, count: int, end_time: str) -> dict[str, Any]:
             new += 1
             candles[key] = {
                 "time": f"{d[:4]}-{d[4:6]}-{d[6:]} {t[:2]}:{t[2:4]}",
-                "timestamp": int(datetime.strptime(d + t[:4], "%Y%m%d%H%M").timestamp()) if len(d) == 8 else None,
+                "timestamp": int(datetime.strptime(d + t[:4], "%Y%m%d%H%M").replace(tzinfo=_SEOUL).timestamp()) if len(d) == 8 else None,
                 "open": _num(r.get("stck_oprc")), "high": _num(r.get("stck_hgpr")),
                 "low": _num(r.get("stck_lwpr")), "close": _num(r.get("stck_prpr")),
                 "volume": _int(r.get("cntg_vol")), "amount": _int(r.get("acml_tr_pbmn")),
@@ -189,7 +180,9 @@ def _respond(build):
     try:
         return jsonify({"ok": True, **build()})
     except BrokerApiError as exc:
-        return jsonify({"ok": False, "broker": "한국투자증권 Testbed", "message": str(exc)})
+        return jsonify({"ok": False, "broker": "한국투자증권 Testbed", "message": str(exc)}), exc.status_code
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "broker": "한국투자증권 Testbed", "message": "조회 파라미터 형식이 올바르지 않습니다."}), 400
     except requests.RequestException:
         return jsonify({"ok": False, "broker": "한국투자증권 Testbed", "message": "한국투자증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
 
@@ -200,10 +193,10 @@ def candles():
         symbol = _symbol()
         period = request.args.get("period", "D").upper()
         if period not in _PERIOD_WINDOW_DAYS:
-            raise BrokerApiError("period 는 D(일), W(주), M(월), Y(년) 중 하나여야 합니다.")
+            raise BrokerApiError("period 는 D(일), W(주), M(월), Y(년) 중 하나여야 합니다.", 400)
         count = max(20, min(_MAX_CANDLES, int(request.args.get("count", 120) or 120)))
         end_raw = request.args.get("end", "").strip()
-        end = datetime.strptime(end_raw, "%Y%m%d").date() if end_raw else date.today()
+        end = datetime.strptime(end_raw, "%Y%m%d").date() if end_raw else datetime.now(_SEOUL).date()
         return _cached(f"{symbol}:{period}:{count}:{end}", lambda: _period_candles(symbol, period, count, end))
     return _respond(build)
 
@@ -215,6 +208,8 @@ def minutes():
         count = max(30, min(_MAX_MINUTES, int(request.args.get("count", 120) or 120)))
         end_time = request.args.get("time", "").strip() or "153000"
         if len(end_time) != 6 or not end_time.isdigit():
-            raise BrokerApiError("time 은 HHMMSS 형식이어야 합니다.")
+            raise BrokerApiError("time 은 HHMMSS 형식이어야 합니다.", 400)
+        if not ("090000" <= end_time <= "153000"):
+            raise BrokerApiError("time 은 정규장 시간(090000~153000) 범위여야 합니다.", 400)
         return _cached(f"{symbol}:1m:{count}:{end_time}", lambda: _minute_candles(symbol, count, end_time))
     return _respond(build)

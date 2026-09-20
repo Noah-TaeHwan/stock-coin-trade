@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KIS 실전연습 3단계 · 테스트 — 모의투자</title>
+  <title>KIS 모의투자 실습 3단계 · 테스트</title>
   <link rel="icon" href="/img/favicon.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
@@ -16,11 +16,11 @@
   <div id="header-mount"></div>
   <main class="learn-wrap">
     <section style="padding:28px;border:1px solid #C9DAFF;border-radius:15px;background:linear-gradient(135deg,#E4F0FF,#F9FBFF);">
-      <div class="kicker">KIS 실전연습 · 3단계 테스트</div>
+      <div class="kicker">KIS 모의투자 실습 · 3단계 테스트</div>
       <h1 style="margin:7px 0;font-size:30px;line-height:1.25;font-weight:900;color:var(--fg);">키 발급 후 간단한 테스트: 현재가 조회부터 모의 주문 흐름까지</h1>
       <p class="desc" style="max-width:850px">2단계에서 설정한 모의 키로 이 웹앱의 KIS 조회 모듈을 하나씩 실행합니다. 현재가 1건 → 일봉·호가·지수 → 잔고 순서로 넓힌 뒤, 마지막에 로그인 후 보호된 <strong>모의 주문 → 정정 → 취소</strong> 흐름을 한 번만 실행합니다. 실전 키·실전 계좌는 사용하지 않습니다.</p>
       <div class="flow"><span>현재가 1건 확인</span><i>→</i><span>조회 API 검증</span><i>→</i><span>잔고 확인</span><i>→</i><span>모의 주문 흐름</span><i>→</i><span>체결·잔고 대사</span></div>
-      <nav class="stage-nav" aria-label="KIS 실전연습 단계"><a href="/learning/kis-regist.html"><b>1단계 · 가입</b><small>한국투자증권 계좌와 모의투자 계좌 준비</small></a><a href="/learning/kis-dev.html"><b>2단계 · 키 발급</b><small>KIS Developers API 신청과 kis.key 설정</small></a><a href="/learning/kis-test.html" class="on"><b>3단계 · 테스트</b><small>현재가 조회부터 모의 주문 흐름까지 점검</small></a></nav>
+      <nav class="stage-nav" aria-label="KIS 모의투자 실습 단계"><a href="/learning/kis-regist.html"><b>1단계 · 가입</b><small>한국투자증권 계좌와 모의투자 계좌 준비</small></a><a href="/learning/kis-dev.html"><b>2단계 · 키 발급</b><small>KIS Developers API 신청과 kis.key 설정</small></a><a href="/learning/kis-test.html" class="on"><b>3단계 · 테스트</b><small>현재가 조회부터 모의 주문 흐름까지 점검</small></a></nav>
     </section>
 
 <section class="card">
@@ -36,7 +36,7 @@
     </section>
     <section class="card">
       <div class="kicker">호출 경로 · 이 저장소 백엔드 vs KIS 직접</div><h2 class="title">브라우저는 KIS 를 직접 호출하지 않고, 항상 이 저장소의 백엔드를 거칩니다</h2>
-      <p class="desc">KIS 실전연습의 모든 화면은 <strong>브라우저 → nginx(<code>/api/*</code> 프록시) → Flask 백엔드(<code>python-stock-backend</code>) → KIS Testbed</strong> 순서로 동작합니다. App Key·Secret·계좌번호·접근 토큰은 백엔드에만 있고, 브라우저에는 백엔드가 정리한 JSON 만 돌아옵니다. 브라우저가 <code>openapivts.koreainvestment.com</code> 에 직접 접속하는 코드는 없습니다(키 노출과 CORS 문제 때문입니다). KIS 를 직접 호출하는 것은 아래 표의 마지막 두 줄(CLI 스크립트, MCP)뿐입니다.</p>
+      <p class="desc">KIS 모의투자 실습의 모든 화면은 <strong>브라우저 → nginx(<code>/api/*</code> 프록시) → Flask 백엔드(<code>python-stock-backend</code>) → KIS Testbed</strong> 순서로 동작합니다. App Key·Secret·계좌번호·접근 토큰은 백엔드에만 있고, 브라우저에는 백엔드가 정리한 JSON 만 돌아옵니다. 브라우저가 <code>openapivts.koreainvestment.com</code> 에 직접 접속하는 코드는 없습니다(키 노출과 CORS 문제 때문입니다). KIS 를 직접 호출하는 것은 아래 표의 마지막 두 줄(CLI 스크립트, MCP)뿐입니다.</p>
       <div class="flow"><span>브라우저 (화면 JS)</span><i>→</i><span>이 저장소 API <code>/api/…</code></span><i>→</i><span>백엔드가 kis.key 로 토큰 발급·캐시</span><i>→</i><span>KIS Testbed <code>/uapi/…</code></span><i>→</i><span>정리된 JSON 응답</span></div>
       <div class="table-wrap"><table class="table"><thead><tr><th>화면 · 기능</th><th>브라우저가 호출하는 이 저장소 API</th><th>백엔드가 호출하는 KIS Testbed API (tr_id)</th><th>구분</th></tr></thead><tbody>
         <tr><td><a href="/broker-api-test.html">KIS 연결 테스트</a> · 현재가</td><td><code>GET /api/broker-test/kis/quote</code></td><td><code>quotations/inquire-price</code> (FHKST01010100)</td><td>저장소 백엔드 경유</td></tr>
@@ -299,7 +299,7 @@ def get_access_token():
 app_key=모의_App_Key
 secret=모의_App_Secret
 account=12345678-01</code></pre><h4>오전 핵심 개념</h4><ol><li><code>account</code>의 하이픈 앞은 CANO, 뒤는 계좌상품코드다. 임의로 <code>-01</code>, <code>-02</code>를 바꾸지 않는다.</li><li>시세·호가·차트에는 키가 필요하고, 잔고·주문성 기능에는 계좌 설정도 필요하다.</li><li><code>kis.key</code>는 컨테이너 안에서 <code>/run/secrets/kis.key</code>로 읽기 전용 전달된다.</li><li>공식 구현·샘플의 기준은 <a href="https://github.com/koreainvestment/open-trading-api" target="_blank" rel="noopener noreferrer">https://github.com/koreainvestment/open-trading-api</a>다.</li></ol><h4>CANO와 계좌상품코드</h4><p>CANO는 한국투자증권(KIS) OpenAPI에서 쓰는 필드명으로, 종합계좌번호(Comprehensive Account NO.)의 약자다. KIS 계좌번호는 <code>12345678-01</code> 형태이고, API 요청 시 두 부분으로 나눠 보낸다.</p><div class="cur-table-wrap"><table class="cur-table"><thead><tr><th>위치</th><th>필드명</th><th>의미</th><th>자릿수</th></tr></thead><tbody><tr><td>하이픈 앞</td><td><code>CANO</code></td><td>종합계좌번호 (고객 계좌 식별)</td><td>8자리</td></tr><tr><td>하이픈 뒤</td><td><code>ACNT_PRDT_CD</code></td><td>계좌상품코드 (계좌 종류)</td><td>2자리</td></tr></tbody></table></div><p>계좌상품코드는 계좌 개설 시 증권사가 부여한 값이라 사용자가 고를 수 없다. 예를 들어 01은 종합/위탁 계좌, 03은 선물옵션 계좌, 22는 연금 계좌처럼 종류마다 정해져 있다. "01이 안 되니 02로 바꿔 보자" 식으로 임의 수정하면 KIS 서버가 계좌를 찾지 못해 조회와 주문이 모두 실패한다.</p></div></details>
-<details class="cur-sec" open><summary>오후 — KIS 실전연습 + 기본 자산관리 흐름 (3시간)</summary>
+<details class="cur-sec" open><summary>오후 — KIS 모의투자 실습 + 기본 자산관리 흐름 (3시간)</summary>
 <div class="cur-body"><div class="cur-table-wrap"><table class="cur-table"><thead><tr><th>순서</th><th>웹앱 기능</th><th>역할</th><th>확인할 결과</th></tr></thead><tbody><tr><td>1</td><td><code>/broker-api-test.html</code> (KIS 연결 테스트)</td><td>연결 검증자</td><td>현재가 1건이 정상 반환된다.</td></tr><tr><td>2</td><td>KIS 조회 API</td><td>데이터 검증자</td><td>현재가, 일봉, 10단계 호가, 코스피/코스닥 지수의 차이를 설명한다.</td></tr><tr><td>3</td><td>잔고·평가액 조회</td><td>보안 점검자</td><td>로그인·접근 통제 필요성을 확인한다.</td></tr><tr><td>4</td><td><code>/kis-order-flow-test.html</code></td><td>주문 흐름 관찰자</td><td>모의 주문 → 정정 → 취소의 결과를 확인한다.</td></tr><tr><td>5</td><td>결과 정리</td><td>기록 담당</td><td>시각, 종목, 환경, 성공/실패 코드만 기록한다.</td></tr></tbody></table></div><h4>API 실습 범위</h4><pre class="cur-code"><code>GET  /api/broker-test/kis/quote?symbol=005930
 GET  /api/broker-test/kis/chart?symbol=005930
 GET  /api/broker-test/kis/orderbook?symbol=005930
@@ -320,7 +320,7 @@ cd python-stock-backend &amp;&amp; python kis_quote_test.py --symbol 005930</cod
 </section>
 <!-- curriculum:end -->
 </main>
-  <footer class="footer"><div>EDUMGT · KIS 실전연습 3단계 · Testbed 조회와 모의 주문 흐름 테스트 · 교육용 콘텐츠</div></footer>
+  <footer class="footer"><div>EDUMGT · KIS 모의투자 실습 3단계 · Testbed 조회와 모의 주문 흐름 테스트 · 교육용 콘텐츠</div></footer>
   <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-chart"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
 </body>
 </html>

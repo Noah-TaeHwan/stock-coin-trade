@@ -295,7 +295,7 @@ KIS Testbed에는 호출 제한이 있으므로 토큰과 짧은 시세 결과�
 
 | 플랫폼 | 가입 필요 | API Key 발급 | 이 저장소의 저장 위치 | 이 프로젝트에서의 사용 범위 |
 |---|---|---|---|---|
-| 한국투자증권(KIS) | 계좌 개설 + 모의투자 별도 신청 | 필요 (모의 App Key·Secret) | `kis.key` 또는 `KIS_*` 환경변수 | 모의(Testbed) 시세·잔고 조회, 보호된 모의 주문 흐름 테스트 |
+| 한국투자증권(KIS) | 계좌 개설 + 모의투자 별도 신청 | 필요 (모의 App Key·Secret) | `kis.key` 또는 `KIS_PAPER_*` 환경변수 | 모의(Testbed) 시세 조회, 로그인 회원용 잔고·모의 주문 흐름 테스트 |
 | KB증권 | 계좌 개설(M-able) + Open API 신청 | 필요 (App Key·Secret) | `kb.key` 또는 `KB_APP_KEY`/`KB_APP_SECRET` | 토큰 인증, 시세·호가·차트 읽기 전용 조회 |
 | Alpaca Markets | 이메일 가입 | 필요 (Paper Key·Secret) | `al.key` 또는 `ALPACA_API_KEY`/`ALPACA_SECRET_KEY` | Paper 계정 조회, 보호된 Paper 주문 흐름 테스트 |
 | Binance | 공개 시세는 불필요 | 공개 시세는 불필요(인증 API·Testnet만 필요) | 해당 없음(미구현) | 공개 24hr 시세·호가만 조회 |
@@ -311,9 +311,10 @@ KIS Testbed에는 호출 제한이 있으므로 토큰과 짧은 시세 결과�
 1. 한국투자증권 계좌가 없다면 공식 앱/웹에서 비대면 계좌개설을 먼저 진행합니다. ([한국투자증권 로그인·가입](https://securities.koreainvestment.com/main/member/login/login.jsp))
 2. [모의투자 안내](https://www.truefriend.com/main/research/virtual/_static/TF07da010000.jsp)에서 한국투자증권 고객 ID로 로그인해 **모의투자 참가 신청**을 하고, 완료 후 **나의계좌 → 계좌정보**에서 모의투자 전용 계좌번호(`CANO-상품코드`)를 확인합니다.
 3. [KIS Developers](https://apiportal.koreainvestment.com)에 로그인해 **API 신청**에서 방금 만든 모의투자 계좌를 선택해 서비스를 신청합니다. 신청현황에서 모의투자용 **App Key·App Secret**이 발급됩니다. 실전 계좌 행의 키는 이 프로젝트에서 사용하지 않습니다.
-4. 발급받은 값을 저장소 루트의 `kis.key`(`app_key=`, `secret=`, `account=CANO-상품코드`) 또는 `.env`의 `KIS_APP_KEY`/`KIS_APP_SECRET`/`KIS_ACCOUNT_NO`에 저장합니다. `.env` 값은 `docker-compose.yml`의 `python-backend.environment`를 거쳐 컨테이너로 전달되며, 채워져 있으면 `kis.key`보다 우선합니다. `KIS_ACCOUNT_NO`는 `CANO-계좌상품코드`(예: `12345678-01`) 한 값으로 적고, 하이픈 뒤 상품코드는 증권사가 부여한 값이므로 임의로 바꾸지 않습니다. 계좌(`account`)는 잔고 조회에만 필요하고 시세 조회에는 필요 없습니다.
+4. 발급받은 값을 저장소 루트의 `kis.key`(`app_key=`, `secret=`, `account=CANO-상품코드`) 또는 `.env`의 `KIS_PAPER_APP_KEY`/`KIS_PAPER_APP_SECRET`/`KIS_PAPER_ACCOUNT_NO`에 저장합니다. 기존 `KIS_APP_KEY` 계열도 호환되지만 신규 배포는 모의투자 전용 변수 사용을 권장합니다. `KIS_ENVIRONMENT=paper` 외의 값은 서버가 거부합니다. 계좌번호는 `CANO-계좌상품코드`(예: `12345678-01`) 형식입니다.
 5. 모의(Testbed) 도메인은 `https://openapivts.koreainvestment.com:29443`이며, 실전 도메인(`https://openapi.koreainvestment.com:9443`)은 사용하지 않습니다. 모의투자 토큰 발급은 **1분당 1회** 제한이 있으므로 짧은 간격으로 재시도하지 마세요.
 6. 자세한 절차·스크린샷은 3단계 학습 페이지 [`/learning/kis-regist.html`](frontend/learning/kis-regist.html)(가입) → [`/learning/kis-dev.html`](frontend/learning/kis-dev.html)(키 발급) → [`/learning/kis-test.html`](frontend/learning/kis-test.html)(테스트)에, VS Code에서 자연어로 쓰는 공식 MCP 연동은 아래 "KIS MCP" 절에 정리되어 있습니다.
+7. 공용 모의계좌 잔고·계좌 API·주문 테스트는 웹앱에 로그인한 모든 회원이 사용할 수 있습니다. 주문 실행은 CSRF 검증과 60초짜리 1회 승인 토큰을 추가로 요구합니다.
 
 ### 2. KB증권 Open API
 
@@ -545,7 +546,7 @@ VS Code에서 이 워크스페이스를 열고 Copilot Chat을 에이전트 모�
 | `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD` | 로컬 MariaDB 설정 |
 | `SECRET_KEY` | Flask 세션 서명 키 |
 | `CMC_API_KEY`, `ANTHROPIC_API_KEY` | 선택적 코인 데이터·AI 기능 |
-| `KIS_*`, `KB_*` | 증권사 테스트 환경 변수 대안 |
+| `KIS_PAPER_*`, `KB_*` | 증권사 테스트 환경 변수 |
 | `ALPACA_API_KEY`, `ALPACA_SECRET_KEY` | Alpaca Paper API 키 대안 |
 
 `.env`, `*.key`, 토큰, 계좌번호, 비밀번호, 실제 주문 응답을 Git·문서·화면 캡처·브라우저 코드에 넣지 마세요.

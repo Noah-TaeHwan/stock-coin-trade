@@ -46,6 +46,9 @@ from stocks import stock_bp
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
 CORS(
     app,
@@ -98,7 +101,7 @@ def _capture_unhandled_exception(sender, exception, **extra):
 
 @app.before_request
 def _start_api_usage_timer():
-    if request.path.startswith(("/api/broker-test/", "/api/aws-broker-test/", "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/")):
+    if request.path.startswith(("/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/aws-broker-test/", "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/")):
         g.api_usage_started_at = time.perf_counter()
 
 

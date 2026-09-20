@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import re
-import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -19,7 +18,9 @@ from typing import Any
 import requests
 from flask import Blueprint, jsonify, request, session
 
-from broker_test import KIS_TESTBED_URL, BrokerApiError, _json, _kis_account, _kis_headers
+from authz import can_use_kis_account
+from broker_test import BrokerApiError, _kis_account, kis_request
+from security import csrf_is_valid
 
 kis_explorer_bp = Blueprint("kis_explorer", __name__, url_prefix="/api/kis-explorer")
 
@@ -29,25 +30,11 @@ _BY_ID: dict[str, dict[str, Any]] = {api["id"]: api for api in _CATALOG["apis"]}
 
 _ACCOUNT_CATEGORIES = {"주문/계좌"}
 _VALUE_RE = re.compile(r"^[A-Za-z0-9_.\-:/ ]{0,40}$")
-_CALL_GAP_SECONDS = 0.5  # Testbed 초당 호출 제한 회피 (시세)
-_ACCOUNT_GAP_SECONDS = 1.1  # 계좌 TR 은 제한이 더 엄격해 간격을 더 둔다
-_RATE_LIMIT_MSG_CD = "EGW00201"  # 초당 거래건수 초과 → 1회 자동 재시도
-_call_lock = threading.Lock()
-_last_call_at = 0.0
 
 
 @kis_explorer_bp.get("/catalog")
 def catalog():
     return jsonify({"ok": True, **_CATALOG})
-
-
-def _throttle(gap: float = _CALL_GAP_SECONDS) -> None:
-    global _last_call_at
-    with _call_lock:
-        wait = gap - (time.time() - _last_call_at)
-        if wait > 0:
-            time.sleep(wait)
-        _last_call_at = time.time()
 
 
 def _build_params(api: dict[str, Any], user_params: dict[str, Any]) -> tuple[dict[str, str], dict[str, str]]:
@@ -76,9 +63,9 @@ def _build_params(api: dict[str, Any], user_params: dict[str, Any]) -> tuple[dic
         raw = user_params.get(key, p.get("default", ""))
         value = str(raw if raw is not None else "").strip()
         if not _VALUE_RE.match(value):
-            raise BrokerApiError(f"{key} 값에 허용되지 않는 문자가 있거나 너무 깁니다.")
+            raise BrokerApiError(f"{key} 값에 허용되지 않는 문자가 있거나 너무 깁니다.", 400)
         if p.get("required") and value == "":
-            raise BrokerApiError(f"{p.get('label') or key} 값은 필수입니다.")
+            raise BrokerApiError(f"{p.get('label') or key} 값은 필수입니다.", 400)
         sent[key] = value
         shown[key] = value
     return sent, shown
@@ -95,40 +82,34 @@ def _select_tr_id(api: dict[str, Any], variant: str | None) -> str:
 
 @kis_explorer_bp.post("/call")
 def call():
+    if not csrf_is_valid():
+        return jsonify({"ok": False, "message": "요청 검증에 실패했습니다. 화면을 새로고침한 뒤 다시 시도하세요."}), 403
     body = request.get_json(silent=True) or {}
     api = _BY_ID.get(str(body.get("id", "")))
     if api is None:
         return jsonify({"ok": False, "message": "카탈로그에 없는 API 입니다."}), 404
     if not api["demoSupported"]:
-        return jsonify({"ok": False, "message": "이 API 는 모의투자(Testbed)를 지원하지 않아 이 웹앱에서 호출하지 않습니다. 실전 계좌·실전 키가 필요합니다."})
+        return jsonify({"ok": False, "message": "이 API 는 모의투자(Testbed)를 지원하지 않아 이 웹앱에서 호출하지 않습니다. 실전 계좌·실전 키가 필요합니다."}), 400
     if api["method"] != "GET":
-        return jsonify({"ok": False, "message": "주문·정정·취소 같은 주문성 API 는 탐색기에서 직접 호출하지 않습니다. 로그인 후 '모의 주문 흐름 테스트'에서 보호된 흐름으로만 실행합니다."})
-    if api["category"] in _ACCOUNT_CATEGORIES and not session.get("member_id"):
-        return jsonify({"ok": False, "message": "계좌 관련 API 는 이 웹앱에 로그인한 뒤 호출할 수 있습니다."}), 401
+        return jsonify({"ok": False, "message": "주문·정정·취소 같은 주문성 API 는 탐색기에서 직접 호출하지 않습니다. 로그인 후 '모의 주문 흐름 테스트'에서 보호된 흐름으로만 실행합니다."}), 400
+    if api["category"] in _ACCOUNT_CATEGORIES and not can_use_kis_account(session.get("member_id")):
+        return jsonify({"ok": False, "message": "계좌 관련 API 는 로그인한 회원만 호출할 수 있습니다."}), 401
 
     try:
         params, shown = _build_params(api, body.get("params") or {})
         tr_id = _select_tr_id(api, body.get("variant"))
-        gap = _ACCOUNT_GAP_SECONDS if api["category"] in _ACCOUNT_CATEGORIES else _CALL_GAP_SECONDS
         started = time.time()
-        for attempt in range(2):
-            _throttle(gap if attempt == 0 else gap + 1.0)
-            response = requests.get(
-                f"{KIS_TESTBED_URL}{api['url']}",
-                headers={**_kis_headers(tr_id), "custtype": "P", "tr_cont": ""},
-                params=params,
-                timeout=15,
-            )
-            data = _json(response, "한국투자증권")
-            if data.get("msg_cd") != _RATE_LIMIT_MSG_CD:
-                break
+        response, data = kis_request(
+            "GET", api["url"], tr_id, params=params, label=api.get("title") or "API 조회",
+            extra_headers={"custtype": "P", "tr_cont": ""}, raise_for_api_error=False,
+        )
         elapsed_ms = int((time.time() - started) * 1000)
     except BrokerApiError as exc:
-        return jsonify({"ok": False, "message": str(exc)})
+        return jsonify({"ok": False, "message": str(exc)}), exc.status_code
     except requests.RequestException:
         return jsonify({"ok": False, "message": "한국투자증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
 
-    return jsonify({
+    result = jsonify({
         "ok": data.get("rt_cd") == "0",
         "http": response.status_code,
         "rtCd": data.get("rt_cd"),
@@ -141,3 +122,4 @@ def call():
         "body": data,
         "columns": api.get("columns", {}),
     })
+    return result if data.get("rt_cd") == "0" else (result, 502)

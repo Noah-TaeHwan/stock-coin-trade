@@ -1,7 +1,8 @@
 import requests
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 
+from authz import can_use_kis_account
 from aws_secret_store import AwsSecretError, inspect_parameters
 from broker_test_aws import (
     check_kb_token_aws,
@@ -51,6 +52,8 @@ def kis_quote():
 
 @aws_broker_test_bp.get("/kis/balance")
 def kis_balance():
+    if not can_use_kis_account(session.get("member_id")):
+        return jsonify({"ok": False, "message": "KIS 모의계좌 잔고는 로그인 후 조회할 수 있습니다."}), 401
     return _run("한국투자증권 Testbed (AWS SSM)", lambda: {"balance": get_kis_balance_aws()})
 
 

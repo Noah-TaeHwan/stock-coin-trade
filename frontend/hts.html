@@ -216,7 +216,8 @@
         const base = `/api/broker-test/${broker}`;
         const quoteData = await getBroker(`${base}/quote?symbol=${encodeURIComponent(selected.code)}`);
         renderBrokerQuote(normalizeBrokerQuote(quoteData));
-        const [bookData, chartData] = await Promise.all([getBroker(`${base}/orderbook?symbol=${encodeURIComponent(selected.code)}`), getBroker(`${base}/chart?symbol=${encodeURIComponent(selected.code)}`)]);
+        const bookData = await getBroker(`${base}/orderbook?symbol=${encodeURIComponent(selected.code)}`);
+        const chartData = await getBroker(`${base}/chart?symbol=${encodeURIComponent(selected.code)}`);
         const levels = normalizeBrokerOrderbook(bookData); brokerOrderbook = {levels}; renderBrokerOrderbook(levels);
         const candles = broker === 'kis' ? chartData.chart?.candles : chartData.result?.raw?.out2;
         if (Array.isArray(candles) && candles.length) renderBrokerCandles(candles);
