@@ -26,6 +26,8 @@ from api_keys import api_key_bp
 from broker_test_api import broker_test_bp
 from kis_api_explorer import kis_explorer_bp
 from kis_chart_api import kis_chart_bp
+from kis_practice import ensure_kis_practice_tables, kis_practice_bp
+from kis_real import kis_real_bp
 from broker_test_aws_api import aws_broker_test_bp
 from crypto import ensure_crypto_tables, market_bp, trade_bp
 from crypto_exchange_test_api import crypto_exchange_test_bp
@@ -73,6 +75,8 @@ app.register_blueprint(api_key_bp)
 app.register_blueprint(broker_test_bp)
 app.register_blueprint(kis_explorer_bp)
 app.register_blueprint(kis_chart_bp)
+app.register_blueprint(kis_practice_bp)
+app.register_blueprint(kis_real_bp)
 app.register_blueprint(aws_broker_test_bp)
 app.register_blueprint(open_api_bp)
 app.register_blueprint(ohlcv_db_bp)
@@ -83,6 +87,7 @@ app.register_blueprint(api_usage_bp)
 
 ensure_tables()
 ensure_member_tables()
+ensure_kis_practice_tables()
 ensure_crypto_tables()
 seed_demo_investors()
 seed_ganada_dataset()
@@ -101,7 +106,7 @@ def _capture_unhandled_exception(sender, exception, **extra):
 
 @app.before_request
 def _start_api_usage_timer():
-    if request.path.startswith(("/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/aws-broker-test/", "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/")):
+    if request.path.startswith(("/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/kis-real/", "/api/aws-broker-test/", "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/")):
         g.api_usage_started_at = time.perf_counter()
 
 

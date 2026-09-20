@@ -104,6 +104,45 @@ class StockOrder(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
 
+class KisPracticeAccount(Base):
+    """KIS 실거래 연습 전용 가상 예수금. 기존 Member.asset과 분리된다."""
+    __tablename__ = "kis_practice_account"
+    __table_args__ = (UniqueConstraint("member_id", name="uq_kis_practice_account_member"),)
+
+    kis_practice_account_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    member_id = Column(BigInteger, ForeignKey("member.member_id"), nullable=False)
+    cash = Column(BigInteger, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+class KisPracticePosition(Base):
+    """KIS 실거래 연습 전용 국내주식 포지션."""
+    __tablename__ = "kis_practice_position"
+    __table_args__ = (UniqueConstraint("member_id", "symbol", name="uq_kis_practice_position_member_symbol"),)
+
+    kis_practice_position_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    member_id = Column(BigInteger, ForeignKey("member.member_id"), nullable=False)
+    symbol = Column(String(20), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    avg_price = Column(BigInteger, nullable=False)
+
+
+class KisPracticeOrder(Base):
+    """KIS 실거래 연습 전용 가상 체결 이력."""
+    __tablename__ = "kis_practice_order"
+
+    kis_practice_order_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    member_id = Column(BigInteger, ForeignKey("member.member_id"), nullable=False)
+    symbol = Column(String(20), nullable=False)
+    name = Column(String(100), nullable=False)
+    order_type = Column(String(4), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    price = Column(BigInteger, nullable=False)
+    amount = Column(BigInteger, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+
 class HtsWatchMemo(Base):
     """로그인 회원별 HTS 관심종목 메모."""
     __tablename__ = "hts_watch_memo"

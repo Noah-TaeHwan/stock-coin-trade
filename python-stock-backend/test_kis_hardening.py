@@ -5,6 +5,7 @@ from flask import Flask
 
 from broker_test_api import broker_test_bp
 import broker_test
+import api_usage
 from kis_api_explorer import kis_explorer_bp
 from kis_chart_api import kis_chart_bp
 
@@ -51,6 +52,37 @@ class KisHardeningTest(unittest.TestCase):
         for number in range(broker_test._KIS_QUOTE_CACHE_MAX + 1):
             broker_test.get_kis_quote(f"{number:06d}")
         self.assertEqual(len(broker_test._kis_quote_cache), broker_test._KIS_QUOTE_CACHE_MAX)
+
+    def test_gateway_masks_credentials_and_account(self):
+        safe = api_usage._safe_value({
+            "appkey": "secret-key", "appsecret": "secret-value", "CANO": "12345678",
+            "nested": {"access_token": "token-value", "symbol": "005930"},
+        })
+        self.assertEqual(safe["appkey"], "***")
+        self.assertEqual(safe["appsecret"], "***")
+        self.assertEqual(safe["CANO"], "1234****")
+        self.assertEqual(safe["nested"]["access_token"], "***")
+        self.assertEqual(safe["nested"]["symbol"], "005930")
+
+    @patch("broker_test.time.sleep")
+    @patch("broker_test._audit_kis_call")
+    @patch("broker_test._kis_headers", return_value={})
+    @patch("broker_test.requests.request")
+    def test_each_gateway_retry_is_audited(self, request_call, _headers, audit, _sleep):
+        rate_limited = Mock(status_code=200)
+        rate_limited.json.return_value = {"rt_cd": "1", "msg_cd": "EGW00201", "msg1": "rate limit"}
+        succeeded = Mock(status_code=200)
+        succeeded.json.return_value = {"rt_cd": "0", "msg_cd": "", "msg1": "success"}
+        request_call.side_effect = [rate_limited, succeeded]
+        with patch.object(broker_test, "_KIS_API_CALL_GAP_SECONDS", 0):
+            _, body = broker_test.kis_request(
+                "GET", "/uapi/test", "TEST001", params={"symbol": "005930"}, label="테스트",
+            )
+        self.assertEqual(body["rt_cd"], "0")
+        self.assertEqual(audit.call_count, 2)
+        self.assertFalse(audit.call_args_list[0].kwargs["success"])
+        self.assertTrue(audit.call_args_list[1].kwargs["success"])
+        self.assertEqual(audit.call_args_list[1].kwargs["attempt"], 2)
 
     def test_invalid_chart_count_is_http_400(self):
         response = self.client.get("/api/kis-chart/candles?symbol=005930&count=bad")

@@ -177,7 +177,8 @@ body.alternatives-layout > main :is(p, span, a, button, input, select, textarea,
 
 .oc-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem; border-bottom: 1px solid #B8CCF5;
+    background: linear-gradient(135deg, #E8F1FF 0%, #F7FAFF 100%);
 }
 .oc-close-btn {
     width: 32px; height: 32px;
@@ -190,7 +191,7 @@ body.alternatives-layout > main :is(p, span, a, button, input, select, textarea,
 .oc-close-btn:hover { background: rgba(41,98,255,0.18); }
 
 .oc-nav {
-    padding: 0.35rem 0;
+    padding: 0.45rem 0.55rem 0.8rem;
     flex: 1;
     min-height: 0;
     min-width: 0;
@@ -199,21 +200,48 @@ body.alternatives-layout > main :is(p, span, a, button, input, select, textarea,
 }
 .oc-nav-item {
     display: flex; align-items: center; gap: 0.7rem;
-    padding: 0.55rem 1rem;
+    padding: 0.58rem 0.8rem;
     font-size: 15.4px; font-weight: 600; color: var(--fg-2);
     text-decoration: none;
-    border-left: 3px solid transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
     transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .oc-nav-item:hover {
-    background: var(--accent-light);
-    border-left-color: var(--accent);
+    background: #EDF4FF;
+    border-color: #C9DAFF;
     color: var(--accent-dark);
 }
 .oc-nav-item--sub {
-    padding-left: 1.8rem;
+    position: relative;
+    margin: 2px 4px 2px 12px;
+    padding: 0.52rem 0.65rem 0.52rem 1.45rem;
     font-size: 14.3px;
     font-weight: 500;
+    color: #475569;
+    background: #FFFFFF;
+}
+.oc-nav-item--sub::before {
+    content: '';
+    position: absolute;
+    left: 0.62rem;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #9CB5E8;
+    transform: translateY(-50%);
+}
+.oc-nav-item--sub.active {
+    color: #FFFFFF;
+    background: linear-gradient(135deg, #2962FF, #1746B5);
+    border-color: #1746B5;
+    box-shadow: 0 3px 9px rgba(41,98,255,.22);
+    font-weight: 800;
+}
+.oc-nav-item--sub.active::before {
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.22);
 }
 
 /* ── Offcanvas accordion 그룹 ───────────────────────────────────────────── */
@@ -221,10 +249,10 @@ body.alternatives-layout > main :is(p, span, a, button, input, select, textarea,
     display: flex; align-items: center; justify-content: space-between;
     width: 100%;
     min-width: 0;
-    margin: 0;
-    padding: 0.55rem 1rem;
-    font-size: 15.4px; font-weight: 600; color: var(--fg-2);
-    background: transparent; border: none; border-left: 3px solid transparent;
+    margin: 5px 0 2px;
+    padding: 0.62rem 0.72rem;
+    font-size: 15.4px; font-weight: 800; color: #233653;
+    background: #F1F5FB; border: 1px solid #DCE5F2; border-radius: 8px;
     appearance: none; -webkit-appearance: none;
     cursor: pointer; text-align: left; text-indent: 0;
     transition: background 0.12s, border-color 0.12s, color 0.12s;
@@ -234,9 +262,15 @@ body.alternatives-layout > main :is(p, span, a, button, input, select, textarea,
 /* Preserve guide card spacing across the shared stylesheet. */
 .guide .card { margin: 18px 0 0; }
 .oc-group-toggle:hover {
-    background: var(--accent-light);
-    border-left-color: var(--accent);
+    background: #E7F0FF;
+    border-color: #B8CCF5;
     color: var(--accent-dark);
+}
+.oc-group.open > .oc-group-toggle {
+    color: #123D91;
+    background: #DCE9FF;
+    border-color: #AFC7F6;
+    box-shadow: inset 3px 0 0 #2962FF;
 }
 .oc-group-chevron { font-size: 13.2px; transition: transform 0.18s; }
 .oc-group.open .oc-group-chevron { transform: rotate(180deg); }
@@ -246,7 +280,8 @@ body.alternatives-layout > main :is(p, span, a, button, input, select, textarea,
     overflow: hidden;
     transition: max-height 0.22s ease;
 }
-.oc-group.open .oc-group-body { max-height: 320px; }
+/* 실제 펼침 높이는 common.js가 항목의 scrollHeight로 계산한다. */
+.oc-group.open .oc-group-body { max-height: none; }
 
 .oc-divider { height: 1px; background: var(--border); margin: 0.35rem 1.2rem; }
 

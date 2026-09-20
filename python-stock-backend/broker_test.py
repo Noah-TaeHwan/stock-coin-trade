@@ -220,20 +220,48 @@ def _kis_account() -> tuple[str, str]:
     return cano, acnt_prdt_cd
 
 
+def _audit_kis_call(**kwargs) -> None:
+    """Lazy import keeps standalone quote helpers usable without a Flask app."""
+    try:
+        from api_usage import record_kis_gateway_call
+        record_kis_gateway_call(**kwargs)
+    except Exception:
+        pass
+
+
 def _kis_access_token() -> str:
     app_key, app_secret = _kis_credentials()
     with _kis_token_lock:
         access_token = _kis_token_cache["value"] if _kis_token_cache["expires_at"] > time.time() else None
         if access_token:
             return access_token
-        token_response = requests.post(
-            f"{KIS_TESTBED_URL}/oauth2/tokenP",
-            headers={"content-type": "application/json; charset=utf-8"},
-            json={"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret},
-            timeout=15,
-        )
-        token_body = _json(token_response, "한국투자증권")
+        token_payload = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
+        started = time.perf_counter()
+        try:
+            token_response = requests.post(
+                f"{KIS_TESTBED_URL}/oauth2/tokenP",
+                headers={"content-type": "application/json; charset=utf-8"},
+                json=token_payload,
+                timeout=15,
+            )
+            token_body = _json(token_response, "한국투자증권")
+        except (requests.RequestException, BrokerApiError) as exc:
+            _audit_kis_call(
+                method="POST", path="/oauth2/tokenP", tr_id="OAUTH", label="접근 토큰 발급",
+                attempt=1, request_data={"json": token_payload}, http_status=503,
+                response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                success=False, error=str(exc),
+            )
+            raise
         access_token = token_body.get("access_token")
+        token_success = bool(access_token)
+        _audit_kis_call(
+            method="POST", path="/oauth2/tokenP", tr_id="OAUTH", label="접근 토큰 발급",
+            attempt=1, request_data={"json": token_payload}, http_status=token_response.status_code,
+            response_body=token_body, duration_ms=(time.perf_counter() - started) * 1000,
+            success=token_success,
+            error=None if token_success else (token_body.get("error_description") or token_body.get("msg1")),
+        )
         if not access_token:
             message = token_body.get("error_description") or token_body.get("msg1") or "토큰 발급 실패"
             raise BrokerApiError(f"한국투자증권 인증 실패 (HTTP {token_response.status_code}): {message}")
@@ -283,15 +311,33 @@ def kis_request(
             _kis_last_api_call_at = time.monotonic()
         if attempt:
             time.sleep(0.8 * attempt)
-        response = requests.request(
-            method,
-            f"{KIS_TESTBED_URL}{path}",
-            headers={**_kis_headers(tr_id), **(extra_headers or {})},
-            params=params,
-            json=payload,
-            timeout=15,
+        started = time.perf_counter()
+        request_data = {"params": params or {}, "json": payload or {}}
+        try:
+            response = requests.request(
+                method,
+                f"{KIS_TESTBED_URL}{path}",
+                headers={**_kis_headers(tr_id), **(extra_headers or {})},
+                params=params,
+                json=payload,
+                timeout=15,
+            )
+            body = _json(response, "한국투자증권")
+        except (requests.RequestException, BrokerApiError) as exc:
+            _audit_kis_call(
+                method=method, path=path, tr_id=tr_id, label=label, attempt=attempt + 1,
+                request_data=request_data, http_status=503, response_body={},
+                duration_ms=(time.perf_counter() - started) * 1000,
+                success=False, error=str(exc),
+            )
+            raise
+        success = body.get("rt_cd") == "0"
+        _audit_kis_call(
+            method=method, path=path, tr_id=tr_id, label=label, attempt=attempt + 1,
+            request_data=request_data, http_status=response.status_code, response_body=body,
+            duration_ms=(time.perf_counter() - started) * 1000, success=success,
+            error=None if success else (body.get("msg1") or body.get("msg_cd")),
         )
-        body = _json(response, "한국투자증권")
         if body.get("msg_cd") != _KIS_RATE_LIMIT_CODE:
             break
     if raise_for_api_error and body.get("rt_cd") != "0":

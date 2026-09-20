@@ -51,6 +51,19 @@ if (!document.getElementById('gnb-core-style')) {
     .gnb-shortcuts{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto}.gnb-shortcuts a{padding:8px 12px;border-radius:6px;color:#1e53e5!important;text-decoration:none!important;font-size:16px!important;font-weight:800!important;white-space:nowrap}.gnb-shortcuts a:hover{background:#e3f0ff}
     .site-header-inner{display:grid!important;grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr);align-items:center!important;gap:16px;min-height:56px;padding:0 18px}.site-header-left,.site-header-actions{display:flex;align-items:center;gap:12px;min-width:0}.site-header-actions{justify-self:end}.header-menu-label{display:inline}
     #oc-panel .oc-group-toggle,#ai-panel .oc-group-toggle{font-size:15.4px!important;line-height:1.4!important}#oc-panel .oc-nav-item,#ai-panel .oc-nav-item{font-size:15.4px!important;line-height:1.4!important}#oc-panel .oc-nav-item--sub,#ai-panel .oc-nav-item--sub{font-size:14.3px!important}#oc-panel .oc-header,#ai-panel .oc-header{font-size:16.5px!important}#oc-panel .oc-footer,#ai-panel .oc-footer{font-size:12.1px!important}
+    /* 메뉴 3단계(패널 제목 → 그룹 → 항목)를 캐시와 무관하게 구분한다. */
+    #oc-panel .oc-header{background:linear-gradient(135deg,#1746B5,#2962FF)!important;border-bottom-color:#123D91!important;color:#fff!important}
+    #oc-panel .oc-header .brand-logo-text{background:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+    #oc-panel .oc-close-btn{background:rgba(255,255,255,.16)!important;color:#fff!important}
+    #oc-panel .oc-nav{padding:.45rem .55rem .8rem!important;background:#F7F9FD!important}
+    #oc-panel .oc-group-toggle{margin:5px 0 2px!important;padding:.62rem .72rem!important;border:1px solid #D3DEEE!important;border-radius:8px!important;background:#E9EEF7!important;color:#233653!important;font-weight:800!important}
+    #oc-panel .oc-group-toggle:hover{border-color:#AFC7F6!important;background:#DCE9FF!important;color:#123D91!important}
+    #oc-panel .oc-group.open>.oc-group-toggle{border-color:#8EAFE9!important;background:#CFE0FF!important;color:#0D3A91!important;box-shadow:inset 4px 0 0 #2962FF!important}
+    #oc-panel .oc-nav-item--sub{position:relative!important;margin:2px 4px 2px 12px!important;padding:.52rem .65rem .52rem 1.45rem!important;border:1px solid transparent!important;border-radius:7px!important;background:#fff!important;color:#475569!important;font-weight:500!important}
+    #oc-panel .oc-nav-item--sub:hover{border-color:#C9DAFF!important;background:#EDF4FF!important;color:#1746B5!important}
+    #oc-panel .oc-nav-item--sub::before{content:''!important;position:absolute!important;left:.62rem!important;top:50%!important;width:5px!important;height:5px!important;border-radius:50%!important;background:#86A5DF!important;transform:translateY(-50%)!important}
+    #oc-panel .oc-nav-item--sub.active{border-color:#1746B5!important;background:linear-gradient(135deg,#2962FF,#1746B5)!important;color:#fff!important;font-weight:800!important;box-shadow:0 3px 9px rgba(41,98,255,.24)!important}
+    #oc-panel .oc-nav-item--sub.active::before{background:#fff!important;box-shadow:0 0 0 3px rgba(255,255,255,.22)!important}
     @media(max-width:760px){.site-header-inner{grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;padding:4px 10px}.site-header-left,.site-header-actions{gap:6px}.site-header-left{grid-column:1}.site-header-actions{grid-column:3}.header-menu-label{display:none}.gnb-shortcuts{grid-column:1/-1;grid-row:2;justify-content:center;padding-bottom:2px}.gnb-shortcuts a{padding:5px 8px;font-size:14px!important}.site-header-actions button{padding-inline:7px!important}.site-header-actions span{display:none}}
     @media(max-width:900px){.gnb-shell{gap:10px;padding:0 12px;flex-wrap:wrap;padding-bottom:3px}.gnb-nav{order:3;flex-basis:100%;height:42px}.gnb-link,.gnb-group summary{height:40px;padding:0 8px;font-size:13.2px!important}.gnb-user span{display:none}.gnb-dropdown{position:fixed;left:12px;right:12px;min-width:0}}
   `;
@@ -101,8 +114,10 @@ function renderHeader(user) {
       { href: '/learning/kis-test.html', label: '3단계 · 테스트', icon: 'fa-solid fa-plug-circle-check' },
       { href: '/broker-api-test.html', label: 'KIS 연결 테스트', icon: 'fa-solid fa-chart-line' },
       { href: '/kis-order-flow-test.html', label: '모의 주문 흐름 테스트', icon: 'fa-solid fa-vial-circle-check' },
+      { href: '/kis-real-trading-practice.html', label: 'KIS 실거래 연습', icon: 'fa-solid fa-arrow-right-arrow-left' },
       { href: '/kis-api-explorer.html', label: 'KIS API 탐색기', icon: 'fa-solid fa-compass' },
       { href: '/kis-chart.html', label: 'KIS 종목 차트', icon: 'fa-solid fa-chart-column' },
+      { href: '/kis-api-history.html', label: 'KIS API 호출 이력', icon: 'fa-solid fa-table-list' },
     ]},
     { type: 'group', label: 'KB증권 실전연습', items: [
       { href: '/learning/kb-securities.html', label: 'KB 모의투자 학습', icon: 'fa-solid fa-clipboard-check' },
@@ -159,8 +174,12 @@ function renderHeader(user) {
 
   const isLoggedIn = !!user?.loggedIn;
 
-  const ocNavItem = (n, sub) =>
-    `<a href="${n.href}" class="oc-nav-item${sub ? ' oc-nav-item--sub' : ''}"><i class="${n.icon}" aria-hidden="true" style="width:16px;text-align:center;"></i> ${n.label}</a>`;
+  const currentPath = location.pathname.replace(/\/$/, '') || '/index.html';
+  const ocNavItem = (n, sub) => {
+    const targetPath = n.href.split('?')[0].replace(/\/$/, '');
+    const active = currentPath === targetPath || (currentPath === '/' && targetPath === '/index.html');
+    return `<a href="${n.href}" class="oc-nav-item${sub ? ' oc-nav-item--sub' : ''}${active ? ' active' : ''}"${active ? ' aria-current="page"' : ''}><i class="${n.icon}" aria-hidden="true" style="width:16px;text-align:center;"></i> ${n.label}</a>`;
+  };
 
   // 좌측은 TR·브로커 실전연습, 우측은 대시보드·거래·자산·분석·관리 메뉴로 나눈다.
   const rightMenuLabels = new Set(['대시보드', '거래', '자산관리', 'POSTGRESQL QUANT', '분석 · 도구', 'AWS SSM 연동 트랙']);
@@ -296,6 +315,11 @@ function toggleOcGroup(idx) {
     const open = i === idx ? !el.classList.contains('open') : false;
     el.classList.toggle('open', open);
     el.querySelector('.oc-group-toggle')?.setAttribute('aria-expanded', String(open));
+    const body = el.querySelector('.oc-group-body');
+    if (body) {
+      body.style.maxHeight = open ? `${body.scrollHeight}px` : '0px';
+      body.style.overflow = open ? 'visible' : 'hidden';
+    }
   });
 }
 
@@ -305,6 +329,11 @@ function toggleRightGroup(idx) {
     const open = i === idx ? !el.classList.contains('open') : false;
     el.classList.toggle('open', open);
     el.querySelector('.oc-group-toggle')?.setAttribute('aria-expanded', String(open));
+    const body = el.querySelector('.oc-group-body');
+    if (body) {
+      body.style.maxHeight = open ? `${body.scrollHeight}px` : '0px';
+      body.style.overflow = open ? 'visible' : 'hidden';
+    }
   });
 }
 

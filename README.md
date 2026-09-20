@@ -114,6 +114,7 @@ docker compose ps
 | <http://localhost:3333/broker-api-test.html> | KIS Open API 연결 테스트 |
 | <http://localhost:3333/kis-api-explorer.html> | KIS API 탐색기 (공식 예제 기반 국내주식 API 목록·호출·응답 시각화) |
 | <http://localhost:3333/kis-chart.html> | KIS 종목 차트 (kis.key 로 Testbed 기간별시세·당일분봉을 조회해 캔들 차트 표시) |
+| <http://localhost:3333/kis-api-history.html> | KIS 자체 API·외부 TR 호출·오류 이력 Grid (로그인 필요) |
 | <http://localhost:3333/alpaca-test.html> | Alpaca Paper API 테스트 |
 | <http://localhost:3333/openapi.html> | 외부 연동 Open API 명세 |
 | <http://localhost:3333/quant.html> | PostgreSQL 퀀트 랩 |
@@ -274,6 +275,7 @@ API 키당 분당 60회 제한이 적용됩니다. 키 원문은 발급 시 한 
 | KIS 연결 테스트 | `/broker-api-test.html` | KIS Testbed 현재가·일봉·호가·잔고·시장지수 조회 |
 | KIS API 탐색기 | `/kis-api-explorer.html` | 공식 저장소 `examples_llm/domestic_stock` 예제를 분석한 국내주식 REST API 131개 목록. Testbed 지원 조회 API 는 서버 경유로 호출하고 응답 JSON 을 한글 필드명 표·JSON 으로 표시. 카탈로그는 `scripts/build_kis_api_catalog.py` 로 재생성 |
 | KIS 종목 차트 | `/kis-chart.html` | 종목명·코드 검색 후 1분·일·주·월·년봉 캔들 차트(거래량·이동평균 5/20/60)와 현재가 요약, 캔들 표. 백엔드 `/api/kis-chart/candles`·`/minutes` 가 KIS 기간별시세(FHKST03010100)·당일분봉(FHKST03010200)을 호출 |
+| KIS API 호출 이력 | `/kis-api-history.html` | 자체 Flask API 요청과 공통 KIS 게이트웨이의 실제 Testbed TR 시도·재시도·오류·응답시간을 AG Grid로 조회. App Key·Secret·토큰·CANO는 저장 전에 마스킹 |
 | KB 연결 테스트 | `/kb-api-test.html` | KB증권 토큰 인증·시세 설정 점검 |
 | Alpaca Test | `/alpaca-test.html` | Alpaca Paper `GET /v2/account` 상태 조회 |
 
@@ -315,6 +317,7 @@ KIS Testbed에는 호출 제한이 있으므로 토큰과 짧은 시세 결과�
 5. 모의(Testbed) 도메인은 `https://openapivts.koreainvestment.com:29443`이며, 실전 도메인(`https://openapi.koreainvestment.com:9443`)은 사용하지 않습니다. 모의투자 토큰 발급은 **1분당 1회** 제한이 있으므로 짧은 간격으로 재시도하지 마세요.
 6. 자세한 절차·스크린샷은 3단계 학습 페이지 [`/learning/kis-regist.html`](frontend/learning/kis-regist.html)(가입) → [`/learning/kis-dev.html`](frontend/learning/kis-dev.html)(키 발급) → [`/learning/kis-test.html`](frontend/learning/kis-test.html)(테스트)에, VS Code에서 자연어로 쓰는 공식 MCP 연동은 아래 "KIS MCP" 절에 정리되어 있습니다.
 7. 공용 모의계좌 잔고·계좌 API·주문 테스트는 웹앱에 로그인한 모든 회원이 사용할 수 있습니다. 주문 실행은 CSRF 검증과 60초짜리 1회 승인 토큰을 추가로 요구합니다.
+8. 모든 웹 기반 KIS 호출은 자체 Flask API와 `broker_test.kis_request()` 공통 게이트웨이를 순서대로 거칩니다. 로그인 회원의 자체 API 기록과 실제 KIS TR 시도는 `/kis-api-history.html`에서 확인할 수 있으며, 실패 시 사용이력과 시스템 오류 이력에 모두 마스킹하여 기록합니다.
 
 ### 2. KB증권 Open API
 
