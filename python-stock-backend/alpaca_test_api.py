@@ -3,6 +3,7 @@ import requests
 from flask import Blueprint, jsonify, request, session
 
 from alpaca_test import (
+    get_alpaca_configuration_status,
     test_market_clock,
     test_market_quote,
     test_paper_account,
@@ -24,6 +25,13 @@ def _run(build):
         return jsonify({"ok": False, "message": str(exc)})
     except requests.RequestException:
         return jsonify({"ok": False, "message": "Alpaca 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
+
+
+@alpaca_test_bp.get("/status")
+def configuration_status():
+    if not session.get("member_id"):
+        return jsonify({"ok": False, "message": "Alpaca 실습은 로그인 후 이용할 수 있습니다."}), 401
+    return jsonify({"ok": True, "status": get_alpaca_configuration_status()})
 
 
 @alpaca_test_bp.get("/paper/account")

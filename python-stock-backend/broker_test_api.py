@@ -14,6 +14,7 @@ from broker_test import (
     get_kb_stock_base_info,
     get_kb_stock_chart,
     get_kb_stock_orderbook,
+    get_kb_configuration_status,
     get_kis_balance,
     get_kis_daily_chart,
     get_kis_index,
@@ -43,6 +44,17 @@ def _kis_response(build):
         return jsonify({"ok": False, "broker": "한국투자증권 Testbed", "message": str(exc)}), exc.status_code
     except requests.RequestException:
         return jsonify({"ok": False, "broker": "한국투자증권 Testbed", "message": "한국투자증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
+
+
+def _kb_response(build):
+    if not session.get("member_id"):
+        return jsonify({"ok": False, "broker": "KB증권", "message": "KB API 실습은 로그인 후 이용할 수 있습니다."}), 401
+    try:
+        return jsonify({"ok": True, **build()})
+    except BrokerApiError as exc:
+        return jsonify({"ok": False, "broker": "KB증권", "message": str(exc)}), exc.status_code
+    except requests.RequestException:
+        return jsonify({"ok": False, "broker": "KB증권", "message": "KB증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
 
 
 @broker_test_bp.get("/kis/quote")
@@ -114,49 +126,35 @@ def kis_order_flow_test():
 
 @broker_test_bp.get("/kb/token")
 def kb_token():
-    try:
-        return jsonify({"ok": True, "check": check_kb_token()})
-    except BrokerApiError as exc:
-        return jsonify({"ok": False, "broker": "KB증권", "message": str(exc)})
-    except requests.RequestException:
-        return jsonify({"ok": False, "broker": "KB증권", "message": "KB증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
+    return _kb_response(lambda: {"check": check_kb_token()})
+
+
+@broker_test_bp.get("/kb/status")
+def kb_status():
+    return _kb_response(lambda: {"status": get_kb_configuration_status()})
 
 
 @broker_test_bp.get("/kb/quote")
 def kb_quote():
-    try:
-        return jsonify({"ok": True, "quote": get_kb_domestic_quote(_symbol())})
-    except BrokerApiError as exc:
-        return jsonify({"ok": False, "broker": "KB증권", "message": str(exc)})
-    except requests.RequestException:
-        return jsonify({"ok": False, "broker": "KB증권", "message": "KB증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
+    return _kb_response(lambda: {"quote": get_kb_domestic_quote(_symbol())})
 
 
 @broker_test_bp.get("/kb/base-info")
 def kb_base_info():
-    try:
-        return jsonify({"ok": True, "result": get_kb_stock_base_info(_symbol())})
-    except BrokerApiError as exc:
-        return jsonify({"ok": False, "broker": "KB증권", "message": str(exc)})
-    except requests.RequestException:
-        return jsonify({"ok": False, "broker": "KB증권", "message": "KB증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
+    return _kb_response(lambda: {"result": get_kb_stock_base_info(_symbol())})
 
 
 @broker_test_bp.get("/kb/orderbook")
 def kb_orderbook():
-    try:
-        return jsonify({"ok": True, "result": get_kb_stock_orderbook(_symbol())})
-    except BrokerApiError as exc:
-        return jsonify({"ok": False, "broker": "KB증권", "message": str(exc)})
-    except requests.RequestException:
-        return jsonify({"ok": False, "broker": "KB증권", "message": "KB증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
+    return _kb_response(lambda: {"result": get_kb_stock_orderbook(_symbol())})
 
 
 @broker_test_bp.get("/kb/chart")
 def kb_chart():
     try:
-        return jsonify({"ok": True, "result": get_kb_stock_chart(_symbol())})
-    except BrokerApiError as exc:
-        return jsonify({"ok": False, "broker": "KB증권", "message": str(exc)})
-    except requests.RequestException:
-        return jsonify({"ok": False, "broker": "KB증권", "message": "KB증권 서버 연결에 실패했습니다. 잠시 후 다시 시도하세요."}), 503
+        count = int(request.args.get("count", "60"))
+    except ValueError:
+        return jsonify({"ok": False, "broker": "KB증권", "message": "count는 숫자여야 합니다."}), 400
+    market = request.args.get("market", "0").strip()
+    period = request.args.get("period", "D").strip().upper()
+    return _kb_response(lambda: {"result": get_kb_stock_chart(_symbol(), market, period, count)})

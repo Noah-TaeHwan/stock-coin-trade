@@ -68,4 +68,27 @@
   document.querySelectorAll('.run-sm[data-test^="kb-"]').forEach((button) => {
     button.addEventListener('click', () => runGenericTest(button));
   });
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = await initPage({ requireAuth:true });
+    if (!user) return;
+    const set = (id, ok, text) => {
+      const item = document.getElementById(id);
+      if (!item) return;
+      item.className = `kb-status ${ok ? 'ok' : 'bad'}`;
+      item.textContent = `${ok ? '✓' : '!'} ${text}`;
+    };
+    try {
+      const response = await fetch(`${apiBase}/api/broker-test/kb/status`, { credentials:'include' });
+      const data = await parseJson(response);
+      if (!response.ok || !data.ok) throw new Error(data.message || '설정 확인 실패');
+      set('testConfig', data.status.configured, data.status.configured ? `키 설정: ${data.status.source}` : '키 설정 필요');
+      set('testMode', data.status.mode === 'production', 'KB 운영 조회 모드');
+      set('testAudit', true, '내 API·외부 호출 기록');
+    } catch (error) {
+      set('testConfig', false, error.message);
+      set('testMode', false, '상태 확인 실패');
+      set('testAudit', false, '로그인 필요');
+    }
+  });
 })();

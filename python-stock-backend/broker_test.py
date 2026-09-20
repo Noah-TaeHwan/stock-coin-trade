@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import socket
+import stat
 import threading
 import time
 import uuid
@@ -23,6 +24,9 @@ SECRETS_DIR = Path(os.environ.get("BROKER_KEYS_DIR", "/run/secrets"))
 KB_API_BASE_URL = "https://developer.kbsec.com:32484"
 KIS_TESTBED_URL = "https://openapivts.koreainvestment.com:29443"
 _kis_token_cache: dict[str, Any] = {"value": None, "expires_at": 0.0}
+_kb_chart_cache: dict[str, dict[str, Any]] = {}
+_kb_chart_lock = threading.Lock()
+_KB_CHART_CACHE_SECONDS = 30
 _kis_token_lock = threading.Lock()
 _kis_quote_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _kis_quote_lock = threading.Lock()
@@ -72,6 +76,42 @@ def _credentials(prefix: str, filename: str, key_names: tuple[str, ...], secret_
     return _read_key_file(filename, key_names, secret_names)
 
 
+def get_kb_configuration_status() -> dict[str, Any]:
+    """Return KB credential readiness without returning any credential value."""
+    env_key = bool(os.environ.get("KB_APP_KEY", "").strip())
+    env_secret = bool(os.environ.get("KB_APP_SECRET", "").strip())
+    key_path = next((candidate for candidate in (SECRETS_DIR / "kb.key", ROOT_DIR / "kb.key") if candidate.is_file()), None)
+    file_valid = False
+    file_mode = None
+    if key_path is not None:
+        file_mode = stat.S_IMODE(key_path.stat().st_mode)
+        try:
+            _read_key_file("kb.key", ("appkey", "app_key"), ("secret", "appsecret", "app_secret"))
+            file_valid = True
+        except BrokerApiError:
+            pass
+    env_complete = env_key and env_secret
+    source = "environment" if env_complete else "kb.key" if file_valid else "missing"
+    return {
+        "configured": bool(env_complete or file_valid), "source": source,
+        "environment": {"appKey": env_key, "appSecret": env_secret, "complete": env_complete},
+        "keyFile": {
+            "mounted": key_path is not None, "valid": file_valid,
+            "permission": format(file_mode, "03o") if file_mode is not None else None,
+            "securePermission": bool(file_mode is not None and file_mode & 0o077 == 0),
+        },
+        "endpoint": KB_API_BASE_URL, "mode": "production", "readOnly": True,
+    }
+
+
+def _audit_kb_call(**kwargs) -> None:
+    try:
+        from api_usage import record_kb_gateway_call
+        record_kb_gateway_call(**kwargs)
+    except Exception:
+        pass
+
+
 def _json(response: requests.Response, broker: str) -> dict[str, Any]:
     try:
         return response.json()
@@ -81,30 +121,43 @@ def _json(response: requests.Response, broker: str) -> dict[str, Any]:
 
 def _kb_token_response() -> dict[str, Any]:
     app_key, app_secret = _credentials("KB", "kb.key", ("appkey", "app_key"), ("secret", "appsecret", "app_secret"))
-    response = requests.post(
-        f"{KB_API_BASE_URL}/oauth2/token",
-        headers={"Content-Type": "application/json"},
-        # KB's official kb-openapi repository uses the common B2C request
-        # envelope. The public portal's shortened guide shows a flat OAuth
-        # example, but that form returns E021 for the currently issued keys.
-        json={
-            "dataHeader": {"ipAddr": "", "macAddr": ""},
-            "dataBody": {
-                "appKey": app_key,
-                "appSecret": app_secret,
-                "grantType": "client_credentials",
+    started = time.perf_counter()
+    try:
+        response = requests.post(
+            f"{KB_API_BASE_URL}/oauth2/token",
+            headers={"Content-Type": "application/json"},
+            # The official sample repository's B2C proxy uses this common envelope.
+            json={
+                "dataHeader": {"ipAddr": "", "macAddr": ""},
+                "dataBody": {
+                    "appKey": app_key,
+                    "appSecret": app_secret,
+                    "grantType": "client_credentials",
+                },
             },
-        },
-        timeout=20,
-    )
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        _audit_kb_call(method="POST", path="/oauth2/token", tr_id="OAUTH", label="토큰 발급", request_data={},
+                       http_status=503, response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                       success=False, error="KB증권 서버 연결 실패")
+        raise exc
     body = _json(response, "KB증권")
     token = body.get("access_token") or body.get("dataBody", {}).get("access_token")
+    header = body.get("dataHeader", {})
+    code = header.get("processCode") or body.get("error") or body.get("code")
+    message = header.get("processMessage") or body.get("error_description") or body.get("message")
+    _audit_kb_call(
+        method="POST", path="/oauth2/token", tr_id="OAUTH", label="토큰 발급", request_data={},
+        http_status=response.status_code,
+        response_body={"tokenIssued": bool(token), "tokenType": body.get("token_type") or body.get("dataBody", {}).get("token_type"),
+                       "processCode": code, "processMessage": message},
+        duration_ms=(time.perf_counter() - started) * 1000, success=bool(response.ok and token),
+        error=None if token else message or "토큰 발급 실패",
+    )
     if token:
         return body
-    header = body.get("dataHeader", {})
-    code = header.get("processCode") or body.get("error") or body.get("code") or "unknown"
-    message = header.get("processMessage") or body.get("error_description") or body.get("message") or "토큰 발급 실패"
-    raise BrokerApiError(f"KB증권 인증 실패 (HTTP {response.status_code}, {code}): {message}")
+    raise BrokerApiError(f"KB증권 인증 실패 (HTTP {response.status_code}, {code or 'unknown'}): {message or '토큰 발급 실패'}")
 
 
 def _kb_data_header() -> dict[str, str]:
@@ -140,19 +193,38 @@ def _kb_investment_info(endpoint: str, data_body: dict[str, str]) -> dict[str, A
     app_key, _ = _credentials("KB", "kb.key", ("appkey", "app_key"), ("secret", "appsecret", "app_secret"))
     token_body = _kb_token_response()
     access_token = token_body.get("access_token") or token_body.get("dataBody", {}).get("access_token")
-    response = requests.post(
-        f"{KB_API_BASE_URL}{endpoint}",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"bearer {access_token}",
-            "appKey": app_key,
-        },
-        json={"dataHeader": _kb_data_header(), "dataBody": data_body},
-        timeout=20,
-    )
+    started = time.perf_counter()
+    try:
+        response = requests.post(
+            f"{KB_API_BASE_URL}{endpoint}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {access_token}",
+                "appKey": app_key,
+            },
+            json={"dataHeader": _kb_data_header(), "dataBody": data_body},
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        _audit_kb_call(method="POST", path=endpoint, tr_id=endpoint.rsplit("/", 1)[-1].upper(), label="운영 조회",
+                       request_data=data_body, http_status=503, response_body={},
+                       duration_ms=(time.perf_counter() - started) * 1000, success=False, error="KB증권 서버 연결 실패")
+        raise exc
     body = _json(response, "KB증권")
-    if not response.ok:
-        header = body.get("dataHeader", {})
+    header = body.get("dataHeader", {})
+    code = str(header.get("processCode") or "")
+    # KB TRs use both all-zero success codes and 0024 (normal query complete).
+    business_ok = not code or set(code) == {"0"} or code == "0024"
+    success = bool(response.ok and business_ok)
+    _audit_kb_call(
+        method="POST", path=endpoint, tr_id=endpoint.rsplit("/", 1)[-1].upper(), label="운영 조회",
+        request_data=data_body, http_status=response.status_code,
+        response_body={"processCode": code or None, "processMessage": header.get("processMessage"),
+                       "dataPresent": body.get("dataBody") is not None},
+        duration_ms=(time.perf_counter() - started) * 1000, success=success,
+        error=None if success else header.get("processMessage") or "KB증권 조회 실패",
+    )
+    if not success:
         raise BrokerApiError(
             f"KB증권 조회 실패 (HTTP {response.status_code}, {header.get('processCode') or 'unknown'}): "
             f"{header.get('processMessage') or '요청이 거부되었습니다.'}"
@@ -173,15 +245,65 @@ def get_kb_stock_orderbook(symbol: str) -> dict[str, Any]:
     return {"broker": "KB증권 Open API", "symbol": symbol, "raw": _kb_investment_info("/api/v1/ivu10070", {"is_cd": symbol, "ovtm_mkt_clsf": "0"})}
 
 
-def get_kb_stock_chart(symbol: str) -> dict[str, Any]:
-    return {
-        "broker": "KB증권 Open API",
-        "symbol": symbol,
-        "raw": _kb_investment_info(
-            "/api/v1/ivs11560",
-            {"info_ccd": "1", "mkt_clsf": "1", "chrt_clsf": "D", "minute_tck_indx": "", "is_cd": symbol, "inq_clsf": "1", "strt_dy": "", "inq_cnt": "10"},
-        ),
+def _kb_number(value: Any, *, integer: bool = False) -> int | float | None:
+    raw = str(value or "").strip().replace(",", "")
+    if not raw:
+        return None
+    try:
+        number = float(raw)
+        return int(number) if integer else number
+    except ValueError:
+        return None
+
+
+def get_kb_stock_chart(symbol: str, market: str = "0", period: str = "D", count: int = 60) -> dict[str, Any]:
+    """Return normalized OHLCV candles sourced only from KB IVS11560."""
+    if market not in {"0", "1"}:
+        raise BrokerApiError("시장은 KOSPI(0) 또는 KOSDAQ(1)만 선택할 수 있습니다.", 400)
+    if period not in {"D", "W", "M", "Y"}:
+        raise BrokerApiError("차트 주기는 일·주·월·년만 지원합니다.", 400)
+    if not 10 <= count <= 300:
+        raise BrokerApiError("캔들 수는 10~300 사이여야 합니다.", 400)
+    cache_key = f"{symbol}:{market}:{period}:{count}"
+    now = time.monotonic()
+    with _kb_chart_lock:
+        cached = _kb_chart_cache.get(cache_key)
+        if cached and now - cached["savedAt"] < _KB_CHART_CACHE_SECONDS:
+            return cached["value"]
+
+    raw = _kb_investment_info(
+        "/api/v1/ivs11560",
+        {
+            "info_ccd": "1", "mkt_clsf": market, "chrt_clsf": period,
+            "minute_tck_indx": "", "is_cd": symbol, "inq_clsf": "2",
+            "strt_dy": "", "inq_cnt": str(count),
+        },
+    )
+    candles = []
+    for row in raw.get("out2", []):
+        date_value = str(row.get("dt") or "").strip()
+        if len(date_value) != 8 or not date_value.isdigit():
+            continue
+        candle = {
+            "time": f"{date_value[:4]}-{date_value[4:6]}-{date_value[6:]}",
+            "open": _kb_number(row.get("opn_prc_p2")),
+            "high": _kb_number(row.get("hgh_prc_p2")),
+            "low": _kb_number(row.get("lw_prc_p2")),
+            "close": _kb_number(row.get("cls_prc_p2")),
+            "volume": _kb_number(row.get("vlm"), integer=True),
+            "amount": _kb_number(row.get("dl_tw_amt"), integer=True),
+        }
+        if all(candle[key] is not None for key in ("open", "high", "low", "close")):
+            candles.append(candle)
+    candles.sort(key=lambda item: item["time"])
+    result = {
+        "broker": "KB증권 Open API", "source": "IVS11560",
+        "symbol": symbol, "market": "KOSPI" if market == "0" else "KOSDAQ",
+        "period": period, "count": len(candles), "candles": candles,
     }
+    with _kb_chart_lock:
+        _kb_chart_cache[cache_key] = {"savedAt": now, "value": result}
+    return result
 
 
 def _kis_credentials() -> tuple[str, str]:

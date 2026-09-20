@@ -1,4 +1,6 @@
-(() => {
+(async () => {
+  const user = await initPage({ requireAuth: true });
+  if (!user) return;
   const apiBase = window.APP_CONFIG?.apiBase || '';
   const confirm = document.getElementById('confirm');
   const run = document.getElementById('run');

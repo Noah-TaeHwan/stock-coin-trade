@@ -125,6 +125,56 @@ def record_kis_gateway_call(*, method, path, tr_id, label, attempt, request_data
         pass
 
 
+def record_kb_gateway_call(*, method, path, tr_id, label, request_data,
+                           http_status, response_body, duration_ms, success, error=None):
+    """Persist a masked KB Open API outbound attempt."""
+    try:
+        member_id = session.get("member_id") if has_request_context() else None
+        inbound_path = request.path if has_request_context() else "CLI/background"
+        meta = {
+            "kind": "kb_outbound", "inboundPath": inbound_path,
+            "trId": tr_id, "attempt": 1, "request": _safe_value(request_data or {}),
+        }
+        safe_response = _safe_value(response_body or {})
+        message = error or safe_response.get("processMessage") or ("성공" if success else "KB증권 호출 실패")
+        with session_scope() as db:
+            db.add(ApiUsageLog(
+                member_id=member_id, provider="KB Gateway", operation=f"{label} [{tr_id}]"[:100],
+                method=str(method).upper()[:10], path=str(path)[:500],
+                request_meta=mask_sensitive(json.dumps(meta, ensure_ascii=False, default=str))[:MAX_META],
+                http_status=int(http_status or 503), success=bool(success),
+                duration_ms=max(0, int(duration_ms)), result_summary=mask_sensitive(str(message))[:500],
+                response_body=mask_sensitive(json.dumps(safe_response, ensure_ascii=False, default=str))[:MAX_RESPONSE],
+            ))
+    except Exception:
+        pass
+
+
+def record_alpaca_gateway_call(*, method, path, label, request_data,
+                               http_status, response_body, duration_ms, success, error=None):
+    """Persist a masked Alpaca Paper/Data API outbound attempt."""
+    try:
+        member_id = session.get("member_id") if has_request_context() else None
+        inbound_path = request.path if has_request_context() else "CLI/background"
+        meta = {
+            "kind": "alpaca_outbound", "inboundPath": inbound_path,
+            "attempt": 1, "request": _safe_value(request_data or {}),
+        }
+        safe_response = _safe_value(response_body or {})
+        message = error or safe_response.get("message") or safe_response.get("status") or ("성공" if success else "Alpaca 호출 실패")
+        with session_scope() as db:
+            db.add(ApiUsageLog(
+                member_id=member_id, provider="Alpaca Gateway", operation=str(label)[:100],
+                method=str(method).upper()[:10], path=str(path)[:500],
+                request_meta=mask_sensitive(json.dumps(meta, ensure_ascii=False, default=str))[:MAX_META],
+                http_status=int(http_status or 503), success=bool(success),
+                duration_ms=max(0, int(duration_ms)), result_summary=mask_sensitive(str(message))[:500],
+                response_body=mask_sensitive(json.dumps(safe_response, ensure_ascii=False, default=str))[:MAX_RESPONSE],
+            ))
+    except Exception:
+        pass
+
+
 def _serialize(row, detail=False):
     try:
         meta = json.loads(row.request_meta) if row.request_meta else {}
@@ -135,7 +185,7 @@ def _serialize(row, detail=False):
         "provider": row.provider, "operation": row.operation, "method": row.method, "path": row.path,
         "requestMeta": row.request_meta, "status": row.http_status, "success": bool(row.success),
         "durationMs": row.duration_ms, "summary": row.result_summary,
-        "layer": "KIS 외부 호출" if row.provider == "KIS Gateway" else "내 API",
+        "layer": "KIS 외부 호출" if row.provider == "KIS Gateway" else "KB 외부 호출" if row.provider == "KB Gateway" else "Alpaca 외부 호출" if row.provider == "Alpaca Gateway" else "내 API",
         "trId": meta.get("trId"), "attempt": meta.get("attempt"),
         "inboundPath": meta.get("inboundPath"),
     }
@@ -181,6 +231,56 @@ def list_kis_history():
                 "averageMs": round(sum(durations) / len(durations)) if durations else None,
             },
         })
+
+
+@api_usage_bp.get("/kb-history")
+def list_kb_history():
+    member_id = session.get("member_id")
+    if not member_id:
+        return jsonify({"error": "KB API 이력은 로그인 후 조회할 수 있습니다."}), 401
+    try:
+        limit = max(1, min(int(request.args.get("limit", 1000)), 2000))
+    except ValueError:
+        return jsonify({"error": "limit은 숫자여야 합니다."}), 400
+    with session_scope() as db:
+        rows = db.query(ApiUsageLog).filter(
+            ApiUsageLog.member_id == member_id,
+            ApiUsageLog.provider.in_(("KB증권", "KB Gateway")),
+        ).order_by(ApiUsageLog.called_at.desc(), ApiUsageLog.api_usage_log_id.desc()).limit(limit).all()
+        history = [_serialize(row) for row in rows]
+        completed = [row for row in history if row["layer"] == "KB 외부 호출"]
+        durations = [row["durationMs"] for row in completed if row["durationMs"] is not None]
+        return jsonify({"history": history, "summary": {
+            "total": len(history), "outbound": len(completed),
+            "success": sum(1 for row in completed if row["success"]),
+            "failure": sum(1 for row in completed if not row["success"]),
+            "averageMs": round(sum(durations) / len(durations)) if durations else None,
+        }})
+
+
+@api_usage_bp.get("/alpaca-history")
+def list_alpaca_history():
+    member_id = session.get("member_id")
+    if not member_id:
+        return jsonify({"error": "Alpaca API 이력은 로그인 후 조회할 수 있습니다."}), 401
+    try:
+        limit = max(1, min(int(request.args.get("limit", 1000)), 2000))
+    except ValueError:
+        return jsonify({"error": "limit은 숫자여야 합니다."}), 400
+    with session_scope() as db:
+        rows = db.query(ApiUsageLog).filter(
+            ApiUsageLog.member_id == member_id,
+            ApiUsageLog.provider.in_(("Alpaca", "Alpaca Gateway")),
+        ).order_by(ApiUsageLog.called_at.desc(), ApiUsageLog.api_usage_log_id.desc()).limit(limit).all()
+        history = [_serialize(row) for row in rows]
+        completed = [row for row in history if row["layer"] == "Alpaca 외부 호출"]
+        durations = [row["durationMs"] for row in completed if row["durationMs"] is not None]
+        return jsonify({"history": history, "summary": {
+            "total": len(history), "outbound": len(completed),
+            "success": sum(1 for row in completed if row["success"]),
+            "failure": sum(1 for row in completed if not row["success"]),
+            "averageMs": round(sum(durations) / len(durations)) if durations else None,
+        }})
 
 
 @api_usage_bp.get("/history/<int:log_id>")

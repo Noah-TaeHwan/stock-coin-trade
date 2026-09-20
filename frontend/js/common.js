@@ -119,14 +119,25 @@ function renderHeader(user) {
       { href: '/kis-chart.html', label: 'KIS 종목 차트', icon: 'fa-solid fa-chart-column' },
       { href: '/kis-api-history.html', label: 'KIS API 호출 이력', icon: 'fa-solid fa-table-list' },
     ]},
-    { type: 'group', label: 'KB증권 실전연습', items: [
-      { href: '/learning/kb-securities.html', label: 'KB 모의투자 학습', icon: 'fa-solid fa-clipboard-check' },
-      { href: '/kb-api-test.html', label: 'KB 연결 테스트', icon: 'fa-solid fa-plug-circle-check' },
+    { type: 'group', label: 'KB증권 Open API 실습', items: [
+      { href: '/learning/kb-securities.html', label: '전체 · 2일차 과정', icon: 'fa-solid fa-book-open' },
+      { href: '/learning/kb-signup.html', label: '1단계 · 가입·신청', icon: 'fa-solid fa-user-plus' },
+      { href: '/learning/kb-key.html', label: '2단계 · Key 발급', icon: 'fa-solid fa-key' },
+      { href: '/learning/kb-install.html', label: '3단계 · 설치', icon: 'fa-solid fa-download' },
+      { href: '/learning/kb-setup.html', label: '4단계 · 설정', icon: 'fa-solid fa-gears' },
+      { href: '/kb-api-test.html', label: '5단계 · API 테스트', icon: 'fa-solid fa-plug-circle-check' },
+      { href: '/kb-chart.html', label: 'KB 종목 캔들 차트', icon: 'fa-solid fa-chart-column' },
+      { href: '/kb-api-history.html', label: '6단계 · 호출 이력', icon: 'fa-solid fa-table-list' },
     ]},
     { type: 'group', label: 'Alpaca 실전연습', items: [
-      { href: '/learning/alpaca-api.html', label: 'Alpaca Paper 학습', icon: 'fa-solid fa-robot' },
-      { href: '/alpaca-test.html', label: 'Paper 연결·조회', icon: 'fa-solid fa-chart-line' },
-      { href: '/alpaca-order-flow-test.html', label: 'Paper 주문 흐름 테스트', icon: 'fa-solid fa-vial-circle-check' },
+      { href: '/learning/alpaca-api.html', label: '전체 · 3일차 과정', icon: 'fa-solid fa-book-open' },
+      { href: '/learning/alpaca-signup.html', label: '1단계 · 가입·Paper 계정', icon: 'fa-solid fa-user-plus' },
+      { href: '/learning/alpaca-key.html', label: '2단계 · Paper Key 발급', icon: 'fa-solid fa-key' },
+      { href: '/learning/alpaca-install.html', label: '3단계 · 설치', icon: 'fa-solid fa-download' },
+      { href: '/learning/alpaca-setup.html', label: '4단계 · 설정', icon: 'fa-solid fa-gears' },
+      { href: '/alpaca-test.html', label: '5단계 · 연결·조회', icon: 'fa-solid fa-chart-line' },
+      { href: '/alpaca-order-flow-test.html', label: '6단계 · Paper 주문 흐름', icon: 'fa-solid fa-vial-circle-check' },
+      { href: '/alpaca-api-history.html', label: '7단계 · 호출 이력', icon: 'fa-solid fa-table-list' },
     ]},
     { type: 'group', label: 'Binance 실전연습', items: [
       { href: '/learning/binance-api.html', label: 'Binance Spot API 학습', icon: 'fa-brands fa-bitcoin' },
@@ -153,7 +164,6 @@ function renderHeader(user) {
       { href: '/openapi.html',  label: 'Open API',       icon: 'fa-solid fa-key' },
       { href: '/api-usage-history.html', label: 'API 사용이력', icon: 'fa-solid fa-list-check' },
       { href: '/error-analysis.html', label: '에러분석', icon: 'fa-solid fa-bug' },
-      { href: '/broker-api-test.html', label: 'KIS 연결 테스트', icon: 'fa-solid fa-plug-circle-check' },
     ]},
     { type: 'group', label: 'AWS SSM 연동 트랙', items: [
       { href: '/learning/aws-ssm-key-management.html', label: 'AWS 키 관리 가이드', icon: 'fa-solid fa-shield-halved' },
@@ -247,7 +257,7 @@ function renderHeader(user) {
     <!-- 왼쪽 오프캔버스 — 네비게이션 메뉴 -->
     <aside id="oc-panel">
       <div class="oc-header">
-        <span class="brand-logo-text" style="font-size:18.7px;letter-spacing:1.5px;"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>모의투자</span>
+        <span class="brand-logo-text" style="font-size:18.7px;letter-spacing:1.5px;"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>실전투자</span>
         <button class="oc-close-btn" onclick="closeOffcanvas()">✕</button>
       </div>
       <nav class="oc-nav" aria-label="TR 실전연습 메뉴">
@@ -264,7 +274,7 @@ function renderHeader(user) {
       <div class="site-header-inner">
         <div class="site-header-left">
           <button onclick="openOffcanvas()" aria-label="메뉴 열기" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .12s;color:var(--fg-2);font-size:15.4px;font-weight:600;"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="header-menu-label">메뉴</span></button>
-          <a href="/index.html" style="text-decoration:none;display:flex;align-items:center;"><span class="brand-logo-text"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>모의투자</span></a>
+          <a href="/index.html" style="text-decoration:none;display:flex;align-items:center;"><span class="brand-logo-text"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>실전투자</span></a>
         </div>
         <nav class="gnb-shortcuts" aria-label="AI 기능 바로가기"><a href="/ai-analysis.html"><i class="fa-solid fa-robot" aria-hidden="true"></i> AI 분석</a><a href="/knowledge-search.html"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> 지식 검색</a><a href="/knowledge-dataset.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i> 데이터셋</a></nav>
         <div class="site-header-actions"><button onclick="openAiPanel()" aria-label="분석 도구 메뉴 열기" style="border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--accent-dark);padding:6px 9px;font-size:13.2px;font-weight:800;cursor:pointer;white-space:nowrap;"><i class="fa-solid fa-toolbox" aria-hidden="true"></i> 도구 메뉴</button>${userSection}</div>
