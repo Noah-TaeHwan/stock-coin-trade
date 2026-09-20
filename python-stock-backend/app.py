@@ -1,5 +1,13 @@
 import os
 from datetime import timedelta
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Docker 없이 `python app.py`로 직접 실행할 때 저장소 루트의 .env를 읽는다.
+# 이미 설정된 환경변수(Compose environment 등)가 우선하며, 파일이 없으면 무시된다.
+# 다른 모듈이 import 시점에 os.environ을 읽으므로 반드시 그 import보다 먼저 실행한다.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 from flask import Flask, jsonify, request, g, session, got_request_exception
 import threading

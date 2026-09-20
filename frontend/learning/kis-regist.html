@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KIS 실전연습 1단계 · 가입 — 모의투자</title>
+  <link rel="icon" href="/img/favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css?v=20260920-kis-split">
+
+  <style>
+    .learn-wrap{max-width:1080px;margin:0 auto;padding:32px 20px 48px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.title{margin:0 0 7px;font-size:23px;font-weight:900;color:var(--fg)}.desc{margin:0;color:var(--fg-2);font-size:14px;line-height:1.75}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}.flow span{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:13px;font-weight:800;color:var(--fg)}.flow i{color:var(--accent);font-style:normal;font-weight:900}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}.box{padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.box b{display:block;color:var(--fg);font-size:14px}.box p{margin:5px 0 0;color:var(--fg-2);font-size:12px;line-height:1.65}.steps{display:grid;gap:10px;margin-top:16px}.step{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:13px;font-weight:900}.step h3{margin:0;color:var(--fg);font-size:15px;font-weight:900}.step p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.table-wrap{overflow:auto;margin-top:14px}.table{width:100%;min-width:680px;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.table th{background:var(--surface-2);color:var(--muted);font-size:11px}.guide-figure{margin:18px auto 0;max-width:940px;overflow:hidden;border:1px solid #D7E1EE;border-radius:12px;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.guide-figure img{display:block;width:100%;height:auto}.guide-figure figcaption{padding:10px 14px;border-top:1px solid var(--border);color:var(--fg-2);font-size:12px;line-height:1.55}.code{margin:14px 0 0;padding:16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}.notice{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF8E8;color:#854D0E;font-size:13px;line-height:1.7}.danger{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF1F2;color:#9F1239;font-size:13px;line-height:1.7}.check{display:flex;gap:8px;align-items:flex-start;margin-top:9px;color:var(--fg-2);font-size:13px;line-height:1.55}.check input{margin-top:3px;accent-color:var(--accent)}.btn{display:inline-block;margin-top:14px;padding:9px 13px;border:0;border-radius:7px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:800}.btn-alt{display:inline-block;margin:14px 0 0 8px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;color:var(--fg);text-decoration:none;font-size:13px;font-weight:800}@media(max-width:760px){.learn-wrap{padding:20px 12px 30px}.card{padding:17px}.grid{grid-template-columns:1fr}.title{font-size:20px}.guide-figure figcaption{padding:9px 11px;font-size:11px}}
+  .card figure{width:min(100%,920px);margin:20px auto 0;border:1px solid #D7E1EE;border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.card figure img{display:block;width:100%;height:auto}.card figcaption{padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);color:var(--fg-2);font-size:12px;line-height:1.55}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:1080px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:12px}.stage-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}.stage-nav a{display:block;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);text-decoration:none;color:var(--fg-2)}.stage-nav a b{display:block;color:var(--fg);font-size:14px;font-weight:900}.stage-nav a small{display:block;margin-top:3px;font-size:12px;line-height:1.5}.stage-nav a.on{border-color:var(--accent);background:#EEF4FF;color:var(--accent-dark)}.stage-nav a.on b{color:var(--accent-dark)}.stage-nav a.on::before{content:'현재 단계 · ';font-size:11px;font-weight:900;color:var(--accent)}@media(max-width:760px){.stage-nav{grid-template-columns:1fr}}</style>
+</head>
+<body>
+  <div id="header-mount"></div>
+  <main class="learn-wrap">
+    <section style="padding:28px;border:1px solid #C9DAFF;border-radius:15px;background:linear-gradient(135deg,#E4F0FF,#F9FBFF);">
+      <div class="kicker">KIS 실전연습 · 1단계 가입</div>
+      <h1 style="margin:7px 0;font-size:30px;line-height:1.25;font-weight:900;color:var(--fg);">한국투자증권 가입과 모의투자 계좌 준비</h1>
+      <p class="desc" style="max-width:850px">KIS Open API를 쓰려면 먼저 한국투자증권 고객 ID와 <strong>모의투자 전용 계좌</strong>가 있어야 합니다. 이 단계에서는 계좌 개설, 모의투자 참가 신청, 모의 계좌번호(CANO-상품코드) 확인까지만 진행합니다. API 키는 아직 발급하지 않습니다.</p>
+      <div class="flow"><span>고객 ID·계좌 확인</span><i>→</i><span>모의투자 참가 신청</span><i>→</i><span>모의 계좌번호 확인</span><i>→</i><span>다음: 키 발급</span></div>
+      <nav class="stage-nav" aria-label="KIS 실전연습 단계"><a href="/learning/kis-regist.html" class="on"><b>1단계 · 가입</b><small>한국투자증권 계좌와 모의투자 계좌 준비</small></a><a href="/learning/kis-dev.html"><b>2단계 · 키 발급</b><small>KIS Developers API 신청과 kis.key 설정</small></a><a href="/learning/kis-test.html"><b>3단계 · 테스트</b><small>현재가 조회부터 모의 주문 흐름까지 점검</small></a></nav>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 0 · 시작 전 구분</div><h2 class="title">이 웹앱 회원가입과 한국투자증권 가입은 서로 다릅니다</h2>
+      <div class="grid"><div class="box"><b>이 웹앱 계정</b><p>이 사이트의 모의 주식·코인 서비스에 로그인하는 계정입니다. KIS App Key를 만들거나 증권 계좌를 개설하지 않습니다.</p></div><div class="box"><b>한국투자증권 고객 ID·계좌</b><p>한국투자증권의 계좌 및 온라인 서비스용입니다. KIS Developers의 API 신청은 이 쪽의 본인 인증·계좌와 연결됩니다.</p></div><div class="box"><b>KIS Developers</b><p>API 문서·Testbed·오류코드·샘플을 확인하고 Open API 서비스를 신청하는 공식 개발자센터입니다.</p></div></div>
+      <div class="notice">아래 순서는 현재 KIS Developers와 한국투자증권 웹 안내를 바탕으로 한 학습용 체크리스트입니다. 실제 신청 화면의 약관, 가능한 계좌·상품, 인증 방식은 신청 시점의 공식 화면을 우선합니다.</div>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 1 · 한국투자증권 가입과 계좌 준비</div><h2 class="title">먼저 증권사 고객 ID와 목적에 맞는 계좌를 준비합니다</h2>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div><h3>한국투자증권 계정 만들기 또는 로그인</h3><p>KIS Developers의 API 신청 버튼은 한국투자증권 로그인 화면으로 이동합니다. 이미 계좌가 있다면 고객 ID 상태와 연결된 계좌를 확인합니다. 이 웹앱의 회원가입 정보나 비밀번호를 입력하는 곳이 아닙니다.</p></div></div>
+        <div class="step"><span class="num">2</span><div><h3>계좌가 없다면 비대면 계좌개설 진행</h3><p>한국투자증권 안내상 모바일 계좌개설에는 본인 신분증, 본인 명의 휴대폰, 보유 은행·증권사 계좌가 필요합니다. 계좌 개설 뒤 온라인 이용을 위해 고객 ID 등록·계좌 연결이 필요한 경우도 있습니다.</p></div></div>
+        <div class="step"><span class="num">3</span><div><h3>모의와 실전을 여기서 갈라서 결정</h3><p>이 웹앱 모듈은 모의 Testbed 조회 전용이므로 처음에는 모의투자 신청과 모의 API 키만 사용합니다. 실전 계좌·실전 키는 이 모듈 설정에 넣지 않습니다.</p></div></div>
+      </div>
+      <a class="btn" href="https://securities.koreainvestment.com/main/member/login/login.jsp" target="_blank" rel="noopener noreferrer">한국투자증권 로그인·가입 ↗</a>
+      <a class="btn-alt" href="https://apiportal.koreainvestment.com/intro" target="_blank" rel="noopener noreferrer">KIS Developers 열기 ↗</a>
+      <div class="danger"><strong>입력 위치를 구분하세요:</strong> 주민등록증, 휴대폰 인증, 계좌 비밀번호, 인증서 정보는 한국투자증권 공식 앱·웹사이트에서만 입력합니다. 이 웹앱과 KIS Developers 문서 페이지에는 입력하지 않습니다.</div>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 2 · 모의투자 계좌 받기</div><h2 class="title">KIS Testbed용 모의계좌를 신청하고 번호를 확인합니다</h2>
+      <p class="desc">이 웹앱에서 사용하는 KIS 계좌는 실전 계좌가 아니라 한국투자증권의 <strong>주식/선물옵션 모의투자</strong>에서 발급받는 모의투자 전용 계좌입니다. 모의투자는 투자 체험과 학습을 위한 서비스이며, 신청 가능한 리그·기간·대상 상품은 그때그때 공식 화면의 안내를 따릅니다.</p>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div><h3>공식 모의투자 안내로 이동하고 로그인</h3><p>아래의 공식 안내에서 <strong>모의투자안내</strong> 또는 참가 신청 화면으로 이동합니다. 한국투자증권 고객 ID로 로그인하며, 이 웹앱 계정으로는 신청할 수 없습니다.</p></div></div>
+        <div class="step"><span class="num">2</span><div><h3>참가 신청 정보를 선택</h3><p>신청 화면에서 모의투자 비밀번호, 참여 리그 또는 투자 기간, 개인정보·약관 동의 등 현재 표시되는 항목을 확인하고 제출합니다. 항목명과 참가 조건은 바뀔 수 있으므로 화면의 최신 안내를 우선합니다.</p></div></div>
+        <div class="step"><span class="num">3</span><div><h3>신청 완료 후 모의계좌 정보 확인</h3><p>모의투자 서비스의 <strong>나의계좌 → 계좌정보</strong>에서 새로 생성된 모의투자 계좌번호를 확인합니다. 계좌번호 전체를 메신저·캡처·Git에 공유하지 않습니다.</p></div></div>
+        <div class="step"><span class="num">4</span><div><h3>계좌번호를 <code>kis.key</code> 형식으로 분리</h3><p>화면의 계좌번호가 <code>12345678-01</code>처럼 보이면 앞 8자리(CANO)와 뒤 2자리(상품코드)를 하이픈으로 유지해 <code>account=12345678-01</code>로 적습니다. 이 값은 잔고 조회와 향후 주문성 API에 필요합니다.</p></div></div>
+        <div class="step"><span class="num">5</span><div><h3>모의계좌와 모의 API 키를 같은 환경으로 맞춤</h3><p>다음 단계(2단계 · 키 발급)에서 KIS Developers API 신청 시 모의투자 계좌에 대응하는 키를 발급받습니다. 실전 계좌·실전 키와 한 파일에 섞지 않습니다.</p></div></div>
+      </div>
+      <figure style="margin:16px 0 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)"><img src="/images/kis-mock-investment-application.svg" alt="모의투자 비밀번호, 리그와 투자기간을 선택하고 개인정보 활용 동의 후 신청하는 화면 예시" width="1200" height="700" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">모의투자 신청 화면 예시 · 비밀번호 규칙, 리그 종류, 투자기간 및 동의 항목은 신청 시점의 공식 화면을 따르세요.</figcaption></figure>
+      <figure style="margin:16px 0 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)"><img src="/images/kis-mock-account-confirmation.svg" alt="나의계좌의 계좌정보에서 모의투자 전용 계좌번호를 확인하는 화면 예시" width="1200" height="620" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">모의투자 전용 계좌 생성 및 확인 화면 예시 · 실제 계좌번호와 투자기간은 개인정보이므로 화면·로그·Git에 기록하지 마세요.</figcaption></figure>
+      <div class="table-wrap"><table class="table"><thead><tr><th>확인 항목</th><th>이 웹앱에 쓰는 방법</th><th>주의</th></tr></thead><tbody>
+        <tr><td>모의투자 계좌번호</td><td><code>account=CANO-상품코드</code>로 <code>kis.key</code>에 저장</td><td>현재가·차트·호가·지수 조회에는 필요 없고, 잔고 조회부터 필요합니다.</td></tr>
+        <tr><td>모의투자 비밀번호</td><td>한국투자증권 모의투자 서비스에서만 사용</td><td><strong>kis.key</strong>, 이 웹앱, KIS API 요청에 넣지 않습니다.</td></tr>
+        <tr><td>실전 증권계좌</td><td>이 모듈에서는 사용하지 않음</td><td>실전 계좌번호·실전 키를 Testbed 파일에 기록하지 않습니다.</td></tr>
+      </tbody></table></div>
+      <a class="btn" href="https://www.truefriend.com/main/research/virtual/_static/TF07da010000.jsp" target="_blank" rel="noopener noreferrer">공식 모의투자 안내 열기 ↗</a>
+      <div class="notice"><strong>계좌가 바로 보이지 않을 때:</strong> 신청 완료 상태, 선택한 투자 기간, 현재 로그인한 고객 ID를 다시 확인하세요. 모의투자 서비스의 계좌 정보가 확인되기 전에는 <code>account</code>를 추측해 넣지 말고, KIS Developers의 모의 API 신청도 실제 표시된 모의계좌를 기준으로 진행합니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="kicker">STEP 3 · 계좌번호 읽는 법</div><h2 class="title">CANO와 계좌상품코드를 구분합니다</h2>
+      <p class="desc">모의투자 계좌번호는 <code>12345678-01</code>처럼 표시됩니다. KIS API는 이 값을 두 필드로 나눠 받으며, 이 웹앱은 <code>account=CANO-상품코드</code> 한 줄로 적으면 서버가 하이픈 기준으로 분리합니다.</p>
+      <div class="table-wrap"><table class="table"><thead><tr><th>위치</th><th>KIS 필드명</th><th>의미</th><th>자릿수</th></tr></thead><tbody>
+        <tr><td>하이픈 앞</td><td><code>CANO</code></td><td>종합계좌번호 (고객 계좌 식별)</td><td>8자리</td></tr>
+        <tr><td>하이픈 뒤</td><td><code>ACNT_PRDT_CD</code></td><td>계좌상품코드 (계좌 종류)</td><td>2자리</td></tr>
+      </tbody></table></div>
+      <div class="danger"><strong>상품코드는 임의로 바꾸지 않습니다.</strong> 01은 종합/위탁, 03은 선물옵션, 22는 연금처럼 증권사가 계좌 개설 시 부여한 값입니다. "01이 안 되니 02로 바꿔 보자" 식으로 수정하면 KIS 서버가 계좌를 찾지 못해 잔고 조회와 주문이 모두 실패합니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="kicker">STEP 4 · 모의와 실전의 차이</div><h2 class="title">모의투자와 실전투자는 계좌와 API 키가 서로 다릅니다</h2>
+      <p class="desc">모의투자는 한국투자증권 회원으로 로그인한 뒤 모의투자 참가를 신청하고, 발급된 <strong>모의투자용 계좌번호</strong>와 다음 단계의 <strong>모의 App Key·Secret</strong>을 사용합니다. 실제 자금 주문을 하려면 주식 거래가 가능한 <strong>별도의 실전 계좌</strong>, 실전 서비스 신청, <strong>실전 App Key·Secret</strong>이 필요하지만 이 실전연습에서는 사용하지 않습니다.</p>
+      <figure style="margin:16px 0 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)"><img src="/images/kis-account-requirements.svg" alt="KIS 모의투자와 실전투자에 필요한 계좌, API 키, 서버와 거래 ID의 구분" width="1200" height="470" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">모의투자 참가 신청 경로와 실전 계좌·API 권한은 변경될 수 있으므로, 신청 전 한국투자증권의 최신 안내와 KIS Developers 서비스 신청 화면을 확인하세요.</figcaption></figure>
+      <div class="notice"><strong>학습 환경의 원칙:</strong> 이 실전연습에서는 모의투자 계좌와 모의 API 키만 사용합니다. 실전 계좌번호·실전 App Key·Secret·TTTC 거래 ID를 <code>kis.key</code>, <code>.env</code> 또는 코드에 넣지 마세요. 모의투자 신청에는 실전 거래용 계좌가 항상 필요한 것은 아니며, 가입·이용 조건은 공식 모의투자 안내를 따릅니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="kicker">1단계 완료 확인</div><h2 class="title">다음 단계로 가기 전에 확인합니다</h2>
+      <label class="check"><input type="checkbox"> 한국투자증권 고객 ID로 로그인할 수 있다.</label>
+      <label class="check"><input type="checkbox"> 모의투자 참가 신청이 완료되어 <strong>나의계좌 → 계좌정보</strong>에 모의 계좌가 보인다.</label>
+      <label class="check"><input type="checkbox"> 모의 계좌번호를 <code>CANO-상품코드</code> 형식으로 적어 두었고, 화면·채팅·Git에 남기지 않았다.</label>
+      <label class="check"><input type="checkbox"> 실전 계좌·실전 키는 이 실전연습에 쓰지 않는다는 점을 이해했다.</label>
+      <a class="btn" href="/learning/kis-dev.html">2단계 · KIS Developers 키 발급으로 →</a>
+    </section>
+  </main>
+  <footer class="footer"><div>EDUMGT · KIS 실전연습 1단계 · 한국투자증권 가입과 모의투자 계좌 · 교육용 콘텐츠</div></footer>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-kis-split"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
+</body>
+</html>

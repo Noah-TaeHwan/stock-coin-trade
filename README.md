@@ -48,7 +48,7 @@ Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자
 Browser
   │
   ▼
-Nginx Frontend (:3000)
+Nginx Frontend (:3333)
   ├─ 정적 HTML / JavaScript / CSS
   ├─ /api/*      → Flask Backend
   └─ /openapi/*  → Flask Backend
@@ -79,7 +79,7 @@ Nginx Frontend (:3000)
 cp .env.example .env
 ```
 
-`.env`에는 DB 비밀번호, 세션 키, 선택적 API 키만 설정합니다. 실제 값은 Git에 커밋하지 않습니다.
+`.env`에는 DB 비밀번호, 세션 키, 선택적 API 키만 설정합니다. 실제 값은 Git에 커밋하지 않습니다. Docker Compose는 `.env`를 자동으로 읽고, `python app.py`로 직접 실행할 때는 `app.py`가 저장소 루트의 `.env`를 `python-dotenv`로 읽습니다(이미 설정된 환경변수가 우선).
 
 ### 2. 선택적 증권사 테스트 키 파일 준비
 
@@ -110,11 +110,11 @@ docker compose ps
 
 | 주소 | 설명 |
 |---|---|
-| <http://localhost:3000> | 웹 애플리케이션 |
-| <http://localhost:3000/broker-api-test.html> | 증권사 시세 테스트 |
-| <http://localhost:3000/alpaca-test.html> | Alpaca Paper API 테스트 |
-| <http://localhost:3000/openapi.html> | 외부 연동 Open API 명세 |
-| <http://localhost:3000/quant.html> | PostgreSQL 퀀트 랩 |
+| <http://localhost:3333> | 웹 애플리케이션 |
+| <http://localhost:3333/broker-api-test.html> | KIS Open API 연결 테스트 |
+| <http://localhost:3333/alpaca-test.html> | Alpaca Paper API 테스트 |
+| <http://localhost:3333/openapi.html> | 외부 연동 Open API 명세 |
+| <http://localhost:3333/quant.html> | PostgreSQL 퀀트 랩 |
 
 Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에서는 API 호출을 같은 origin으로 처리합니다.
 
@@ -263,13 +263,14 @@ AWS 보안 그룹에는 PostgreSQL `5432` 인바운드 규칙을 추가하지 �
 
 API 키당 분당 60회 제한이 적용됩니다. 키 원문은 발급 시 한 번만 표시되고 서버에는 SHA-256 해시만 저장됩니다.
 
-## 증권사·Alpaca 연결 테스트
+## 브로커·Alpaca 연결 테스트
 
 테스트 화면은 서버에서만 키를 읽습니다. 브라우저 응답·로그에 API Key, Secret, 접근 토큰, 계좌번호를 포함하지 않습니다.
 
 | 화면 | 경로 | 호출 범위 |
 |---|---|---|
-| 증권사 시세 테스트 | `/broker-api-test.html` | KIS Testbed 현재가, KB증권 토큰 인증·시세 설정 점검 |
+| KIS 연결 테스트 | `/broker-api-test.html` | KIS Testbed 현재가·일봉·호가·잔고·시장지수 조회 |
+| KB 연결 테스트 | `/kb-api-test.html` | KB증권 토큰 인증·시세 설정 점검 |
 | Alpaca Test | `/alpaca-test.html` | Alpaca Paper `GET /v2/account` 상태 조회 |
 
 백엔드 엔드포인트는 다음과 같습니다.
@@ -306,9 +307,9 @@ KIS Testbed에는 호출 제한이 있으므로 토큰과 짧은 시세 결과�
 1. 한국투자증권 계좌가 없다면 공식 앱/웹에서 비대면 계좌개설을 먼저 진행합니다. ([한국투자증권 로그인·가입](https://securities.koreainvestment.com/main/member/login/login.jsp))
 2. [모의투자 안내](https://www.truefriend.com/main/research/virtual/_static/TF07da010000.jsp)에서 한국투자증권 고객 ID로 로그인해 **모의투자 참가 신청**을 하고, 완료 후 **나의계좌 → 계좌정보**에서 모의투자 전용 계좌번호(`CANO-상품코드`)를 확인합니다.
 3. [KIS Developers](https://apiportal.koreainvestment.com)에 로그인해 **API 신청**에서 방금 만든 모의투자 계좌를 선택해 서비스를 신청합니다. 신청현황에서 모의투자용 **App Key·App Secret**이 발급됩니다. 실전 계좌 행의 키는 이 프로젝트에서 사용하지 않습니다.
-4. 발급받은 값을 저장소 루트의 `kis.key`(`app_key=`, `secret=`, `account=CANO-상품코드`) 또는 `.env`의 `KIS_MODE=mock`/`KIS_APP_KEY`/`KIS_APP_SECRET`/`KIS_ACCOUNT_NO`/`KIS_ACCOUNT_PRODUCT_CODE`에 저장합니다(환경변수가 설정되면 우선 적용). 계좌(`account`)는 잔고 조회에만 필요하고 시세 조회에는 필요 없습니다.
+4. 발급받은 값을 저장소 루트의 `kis.key`(`app_key=`, `secret=`, `account=CANO-상품코드`) 또는 `.env`의 `KIS_APP_KEY`/`KIS_APP_SECRET`/`KIS_ACCOUNT_NO`에 저장합니다. `.env` 값은 `docker-compose.yml`의 `python-backend.environment`를 거쳐 컨테이너로 전달되며, 채워져 있으면 `kis.key`보다 우선합니다. `KIS_ACCOUNT_NO`는 `CANO-계좌상품코드`(예: `12345678-01`) 한 값으로 적고, 하이픈 뒤 상품코드는 증권사가 부여한 값이므로 임의로 바꾸지 않습니다. 계좌(`account`)는 잔고 조회에만 필요하고 시세 조회에는 필요 없습니다.
 5. 모의(Testbed) 도메인은 `https://openapivts.koreainvestment.com:29443`이며, 실전 도메인(`https://openapi.koreainvestment.com:9443`)은 사용하지 않습니다. 모의투자 토큰 발급은 **1분당 1회** 제한이 있으므로 짧은 간격으로 재시도하지 마세요.
-6. 자세한 절차·스크린샷은 [`/learning/kis-developers.html`](frontend/learning/kis-developers.html)과 [`/learning/kis-module-guide.html`](frontend/learning/kis-module-guide.html)에, VS Code에서 자연어로 쓰는 공식 MCP 연동은 아래 "KIS MCP" 절에 정리되어 있습니다.
+6. 자세한 절차·스크린샷은 3단계 학습 페이지 [`/learning/kis-regist.html`](frontend/learning/kis-regist.html)(가입) → [`/learning/kis-dev.html`](frontend/learning/kis-dev.html)(키 발급) → [`/learning/kis-test.html`](frontend/learning/kis-test.html)(테스트)에, VS Code에서 자연어로 쓰는 공식 MCP 연동은 아래 "KIS MCP" 절에 정리되어 있습니다.
 
 ### 2. KB증권 Open API
 
@@ -324,7 +325,7 @@ KIS Testbed에는 호출 제한이 있으므로 토큰과 짧은 시세 결과�
 1. [Alpaca 가입/대시보드](https://app.alpaca.markets/signup)에서 이메일로 계정을 만들고 요구되는 이메일 확인 절차를 완료합니다.
 2. 대시보드 좌측 상단 계정 선택기에서 **Paper Trading** 계정을 선택하거나 새로 생성합니다.
 3. **Home** 대시보드의 **API Keys** 패널에서 Paper 계정용 Key·Secret을 생성합니다. Secret은 최초 표시 이후 다시 확인되지 않을 수 있으므로 즉시 저장합니다.
-4. 발급받은 값을 저장소 루트의 `al.key`(`Key=`, `Secret=`) 또는 `.env`의 `ALPACA_API_KEY`/`ALPACA_SECRET_KEY`/`ALPACA_PAPER=true`에 저장합니다. Paper 엔드포인트는 `https://paper-api.alpaca.markets`/`https://data.alpaca.markets`이며, Live는 키와 도메인이 모두 다르므로 이 프로젝트에서는 전환하지 않습니다.
+4. 발급받은 값을 저장소 루트의 `al.key`(`Key=`, `Secret=`) 또는 `.env`의 `ALPACA_API_KEY`/`ALPACA_SECRET_KEY`에 저장합니다. Paper 엔드포인트는 `https://paper-api.alpaca.markets`/`https://data.alpaca.markets`이며, Live는 키와 도메인이 모두 다르므로 이 프로젝트에서는 전환하지 않습니다.
 5. 거주 국가에 따라 Live 계정 승인 여부·상품·세금 요건이 달라질 수 있지만, Paper 전용 계정은 별도 심사 없이 만들 수 있습니다.
 6. 자세한 SDK(`alpaca-py`)·Trading CLI 사용법은 아래 "Alpaca Paper Trading" 절과 [`/learning/alpaca-api.html`](frontend/learning/alpaca-api.html) 참고.
 
@@ -446,7 +447,7 @@ aws ssm put-parameter --name "/stock-coin-trade/alpaca/secret_key" --type Secure
 
 ## KIS MCP — VS Code에서 자연어로 KIS API 사용하기
 
-`/broker-api-test.html`의 증권사 연결 테스트와는 별개로, 한국투자증권은 AI 도구로 **MCP(Model Context Protocol)** 를 제공합니다. MCP는 생성형 AI가 외부 도구와 데이터에 표준 방식으로 연결되도록 하는 규약입니다. 이 프로젝트는 MCP 서버를 자체 구현하거나 `broker_test.py`를 MCP로 감싼 것이 아니라, 아래의 한투 공식 MCP를 별도로 사용합니다.
+`/broker-api-test.html`의 KIS 연결 테스트와는 별개로, 한국투자증권은 AI 도구로 **MCP(Model Context Protocol)** 를 제공합니다. MCP는 생성형 AI가 외부 도구와 데이터에 표준 방식으로 연결되도록 하는 규약입니다. 이 프로젝트는 MCP 서버를 자체 구현하거나 `broker_test.py`를 MCP로 감싼 것이 아니라, 아래의 한투 공식 MCP를 별도로 사용합니다.
 
 | 구분 | 용도 | 공식 안내 |
 |---|---|---|
@@ -516,7 +517,7 @@ VS Code에서 이 워크스페이스를 열고 Copilot Chat을 에이전트 모�
 - "삼성전자 현재가 조회해줘"
 - "모의투자 계좌 잔고 보여줘"
 
-전체 도구 목록과 Docker+SSE 실행 방식 등 상세 내용은 [공식 MCP README](https://github.com/koreainvestment/open-trading-api/blob/main/MCP/README.MD)를 참조하세요. 프론트엔드 학습 페이지(`/learning/kis-developers.html`)에도 동일한 안내가 있습니다.
+전체 도구 목록과 Docker+SSE 실행 방식 등 상세 내용은 [공식 MCP README](https://github.com/koreainvestment/open-trading-api/blob/main/MCP/README.MD)를 참조하세요. 프론트엔드 학습 페이지(`/learning/kis-dev.html`의 "선택 B · MCP · VS Code")에도 동일한 안내가 있습니다.
 
 > ⚠️ 실전 거래용 `KIS_APP_KEY`/`KIS_APP_SECRET`는 설정하지 마세요. 설정하면 MCP 도구가 실제 자금으로 주문을 실행할 수 있습니다.
 
@@ -554,7 +555,8 @@ VS Code에서 이 워크스페이스를 열고 Copilot Chat을 에이전트 모�
 │   ├── trade/                         # 코인·주식·대체자산 모의거래
 │   ├── learning/                      # TradingView, KB, KIS, Alpaca 실전연습
 │   ├── alpaca-test.html               # Alpaca Paper 연결 테스트
-│   ├── broker-api-test.html           # KIS·KB 연결 테스트
+│   ├── broker-api-test.html           # KIS 연결 테스트
+│   ├── kb-api-test.html               # KB증권 연결 테스트
 │   ├── member/                        # 로그인·회원가입·플랫폼 API 키
 │   ├── js/common.js                   # 모든 페이지 공통 offcanvas 메뉴
 │   └── images/                        # 학습용 이미지·안내도
@@ -587,7 +589,7 @@ python3 -m py_compile python-stock-backend/*.py
 ```bash
 docker compose up -d --build
 docker compose ps
-curl http://localhost:3000/api/alpaca-test/paper/account
+curl http://localhost:3333/api/alpaca-test/paper/account
 ```
 
 `scripts/ec2/deploy.sh`는 Python 문법 검사 후 `docker compose up -d --build --remove-orphans`를 실행합니다.

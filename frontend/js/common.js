@@ -45,14 +45,14 @@ if (!document.getElementById('gnb-core-style')) {
     .gnb-shell{display:flex!important;align-items:center!important;gap:18px;min-height:58px;padding:0 22px}
     .gnb-brand{flex:0 0 auto;color:#0d47a1!important;text-decoration:none!important;font-size:18px!important;font-weight:900!important;white-space:nowrap}.gnb-brand i{margin-right:6px}
     .gnb-nav{display:flex!important;align-items:stretch!important;gap:2px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:thin}
-    .gnb-link,.gnb-group summary{display:flex!important;align-items:center!important;gap:6px;height:58px;padding:0 10px;color:#334155!important;text-decoration:none!important;font-size:13px!important;font-weight:750!important;white-space:nowrap;cursor:pointer;list-style:none}
-    .gnb-group{position:relative;flex:0 0 auto}.gnb-group summary::-webkit-details-marker{display:none}.gnb-group summary i{font-size:10px}.gnb-link:hover,.gnb-group summary:hover{color:#0d47a1!important;background:#edf3ff}
-    .gnb-dropdown{position:absolute;z-index:220;display:grid;min-width:210px;padding:6px;border:1px solid #dce3ef;border-radius:9px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.12)}.gnb-dropdown a{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;color:#334155!important;text-decoration:none!important;font-size:13px!important;font-weight:650!important;white-space:nowrap}.gnb-dropdown a:hover{background:#edf3ff;color:#0d47a1!important}.gnb-user{flex:0 0 auto;white-space:nowrap}
-    .gnb-shortcuts{display:flex;align-items:center;gap:3px;min-width:0;overflow-x:auto}.gnb-shortcuts a{padding:7px 9px;border-radius:6px;color:#1e53e5!important;text-decoration:none!important;font-size:12px!important;font-weight:800!important;white-space:nowrap}.gnb-shortcuts a:hover{background:#e3f0ff}
+    .gnb-link,.gnb-group summary{display:flex!important;align-items:center!important;gap:6px;height:58px;padding:0 10px;color:#334155!important;text-decoration:none!important;font-size:14.3px!important;font-weight:750!important;white-space:nowrap;cursor:pointer;list-style:none}
+    .gnb-group{position:relative;flex:0 0 auto}.gnb-group summary::-webkit-details-marker{display:none}.gnb-group summary i{font-size:11px}.gnb-link:hover,.gnb-group summary:hover{color:#0d47a1!important;background:#edf3ff}
+    .gnb-dropdown{position:absolute;z-index:220;display:grid;min-width:210px;padding:6px;border:1px solid #dce3ef;border-radius:9px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.12)}.gnb-dropdown a{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;color:#334155!important;text-decoration:none!important;font-size:14.3px!important;font-weight:650!important;white-space:nowrap}.gnb-dropdown a:hover{background:#edf3ff;color:#0d47a1!important}.gnb-user{flex:0 0 auto;white-space:nowrap}
+    .gnb-shortcuts{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto}.gnb-shortcuts a{padding:8px 12px;border-radius:6px;color:#1e53e5!important;text-decoration:none!important;font-size:16px!important;font-weight:800!important;white-space:nowrap}.gnb-shortcuts a:hover{background:#e3f0ff}
     .site-header-inner{display:grid!important;grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr);align-items:center!important;gap:16px;min-height:56px;padding:0 18px}.site-header-left,.site-header-actions{display:flex;align-items:center;gap:12px;min-width:0}.site-header-actions{justify-self:end}.header-menu-label{display:inline}
-    #oc-panel .oc-group-toggle,#ai-panel .oc-group-toggle{font-size:14px!important;line-height:1.4!important}#oc-panel .oc-nav-item,#ai-panel .oc-nav-item{font-size:14px!important;line-height:1.4!important}#oc-panel .oc-nav-item--sub,#ai-panel .oc-nav-item--sub{font-size:13px!important}#oc-panel .oc-header,#ai-panel .oc-header{font-size:15px!important}#oc-panel .oc-footer,#ai-panel .oc-footer{font-size:11px!important}
-    @media(max-width:760px){.site-header-inner{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:0 10px}.site-header-left,.site-header-actions{gap:6px}.header-menu-label{display:none}.gnb-shortcuts{justify-content:center}.gnb-shortcuts a{padding:6px 5px;font-size:11px!important}.site-header-actions button{padding-inline:7px!important}.site-header-actions span{display:none}}
-    @media(max-width:900px){.gnb-shell{gap:10px;padding:0 12px;flex-wrap:wrap;padding-bottom:3px}.gnb-nav{order:3;flex-basis:100%;height:42px}.gnb-link,.gnb-group summary{height:40px;padding:0 8px;font-size:12px!important}.gnb-user span{display:none}.gnb-dropdown{position:fixed;left:12px;right:12px;min-width:0}}
+    #oc-panel .oc-group-toggle,#ai-panel .oc-group-toggle{font-size:15.4px!important;line-height:1.4!important}#oc-panel .oc-nav-item,#ai-panel .oc-nav-item{font-size:15.4px!important;line-height:1.4!important}#oc-panel .oc-nav-item--sub,#ai-panel .oc-nav-item--sub{font-size:14.3px!important}#oc-panel .oc-header,#ai-panel .oc-header{font-size:16.5px!important}#oc-panel .oc-footer,#ai-panel .oc-footer{font-size:12.1px!important}
+    @media(max-width:760px){.site-header-inner{grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;padding:4px 10px}.site-header-left,.site-header-actions{gap:6px}.site-header-left{grid-column:1}.site-header-actions{grid-column:3}.header-menu-label{display:none}.gnb-shortcuts{grid-column:1/-1;grid-row:2;justify-content:center;padding-bottom:2px}.gnb-shortcuts a{padding:5px 8px;font-size:14px!important}.site-header-actions button{padding-inline:7px!important}.site-header-actions span{display:none}}
+    @media(max-width:900px){.gnb-shell{gap:10px;padding:0 12px;flex-wrap:wrap;padding-bottom:3px}.gnb-nav{order:3;flex-basis:100%;height:42px}.gnb-link,.gnb-group summary{height:40px;padding:0 8px;font-size:13.2px!important}.gnb-user span{display:none}.gnb-dropdown{position:fixed;left:12px;right:12px;min-width:0}}
   `;
   document.head.appendChild(gnbStyle);
 }
@@ -95,14 +95,10 @@ function renderHeader(user) {
       { href: '/trade/history.html', label: '내 거래이력',   icon: 'fa-solid fa-clock-rotate-left' },
       { href: '/trade/avg-down.html', label: '물타기 계산기', icon: 'fa-solid fa-calculator' },
     ]},
-    { type: 'group', label: '실전연습', items: [
-      { href: '/hts.html', label: 'HTS 시뮬레이션', icon: 'fa-solid fa-desktop' },
-      { href: '/learning/tradingview-pine.html', label: 'TradingView(Pine)', icon: 'fa-solid fa-chart-column' },
-      { href: '/pine-script-lab.html', label: 'Pine 간단 테스트', icon: 'fa-solid fa-code' },
-    ]},
     { type: 'group', label: 'KIS 실전연습', items: [
-      { href: '/learning/kis-module-guide.html', label: 'KIS 모듈 실습', icon: 'fa-solid fa-plug-circle-check' },
-      { href: '/learning/kis-developers.html', label: 'KIS Developers 학습', icon: 'fa-solid fa-code' },
+      { href: '/learning/kis-regist.html', label: '1단계 · 가입', icon: 'fa-solid fa-user-plus' },
+      { href: '/learning/kis-dev.html', label: '2단계 · 키 발급', icon: 'fa-solid fa-key' },
+      { href: '/learning/kis-test.html', label: '3단계 · 테스트', icon: 'fa-solid fa-plug-circle-check' },
       { href: '/kis-order-flow-test.html', label: '모의 주문 흐름 테스트', icon: 'fa-solid fa-vial-circle-check' },
       { href: '/broker-api-test.html', label: 'KIS 연결 테스트', icon: 'fa-solid fa-chart-line' },
     ]},
@@ -123,6 +119,10 @@ function renderHeader(user) {
       { href: '/learning/korbit-api.html', label: 'Korbit Open API 학습', icon: 'fa-solid fa-coins' },
       { href: '/korbit-api-test.html', label: 'Korbit 공개 시세 테스트', icon: 'fa-solid fa-chart-line' },
     ]},
+    { type: 'group', label: 'TR 실전연습', items: [
+      { href: '/learning/tradingview-pine.html', label: 'TradingView(Pine)', icon: 'fa-solid fa-chart-column' },
+      { href: '/pine-script-lab.html', label: 'Pine 간단 테스트', icon: 'fa-solid fa-code' },
+    ]},
     { type: 'group', label: 'POSTGRESQL QUANT', items: [
       { href: '/quant.html?tab=schema', label: 'DB 스키마', icon: 'fa-solid fa-sitemap' },
       { href: '/quant.html?tab=algorithm', label: '알고리즘', icon: 'fa-solid fa-code-branch' },
@@ -130,12 +130,13 @@ function renderHeader(user) {
       { href: '/ohlcv-db.html', label: 'OHLCV DB', icon: 'fa-brands fa-docker' },
     ]},
     { type: 'group', label: '분석 · 도구', items: [
+      { href: '/hts.html', label: 'HTS 시뮬레이션', icon: 'fa-solid fa-desktop' },
       { href: '/analysis.html', label: '투자 분석 학습', icon: 'fa-solid fa-graduation-cap' },
       { href: '/ai-sheet.html', label: 'AI Sheet',       icon: 'fa-solid fa-table-cells-large' },
       { href: '/openapi.html',  label: 'Open API',       icon: 'fa-solid fa-key' },
       { href: '/api-usage-history.html', label: 'API 사용이력', icon: 'fa-solid fa-list-check' },
       { href: '/error-analysis.html', label: '에러분석', icon: 'fa-solid fa-bug' },
-      { href: '/broker-api-test.html', label: '증권사 시세 테스트', icon: 'fa-solid fa-plug-circle-check' },
+      { href: '/broker-api-test.html', label: 'KIS 연결 테스트', icon: 'fa-solid fa-plug-circle-check' },
     ]},
     { type: 'group', label: 'AWS SSM 연동 트랙', items: [
       { href: '/learning/aws-ssm-key-management.html', label: 'AWS 키 관리 가이드', icon: 'fa-solid fa-shield-halved' },
@@ -146,12 +147,12 @@ function renderHeader(user) {
 
   const userSection = user?.loggedIn
     ? `<div style="display:flex;align-items:center;gap:8px;">
-         <span style="font-size:14px;font-weight:700;color:var(--fg);">${user.username}님</span>
-         <button onclick="logout()" style="background:rgba(225,29,72,0.06);color:#E11D48;border:1.5px solid rgba(225,29,72,0.2);border-radius:6px;padding:0.3rem 0.9rem;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(225,29,72,0.12)'" onmouseout="this.style.background='rgba(225,29,72,0.06)'">로그아웃</button>
+         <span style="font-size:15.4px;font-weight:700;color:var(--fg);">${user.username}님</span>
+         <button onclick="logout()" style="background:rgba(225,29,72,0.06);color:#E11D48;border:1.5px solid rgba(225,29,72,0.2);border-radius:6px;padding:0.3rem 0.9rem;font-size:14.3px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(225,29,72,0.12)'" onmouseout="this.style.background='rgba(225,29,72,0.06)'">로그아웃</button>
        </div>`
     : `<div style="display:flex;align-items:center;gap:6px;">
-         <button onclick="location.href='/member/login.html'" style="background:transparent;color:var(--fg-2);border:1.5px solid var(--border);border-radius:6px;padding:0.3rem 0.9rem;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='transparent'">로그인</button>
-         <button onclick="location.href='/member/register.html'" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.9rem;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">회원가입</button>
+         <button onclick="location.href='/member/login.html'" style="background:transparent;color:var(--fg-2);border:1.5px solid var(--border);border-radius:6px;padding:0.3rem 0.9rem;font-size:14.3px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='transparent'">로그인</button>
+         <button onclick="location.href='/member/register.html'" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.9rem;font-size:14.3px;font-weight:600;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">회원가입</button>
        </div>`;
 
   const isLoggedIn = !!user?.loggedIn;
@@ -159,11 +160,11 @@ function renderHeader(user) {
   const ocNavItem = (n, sub) =>
     `<a href="${n.href}" class="oc-nav-item${sub ? ' oc-nav-item--sub' : ''}"><i class="${n.icon}" aria-hidden="true" style="width:16px;text-align:center;"></i> ${n.label}</a>`;
 
-  // 좌측은 실전연습, 우측은 대시보드·거래·자산·분석·관리 메뉴로 나눈다.
+  // 좌측은 TR·브로커 실전연습, 우측은 대시보드·거래·자산·분석·관리 메뉴로 나눈다.
   const rightMenuLabels = new Set(['대시보드', '거래', '자산관리', 'POSTGRESQL QUANT', '분석 · 도구', 'AWS SSM 연동 트랙']);
   const leftNavGroups = navGroups.filter(group => !rightMenuLabels.has(group.label));
   const rightPanelGroups = navGroups.filter(group => rightMenuLabels.has(group.label));
-  const practiceItems = navGroups.find(group => group.label === '실전연습')?.items || [];
+  const practiceItems = navGroups.find(group => group.label === 'TR 실전연습')?.items || [];
 
   let ocGroupIdx = -1;
   const ocNavItems = leftNavGroups.map(g => {
@@ -202,7 +203,7 @@ function renderHeader(user) {
   const ocNavGuest = `
     <div class="oc-group open">
       <button type="button" class="oc-group-toggle" onclick="toggleOcGroup(0)" aria-expanded="true">
-        <span>실전연습</span>
+        <span>TR 실전연습</span>
         <i class="fa-solid fa-chevron-down oc-group-chevron" aria-hidden="true"></i>
       </button>
       <div class="oc-group-body">
@@ -225,13 +226,13 @@ function renderHeader(user) {
     <!-- 왼쪽 오프캔버스 — 네비게이션 메뉴 -->
     <aside id="oc-panel">
       <div class="oc-header">
-        <span class="brand-logo-text" style="font-size:17px;letter-spacing:1.5px;"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>모의투자</span>
+        <span class="brand-logo-text" style="font-size:18.7px;letter-spacing:1.5px;"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>모의투자</span>
         <button class="oc-close-btn" onclick="closeOffcanvas()">✕</button>
       </div>
-      <nav class="oc-nav" aria-label="실전연습 메뉴">
+      <nav class="oc-nav" aria-label="TR 실전연습 메뉴">
         ${isLoggedIn ? ocNavAuthed : ocNavGuest}
       </nav>
-      <div class="oc-footer" style="font-size:11px;color:var(--muted);">
+      <div class="oc-footer" style="font-size:12.1px;color:var(--muted);">
         <div>(주)에듀엠지티</div>
         <a href="https://www.edumgt.co.kr" target="_blank" style="color:var(--accent-dark);text-decoration:none;font-weight:600;">www.edumgt.co.kr</a>
       </div>
@@ -241,11 +242,11 @@ function renderHeader(user) {
     <header id="site-header">
       <div class="site-header-inner">
         <div class="site-header-left">
-          <button onclick="openOffcanvas()" aria-label="메뉴 열기" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .12s;color:var(--fg-2);font-size:14px;font-weight:600;"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="header-menu-label">메뉴</span></button>
+          <button onclick="openOffcanvas()" aria-label="메뉴 열기" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .12s;color:var(--fg-2);font-size:15.4px;font-weight:600;"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="header-menu-label">메뉴</span></button>
           <a href="/index.html" style="text-decoration:none;display:flex;align-items:center;"><span class="brand-logo-text"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>모의투자</span></a>
         </div>
         <nav class="gnb-shortcuts" aria-label="AI 기능 바로가기"><a href="/ai-analysis.html"><i class="fa-solid fa-robot" aria-hidden="true"></i> AI 분석</a><a href="/knowledge-search.html"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> 지식 검색</a><a href="/knowledge-dataset.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i> 데이터셋</a></nav>
-        <div class="site-header-actions"><button onclick="openAiPanel()" aria-label="분석 도구 메뉴 열기" style="border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--accent-dark);padding:6px 9px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;"><i class="fa-solid fa-toolbox" aria-hidden="true"></i> 도구 메뉴</button>${userSection}</div>
+        <div class="site-header-actions"><button onclick="openAiPanel()" aria-label="분석 도구 메뉴 열기" style="border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--accent-dark);padding:6px 9px;font-size:13.2px;font-weight:800;cursor:pointer;white-space:nowrap;"><i class="fa-solid fa-toolbox" aria-hidden="true"></i> 도구 메뉴</button>${userSection}</div>
       </div>
     </header>
 
@@ -259,9 +260,9 @@ function renderHeader(user) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.1rem;border-bottom:1px solid var(--border);flex-shrink:0;">
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fa-solid fa-toolbox" aria-hidden="true" style="font-size:16px;color:var(--accent);"></i>
-          <span style="font-size:15px;font-weight:800;color:var(--fg);">빠른 메뉴</span>
+          <span style="font-size:16.5px;font-weight:800;color:var(--fg);">빠른 메뉴</span>
         </div>
-        <button onclick="closeAiPanel()" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;color:var(--muted);cursor:pointer;">✕</button>
+        <button onclick="closeAiPanel()" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:13.2px;color:var(--muted);cursor:pointer;">✕</button>
       </div>
 
       <nav class="oc-nav right-tool-nav" aria-label="대시보드 및 분석·연동 메뉴">
@@ -689,16 +690,13 @@ function mountApiTestGuide() {
   const guides = {
     '/broker-api-test.html': {
       title: '이 화면의 API 호출과 기대 결과',
-      rate: '<strong>공식 한도(이 화면의 KIS Testbed): 분당 60건</strong> — 모의투자는 초당 1건(계좌·App Key 기준)입니다. 접근 토큰 발급도 초당 1건입니다. KB는 API별 고정 분당 한도를 공개하지 않아 아래 KB 호출은 연속 실행하지 말고 포털의 최신 명세를 확인하세요.',
+      rate: '<strong>KIS Testbed 조회 전용 화면</strong> — 접근 토큰은 서버에서 캐시해 재사용합니다. 호출 제한을 피하려면 조회 버튼을 빠르게 연속 클릭하지 마세요.',
       rows: [
         ['KIS 현재가', 'GET /api/broker-test/kis/quote?symbol=005930', 'symbol: 6자리 KRX 코드', 'ok: true, quote.price·changeRate·volume·tradeTime'],
         ['KIS 일봉', 'GET /api/broker-test/kis/chart?symbol=005930', 'symbol: 6자리 KRX 코드', 'ok: true, chart.data 배열(날짜·OHLC 가격)'],
         ['KIS 호가', 'GET /api/broker-test/kis/orderbook?symbol=005930', 'symbol: 6자리 KRX 코드', 'ok: true, orderbook 매도·매수 10단계'],
         ['KIS 잔고', 'GET /api/broker-test/kis/balance', '서버의 KIS_ACCOUNT_NO', 'ok: true, balance 현금·평가·보유종목 정보'],
         ['KIS 지수', 'GET /api/broker-test/kis/index?code=0001', '0001(코스피) 또는 1001(코스닥)', 'ok: true, index 현재 지수·등락 정보'],
-        ['KB 토큰', 'GET /api/broker-test/kb/token', '서버의 kb.key 또는 환경변수', 'ok: true, check.tokenType·expiresIn'],
-        ['KB 현재가', 'GET /api/broker-test/kb/quote?symbol=005930', 'symbol: 6자리 KRX 코드', 'ok: true, quote.price·changeRate·volume'],
-        ['KB 추가 조회', 'GET /api/broker-test/kb/{base-info|orderbook|chart}?symbol=005930', 'symbol: 6자리 KRX 코드', 'ok: true, result 객체(기본정보·호가·일봉)'],
       ],
     },
     '/kb-api-test.html': {
@@ -718,7 +716,7 @@ function mountApiTestGuide() {
       rows: [
         ['모의 주문 흐름', 'POST /api/broker-test/kis/order-flow-test', '로그인 세션 + 확인 체크 + 서버의 Testbed 계좌', 'ok: true, test.environment·symbol·currentPrice·testPrice·amendedPrice. 서버가 모의 주문→정정→취소까지 완료'],
       ],
-      note: '이 호출만 상태를 변경합니다. 200,000원 지정가 1주 주문 후 199,500원으로 정정하고 취소합니다. 현재가가 220,000원을 넘으면 안전장치가 실행을 중단합니다.',
+      note: '이 호출만 상태를 변경합니다. 현재가의 90%(호가 단위 내림) 지정가로 1주 매수 주문 후 한 호가 아래로 정정하고 취소합니다. 정정·취소가 실패하면 미체결을 조회해 정리하며, 이미 실행 중이면 거부합니다.',
     },
     '/alpaca-test.html': {
       title: '이 화면의 API 호출과 기대 결과',

@@ -27,9 +27,10 @@ _kis_quote_cache: dict[str, dict[str, Any]] = {}
 _kis_quote_lock = threading.Lock()
 _kis_order_flow_lock = threading.Lock()
 _KIS_ORDER_TEST_SYMBOL = "005930"
-_KIS_ORDER_TEST_PRICE = 200000
-_KIS_ORDER_TEST_AMENDED_PRICE = 199500
-_KIS_ORDER_TEST_MIN_CURRENT_PRICE = 220000
+# 지정가는 현재가의 90%(호가 단위 내림)로 계산해 비시장성 매수 주문만 낸다. 고정
+# 가격을 쓰면 주가 구간이 바뀔 때 하한가(-30%) 밖이 되거나 체결 위험이 생긴다.
+_KIS_ORDER_TEST_PRICE_RATIO = 0.90
+_KIS_ORDER_TEST_MAX_PRICE_RATIO = 0.95  # 이 비율 이상이면 체결 위험으로 보고 주문하지 않는다.
 
 
 class BrokerApiError(RuntimeError):
@@ -385,7 +386,16 @@ def get_kis_index(index_code: str = "0001") -> dict[str, Any]:
     }
 
 
+_KIS_ORDER_CALL_GAP_SECONDS = 0.6  # Testbed 초당 거래건수 제한(EGW00201) 회피용 최소 간격
+_kis_last_order_call_at = 0.0
+
+
 def _kis_order_post(path: str, tr_id: str, payload: dict[str, str], label: str) -> dict[str, Any]:
+    global _kis_last_order_call_at
+    wait = _KIS_ORDER_CALL_GAP_SECONDS - (time.time() - _kis_last_order_call_at)
+    if wait > 0:
+        time.sleep(wait)
+    _kis_last_order_call_at = time.time()
     response = requests.post(
         f"{KIS_TESTBED_URL}{path}",
         headers={**_kis_headers(tr_id), "custtype": "P"},
@@ -400,22 +410,111 @@ def _kis_order_post(path: str, tr_id: str, payload: dict[str, str], label: str) 
     return body
 
 
+def _kis_tick_size(price: int) -> int:
+    """KRX 호가 단위(2023-01-25 개편 기준, 전 시장 공통)."""
+    if price < 2_000:
+        return 1
+    if price < 5_000:
+        return 5
+    if price < 20_000:
+        return 10
+    if price < 50_000:
+        return 50
+    if price < 200_000:
+        return 100
+    if price < 500_000:
+        return 500
+    return 1_000
+
+
+def _kis_round_down_to_tick(price: int) -> int:
+    tick = _kis_tick_size(price)
+    return (price // tick) * tick
+
+
+def _kis_order_test_prices(current_price: int) -> tuple[int, int]:
+    """(주문가, 정정가). 둘 다 현재가보다 충분히 낮은 비시장성 가격이어야 한다."""
+    test_price = _kis_round_down_to_tick(int(current_price * _KIS_ORDER_TEST_PRICE_RATIO))
+    amended_price = test_price - _kis_tick_size(test_price)
+    if test_price <= 0 or amended_price <= 0 or test_price >= current_price * _KIS_ORDER_TEST_MAX_PRICE_RATIO:
+        raise BrokerApiError("안전을 위해 현재가 대비 충분히 낮은 지정가를 계산할 수 없어 주문 테스트를 실행하지 않습니다.")
+    return test_price, amended_price
+
+
+def _kis_open_orders_today(cano: str, acnt_prdt_cd: str, symbol: str) -> list[dict[str, Any]]:
+    """오늘 미체결 주문 조회 (inquire-daily-ccld, 모의 VTTC8001R). 보정 단계에서만 사용한다."""
+    today = time.strftime("%Y%m%d", time.localtime())
+    response = requests.get(
+        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/trading/inquire-daily-ccld",
+        headers=_kis_headers("VTTC8001R"),
+        params={
+            "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
+            "INQR_STRT_DT": today, "INQR_END_DT": today,
+            "SLL_BUY_DVSN_CD": "00", "INQR_DVSN": "00", "PDNO": symbol,
+            "CCLD_DVSN": "02", "ORD_GNO_BRNO": "", "ODNO": "",
+            "INQR_DVSN_3": "00", "INQR_DVSN_1": "",
+            "CTX_AREA_FK100": "", "CTX_AREA_NK100": "",
+        },
+        timeout=15,
+    )
+    body = _json(response, "한국투자증권")
+    if body.get("rt_cd") != "0":
+        raise BrokerApiError(
+            f"한국투자증권 미체결 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
+        )
+    rows = body.get("output1") or []
+    open_orders = []
+    for row in rows:
+        try:
+            remaining = int(str(row.get("rmn_qty") or "0").replace(",", ""))
+        except ValueError:
+            remaining = 0
+        if row.get("pdno") == symbol and remaining > 0 and row.get("odno"):
+            open_orders.append(row)
+    return open_orders
+
+
+def _kis_cancel_order(cano: str, acnt_prdt_cd: str, org_no: str, order_no: str) -> dict[str, Any]:
+    return _kis_order_post(
+        "/uapi/domestic-stock/v1/trading/order-rvsecncl",
+        "VTTC0013U",
+        {
+            "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
+            "KRX_FWDG_ORD_ORGNO": org_no, "ORGN_ODNO": order_no,
+            # 잔량 전부 취소: KIS 스펙상 QTY_ALL_ORD_YN=Y 이면 ORD_QTY 는 "0".
+            "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "02", "ORD_QTY": "0", "ORD_UNPR": "0",
+            "QTY_ALL_ORD_YN": "Y", "EXCG_ID_DVSN_CD": "KRX",
+        },
+        "모의 주문 취소",
+    )
+
+
+def _kis_error_text(exc: Exception) -> str:
+    if isinstance(exc, BrokerApiError):
+        return str(exc)
+    return "한국투자증권 서버 응답을 받지 못했습니다(시간 초과 또는 연결 오류)."
+
+
 def run_kis_mock_order_flow_test() -> dict[str, Any]:
     """Run one safe Testbed-only order → amend → cancel verification.
 
-    The fixed limit prices intentionally sit below the permitted current-price
-    threshold. If that safety condition changes, no order is sent.
+    순서: 안전 조건 확인 → 매수 지정가 1주 → 정정(한 호가 아래) → 잔량 취소.
+    정정이나 취소가 실패하면 오늘 미체결 조회로 남은 주문을 찾아 모두 취소하는
+    보정 단계를 거친다. 정정·취소 결과와 사유는 응답 필드로 그대로 전달한다.
     """
-    with _kis_order_flow_lock:
+    global _kis_last_order_call_at
+    if not _kis_order_flow_lock.acquire(blocking=False):
+        raise BrokerApiError("모의 주문 흐름 테스트가 이미 실행 중입니다. 완료된 뒤 다시 시도하세요.")
+    try:
         quote = get_kis_quote(_KIS_ORDER_TEST_SYMBOL)
         try:
             current_price = int(str(quote.get("price") or "").replace(",", ""))
         except ValueError as exc:
             raise BrokerApiError("한국투자증권 현재가를 숫자로 확인할 수 없어 주문 테스트를 중단했습니다.") from exc
-        if current_price <= _KIS_ORDER_TEST_MIN_CURRENT_PRICE:
-            raise BrokerApiError(
-                f"안전을 위해 현재가가 {_KIS_ORDER_TEST_MIN_CURRENT_PRICE:,}원 이하이면 주문 테스트를 실행하지 않습니다."
-            )
+        if current_price <= 0:
+            raise BrokerApiError("한국투자증권 현재가가 0원으로 조회되어 주문 테스트를 중단했습니다.")
+        test_price, amended_price = _kis_order_test_prices(current_price)
+        _kis_last_order_call_at = time.time()  # 시세 조회와 첫 주문 사이에도 간격을 둔다.
 
         cano, acnt_prdt_cd = _kis_account()
         order = _kis_order_post(
@@ -423,7 +522,7 @@ def run_kis_mock_order_flow_test() -> dict[str, Any]:
             "VTTC0012U",
             {
                 "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd, "PDNO": _KIS_ORDER_TEST_SYMBOL,
-                "ORD_DVSN": "00", "ORD_QTY": "1", "ORD_UNPR": str(_KIS_ORDER_TEST_PRICE),
+                "ORD_DVSN": "00", "ORD_QTY": "1", "ORD_UNPR": str(test_price),
                 "EXCG_ID_DVSN_CD": "KRX",
             },
             "모의 매수 주문",
@@ -434,8 +533,8 @@ def run_kis_mock_order_flow_test() -> dict[str, Any]:
         if not org_no or not order_no:
             raise BrokerApiError("모의 주문은 접수됐지만 정정·취소에 필요한 참조값을 받지 못했습니다. 모의투자 화면에서 주문 상태를 확인하세요.")
 
-        amend_ok = False
-        cancel_body: dict[str, Any] | None = None
+        # ── 정정: 실패해도 예외를 삼키고 사유만 기록한 뒤 취소로 진행한다.
+        amend_error: Exception | None = None
         try:
             amended = _kis_order_post(
                 "/uapi/domestic-stock/v1/trading/order-rvsecncl",
@@ -443,36 +542,72 @@ def run_kis_mock_order_flow_test() -> dict[str, Any]:
                 {
                     "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
                     "KRX_FWDG_ORD_ORGNO": org_no, "ORGN_ODNO": order_no,
-                    "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "01", "ORD_QTY": "1",
-                    "ORD_UNPR": str(_KIS_ORDER_TEST_AMENDED_PRICE), "QTY_ALL_ORD_YN": "Y",
+                    "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "01", "ORD_QTY": "0",
+                    "ORD_UNPR": str(amended_price), "QTY_ALL_ORD_YN": "Y",
                     "EXCG_ID_DVSN_CD": "KRX",
                 },
                 "모의 주문 정정",
             )
-            amend_ok = True
             amended_output = amended.get("output") or {}
             org_no = amended_output.get("KRX_FWDG_ORD_ORGNO") or org_no
             order_no = amended_output.get("ODNO") or order_no
-        finally:
-            cancel_body = _kis_order_post(
-                "/uapi/domestic-stock/v1/trading/order-rvsecncl",
-                "VTTC0013U",
-                {
-                    "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
-                    "KRX_FWDG_ORD_ORGNO": org_no, "ORGN_ODNO": order_no,
-                    "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "02", "ORD_QTY": "1", "ORD_UNPR": "0",
-                    "QTY_ALL_ORD_YN": "Y", "EXCG_ID_DVSN_CD": "KRX",
-                },
-                "모의 주문 취소",
-            )
+        except (BrokerApiError, requests.RequestException) as exc:
+            amend_error = exc
+
+        # ── 취소: 정정 성공 시 새 주문번호, 실패 시 원주문 번호로 시도한다.
+        cancel_error: Exception | None = None
+        try:
+            _kis_cancel_order(cano, acnt_prdt_cd, org_no, order_no)
+        except (BrokerApiError, requests.RequestException) as exc:
+            cancel_error = exc
+
+        # ── 보정: 취소가 실패했거나, 정정 결과가 불확실(시간 초과)하면 미체결을 조회해 정리한다.
+        amend_uncertain = isinstance(amend_error, requests.RequestException)
+        reconcile_note: str | None = None
+        leftover: int | None = None
+        if cancel_error is not None or amend_uncertain:
+            try:
+                open_orders = _kis_open_orders_today(cano, acnt_prdt_cd, _KIS_ORDER_TEST_SYMBOL)
+                failed = 0
+                for row in open_orders:
+                    try:
+                        _kis_cancel_order(cano, acnt_prdt_cd, row.get("ord_gno_brno") or org_no, row["odno"])
+                    except (BrokerApiError, requests.RequestException):
+                        failed += 1
+                leftover = failed
+                if open_orders and failed == 0:
+                    reconcile_note = f"미체결 {len(open_orders)}건을 조회해 모두 취소했습니다."
+                    cancel_error = None
+                elif not open_orders:
+                    reconcile_note = "미체결 조회 결과 남은 주문이 없습니다."
+                    cancel_error = None
+                else:
+                    reconcile_note = f"미체결 {len(open_orders)}건 중 {failed}건을 취소하지 못했습니다."
+            except (BrokerApiError, requests.RequestException) as exc:
+                reconcile_note = f"미체결 조회에 실패해 남은 주문을 확인하지 못했습니다: {_kis_error_text(exc)}"
+
+        if cancel_error is not None or (leftover or 0) > 0:
+            parts = ["모의 주문 취소를 완료하지 못했습니다."]
+            if amend_error is not None:
+                parts.append(f"정정: {_kis_error_text(amend_error)}")
+            if cancel_error is not None:
+                parts.append(f"취소: {_kis_error_text(cancel_error)}")
+            if reconcile_note:
+                parts.append(reconcile_note)
+            parts.append("모의투자 화면에서 미체결 주문을 직접 확인·취소하세요.")
+            raise BrokerApiError(" ".join(parts))
 
         return {
             "environment": "KIS Testbed 모의투자",
             "symbol": _KIS_ORDER_TEST_SYMBOL,
             "currentPrice": current_price,
             "order": "success",
-            "amend": "success" if amend_ok else "failed",
-            "cancel": "success" if cancel_body else "failed",
-            "testPrice": _KIS_ORDER_TEST_PRICE,
-            "amendedPrice": _KIS_ORDER_TEST_AMENDED_PRICE,
+            "amend": "failed" if amend_error is not None else "success",
+            "amendMessage": _kis_error_text(amend_error) if amend_error is not None else None,
+            "cancel": "success",
+            "cancelMessage": reconcile_note,
+            "testPrice": test_price,
+            "amendedPrice": amended_price,
         }
+    finally:
+        _kis_order_flow_lock.release()

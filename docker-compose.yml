@@ -13,7 +13,8 @@ services:
     networks:
       - internal
     ports:
-      - "3000:80"
+      # 호스트 포트는 .env의 FRONTEND_PORT로 바꿀 수 있다(기본 3333).
+      - "${FRONTEND_PORT:-3333}:80"
     depends_on:
       - python-backend
     restart: unless-stopped
@@ -83,6 +84,18 @@ services:
       SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
       CMC_API_KEY: ${CMC_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # 증권사 키는 kis.key/kb.key/al.key 파일(/run/secrets)이 기본이며, 아래
+      # 환경변수를 .env에 채우면 파일보다 우선 적용된다. KIS_ACCOUNT_NO는
+      # 'CANO-계좌상품코드'(예: 12345678-01) 형식이고 하이픈 뒤는 임의로 바꾸지 않는다.
+      KIS_APP_KEY: ${KIS_APP_KEY:-}
+      KIS_APP_SECRET: ${KIS_APP_SECRET:-}
+      KIS_ACCOUNT_NO: ${KIS_ACCOUNT_NO:-}
+      KB_APP_KEY: ${KB_APP_KEY:-}
+      KB_APP_SECRET: ${KB_APP_SECRET:-}
+      ALPACA_API_KEY: ${ALPACA_API_KEY:-}
+      ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY:-}
+      # 비우면 qdrant_service.py가 인메모리 Qdrant를 사용한다.
+      QDRANT_URL: ${QDRANT_URL:-:memory:}
       # AWS SSM Parameter Store 연동 트랙(aws_secret_store.py, *_aws.py)에서만
       # 사용한다. kis.key/kb.key/al.key 기반 기존 모듈에는 영향이 없다. EC2에
       # IAM 인스턴스 프로파일이 붙어 있으면 액세스 키 3종은 비워 둬도 된다.
