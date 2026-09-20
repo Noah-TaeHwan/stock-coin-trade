@@ -112,6 +112,8 @@ docker compose ps
 |---|---|
 | <http://localhost:3333> | 웹 애플리케이션 |
 | <http://localhost:3333/broker-api-test.html> | KIS Open API 연결 테스트 |
+| <http://localhost:3333/kis-api-explorer.html> | KIS API 탐색기 (공식 예제 기반 국내주식 API 목록·호출·응답 시각화) |
+| <http://localhost:3333/kis-chart.html> | KIS 종목 차트 (kis.key 로 Testbed 기간별시세·당일분봉을 조회해 캔들 차트 표시) |
 | <http://localhost:3333/alpaca-test.html> | Alpaca Paper API 테스트 |
 | <http://localhost:3333/openapi.html> | 외부 연동 Open API 명세 |
 | <http://localhost:3333/quant.html> | PostgreSQL 퀀트 랩 |
@@ -270,6 +272,8 @@ API 키당 분당 60회 제한이 적용됩니다. 키 원문은 발급 시 한 
 | 화면 | 경로 | 호출 범위 |
 |---|---|---|
 | KIS 연결 테스트 | `/broker-api-test.html` | KIS Testbed 현재가·일봉·호가·잔고·시장지수 조회 |
+| KIS API 탐색기 | `/kis-api-explorer.html` | 공식 저장소 `examples_llm/domestic_stock` 예제를 분석한 국내주식 REST API 131개 목록. Testbed 지원 조회 API 는 서버 경유로 호출하고 응답 JSON 을 한글 필드명 표·JSON 으로 표시. 카탈로그는 `scripts/build_kis_api_catalog.py` 로 재생성 |
+| KIS 종목 차트 | `/kis-chart.html` | 종목명·코드 검색 후 1분·일·주·월·년봉 캔들 차트(거래량·이동평균 5/20/60)와 현재가 요약, 캔들 표. 백엔드 `/api/kis-chart/candles`·`/minutes` 가 KIS 기간별시세(FHKST03010100)·당일분봉(FHKST03010200)을 호출 |
 | KB 연결 테스트 | `/kb-api-test.html` | KB증권 토큰 인증·시세 설정 점검 |
 | Alpaca Test | `/alpaca-test.html` | Alpaca Paper `GET /v2/account` 상태 조회 |
 

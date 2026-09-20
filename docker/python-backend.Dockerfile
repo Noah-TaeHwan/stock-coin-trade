@@ -21,6 +21,8 @@ c.add('warmup', documents=['warmup']); \
 print('fastembed model ready')"
 
 COPY python-stock-backend/*.py .
+# KIS API 탐색기 카탈로그(공식 예제에서 생성한 JSON)
+COPY python-stock-backend/kis_api_catalog.json .
 
 EXPOSE 8200
 CMD ["python", "app.py"]

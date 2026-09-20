@@ -6,7 +6,7 @@
   <title>KIS 실전연습 1단계 · 가입 — 모의투자</title>
   <link rel="icon" href="/img/favicon.png">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260920-kis-split">
+  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
 
   <style>
     .learn-wrap{max-width:1080px;margin:0 auto;padding:32px 20px 48px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.title{margin:0 0 7px;font-size:23px;font-weight:900;color:var(--fg)}.desc{margin:0;color:var(--fg-2);font-size:14px;line-height:1.75}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}.flow span{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:13px;font-weight:800;color:var(--fg)}.flow i{color:var(--accent);font-style:normal;font-weight:900}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}.box{padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.box b{display:block;color:var(--fg);font-size:14px}.box p{margin:5px 0 0;color:var(--fg-2);font-size:12px;line-height:1.65}.steps{display:grid;gap:10px;margin-top:16px}.step{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:13px;font-weight:900}.step h3{margin:0;color:var(--fg);font-size:15px;font-weight:900}.step p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.table-wrap{overflow:auto;margin-top:14px}.table{width:100%;min-width:680px;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.table th{background:var(--surface-2);color:var(--muted);font-size:11px}.guide-figure{margin:18px auto 0;max-width:940px;overflow:hidden;border:1px solid #D7E1EE;border-radius:12px;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.guide-figure img{display:block;width:100%;height:auto}.guide-figure figcaption{padding:10px 14px;border-top:1px solid var(--border);color:var(--fg-2);font-size:12px;line-height:1.55}.code{margin:14px 0 0;padding:16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}.notice{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF8E8;color:#854D0E;font-size:13px;line-height:1.7}.danger{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF1F2;color:#9F1239;font-size:13px;line-height:1.7}.check{display:flex;gap:8px;align-items:flex-start;margin-top:9px;color:var(--fg-2);font-size:13px;line-height:1.55}.check input{margin-top:3px;accent-color:var(--accent)}.btn{display:inline-block;margin-top:14px;padding:9px 13px;border:0;border-radius:7px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:800}.btn-alt{display:inline-block;margin:14px 0 0 8px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;color:var(--fg);text-decoration:none;font-size:13px;font-weight:800}@media(max-width:760px){.learn-wrap{padding:20px 12px 30px}.card{padding:17px}.grid{grid-template-columns:1fr}.title{font-size:20px}.guide-figure figcaption{padding:9px 11px;font-size:11px}}
@@ -36,9 +36,29 @@
         <div class="step"><span class="num">2</span><div><h3>계좌가 없다면 비대면 계좌개설 진행</h3><p>한국투자증권 안내상 모바일 계좌개설에는 본인 신분증, 본인 명의 휴대폰, 보유 은행·증권사 계좌가 필요합니다. 계좌 개설 뒤 온라인 이용을 위해 고객 ID 등록·계좌 연결이 필요한 경우도 있습니다.</p></div></div>
         <div class="step"><span class="num">3</span><div><h3>모의와 실전을 여기서 갈라서 결정</h3><p>이 웹앱 모듈은 모의 Testbed 조회 전용이므로 처음에는 모의투자 신청과 모의 API 키만 사용합니다. 실전 계좌·실전 키는 이 모듈 설정에 넣지 않습니다.</p></div></div>
       </div>
+      <figure class="guide-figure"><img src="/images/kis-login-page.png" alt="한국투자증권 홈페이지 로그인 화면. 인증서 로그인 탭과 스마트폰 인증 탭이 있고, 스마트폰 인증 탭에서는 한국투자 앱으로 QR코드를 스캔해 로그인한다" width="864" height="868" loading="lazy"><figcaption>한국투자증권 홈페이지 로그인 화면 · <strong>인증서 로그인</strong> 또는 <strong>스마트폰 인증</strong>(한국투자 앱 → 전체메뉴 → QR코드 스캔) 중 하나를 선택합니다. 인증 유효시간 안에 앱에서 승인해야 하며, 이 화면의 ID·인증서·비밀번호는 한국투자증권 공식 사이트에만 입력합니다.</figcaption></figure>
       <a class="btn" href="https://securities.koreainvestment.com/main/member/login/login.jsp" target="_blank" rel="noopener noreferrer">한국투자증권 로그인·가입 ↗</a>
       <a class="btn-alt" href="https://apiportal.koreainvestment.com/intro" target="_blank" rel="noopener noreferrer">KIS Developers 열기 ↗</a>
       <div class="danger"><strong>입력 위치를 구분하세요:</strong> 주민등록증, 휴대폰 인증, 계좌 비밀번호, 인증서 정보는 한국투자증권 공식 앱·웹사이트에서만 입력합니다. 이 웹앱과 KIS Developers 문서 페이지에는 입력하지 않습니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="kicker">STEP 1-1 · 한국투자 앱</div><h2 class="title">한국투자 앱을 설치하고 앱으로 로그인합니다</h2>
+      <p class="desc">한국투자증권의 모바일 앱(<strong>한국투자</strong>)은 비대면 계좌개설, 고객 ID 등록, 인증서 발급·관리, 모의투자 참가 신청에 쓰입니다. PC 홈페이지의 <strong>스마트폰 인증</strong> 로그인도 이 앱의 QR코드 스캔으로 승인하므로, 1단계에서는 앱 로그인이 먼저 되어야 합니다.</p>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div><h3>앱 설치와 첫 로그인</h3><p>앱스토어(iOS) 또는 Play 스토어(Android)에서 한국투자증권 공식 앱을 설치합니다. 계좌가 없으면 앱의 비대면 계좌개설(본인 신분증, 본인 명의 휴대폰, 타행 계좌 필요)을 진행하고, 이미 계좌가 있으면 고객 ID 또는 계좌번호로 본인 인증 후 앱에 로그인합니다.</p></div></div>
+        <div class="step"><span class="num">2</span><div><h3>앱 로그인 수단 등록</h3><p>처음 로그인한 뒤 <strong>간편비밀번호(6자리)</strong>, <strong>생체인증(지문·얼굴)</strong>, <strong>인증서</strong> 중 자주 쓸 수단을 등록해 둡니다. 이후 앱 실행 시 이 수단으로 바로 로그인합니다. 인증서는 앱의 인증/보안센터에서 발급·관리하며, PC 인증서 로그인에도 같은 인증서를 씁니다.</p></div></div>
+        <div class="step"><span class="num">3</span><div><h3>PC 홈페이지 로그인은 앱 QR 스캔으로 승인</h3><p>PC 로그인 화면에서 <strong>스마트폰 인증</strong> 탭을 열면 QR코드가 표시됩니다. 앱에서 <strong>전체메뉴 → QR코드 스캔</strong>을 열어 PC 화면의 QR을 비추고 인증 유효시간 안에 승인하면 PC가 로그인됩니다. 인증서 로그인을 쓸 때는 앱에서 발급한 클라우드 인증서로 PC에서 로그인합니다.</p></div></div>
+        <div class="step"><span class="num">4</span><div><h3>앱에서 모의투자 참가 신청도 가능</h3><p>앱의 전체메뉴에서 모의투자 메뉴로 들어가 참가 신청과 모의 계좌 확인을 할 수 있습니다. PC 모의투자 안내 화면과 같은 고객 ID 기준이므로 어느 쪽에서 신청해도 결과는 같습니다. 다음 STEP 2 는 PC 화면 기준으로 설명합니다.</p></div></div>
+      </div>
+      <figure class="guide-figure"><img src="/images/kis-app-login.svg" alt="한국투자 앱 로그인 화면(간편비밀번호·생체인증·인증서), 전체메뉴의 QR코드 스캔, PC 로그인 화면의 QR 승인으로 이어지는 흐름 예시" width="1200" height="700" loading="lazy"><figcaption>한국투자 앱 로그인과 QR 승인 흐름 · 교육용 재구성 이미지입니다. 실제 메뉴 이름·인증 수단·유효시간은 앱과 홈페이지의 최신 화면을 따르세요.</figcaption></figure>
+      <div class="table-wrap"><table class="table"><thead><tr><th>할 일</th><th>어디서</th><th>이 실전연습에서의 용도</th></tr></thead><tbody>
+        <tr><td>비대면 계좌개설 · 고객 ID 등록</td><td>한국투자 앱</td><td>모의투자 신청과 KIS Developers 로그인의 기준 ID</td></tr>
+        <tr><td>인증서 발급 · 간편비밀번호 · 생체인증 등록</td><td>한국투자 앱 (인증/보안센터)</td><td>앱·PC 로그인 수단</td></tr>
+        <tr><td>QR코드 스캔</td><td>한국투자 앱 (전체메뉴)</td><td>PC 홈페이지 스마트폰 인증 로그인 승인</td></tr>
+        <tr><td>모의투자 참가 신청 · 모의 계좌 확인</td><td>앱 또는 PC 모의투자 안내</td><td>STEP 2 의 모의 계좌번호(CANO-상품코드) 확보</td></tr>
+      </tbody></table></div>
+      <div class="danger"><strong>보안:</strong> 앱의 간편비밀번호·생체인증·인증서 비밀번호, PC 로그인 정보는 한국투자증권 공식 앱과 홈페이지에만 입력합니다. QR코드는 본인이 PC에서 로그인하려고 띄운 화면만 스캔하고, 다른 사람이 보낸 QR 이미지나 링크는 승인하지 않습니다. 앱 설치는 공식 스토어에서만 합니다.</div>
     </section>
 
 <section class="card">
@@ -89,6 +109,6 @@
     </section>
   </main>
   <footer class="footer"><div>EDUMGT · KIS 실전연습 1단계 · 한국투자증권 가입과 모의투자 계좌 · 교육용 콘텐츠</div></footer>
-  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-kis-split"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-chart"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
 </body>
 </html>

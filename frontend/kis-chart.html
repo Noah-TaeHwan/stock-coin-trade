@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KIS 종목 차트 — 모의투자</title>
+  <link rel="icon" href="/img/favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
+  <style>
+    .c-wrap{max-width:1360px;margin:0 auto;padding:22px 20px 56px}
+    .kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}
+    .c-card{margin-top:14px;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}
+    .c-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+    .c-head h1{margin:4px 0 0;font-size:24px;font-weight:900;color:var(--fg)}
+    .c-head p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.6;max-width:760px}
+    .c-search{position:relative;flex:1;min-width:260px;max-width:420px}
+    .c-search input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--fg);font:inherit;font-size:14px;font-weight:700}
+    .c-sug{position:absolute;left:0;right:0;top:100%;z-index:30;margin-top:4px;max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:var(--surface);box-shadow:0 10px 25px rgba(0,0,0,.12);display:none}
+    .c-sug button{display:flex;gap:10px;width:100%;padding:9px 12px;border:0;background:none;text-align:left;font:inherit;font-size:13px;color:var(--fg);cursor:pointer}
+    .c-sug button:hover{background:var(--surface-2)}
+    .c-sug small{color:var(--muted)}
+    .c-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface-2)}
+    .seg button{padding:9px 13px;border:0;background:none;font:inherit;font-size:13px;font-weight:800;color:var(--fg-2);cursor:pointer}
+    .seg button.on{background:var(--accent);color:#fff}
+    .seg button:disabled{opacity:.5;cursor:not-allowed}
+    .c-tools select{padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--fg);font:inherit;font-size:13px;font-weight:700}
+    .btn{padding:10px 14px;border:0;border-radius:9px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:wait}
+    .chk{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--fg-2);cursor:pointer}
+    .chk input{accent-color:var(--accent)}
+    .q-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:14px}
+    .q{padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}
+    .q small{display:block;font-size:11px;color:var(--muted);font-weight:700}
+    .q b{display:block;margin-top:3px;font-size:15px;color:var(--fg);font-variant-numeric:tabular-nums}
+    .q.up b,.up{color:#E11D48!important}.q.down b,.down{color:#2563EB!important}
+    .price-big{font-size:28px;font-weight:900;color:var(--fg);font-variant-numeric:tabular-nums}
+    .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--fg-2);font-variant-numeric:tabular-nums;min-height:18px}
+    .legend b{color:var(--fg)}
+    .legend .ma5{color:#F59E0B}.legend .ma20{color:#10B981}.legend .ma60{color:#8B5CF6}
+    #chart{position:relative;width:100%;height:520px;margin-top:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+    #chart .loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.7);font-size:13px;font-weight:800;color:var(--fg-2);z-index:5}
+    .danger{margin-top:12px;padding:12px 14px;border-radius:9px;background:#FFF1F2;color:#9F1239;font-size:13px;line-height:1.65}
+    .notice{margin-top:12px;padding:12px 14px;border-radius:9px;background:#FFF8E8;color:#854D0E;font-size:13px;line-height:1.65}
+    .tbl-wrap{overflow:auto;border:1px solid var(--border);border-radius:9px;max-height:420px;margin-top:10px}
+    .tbl{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface)}
+    .tbl th,.tbl td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .tbl th:first-child,.tbl td:first-child{text-align:left}
+    .tbl th{position:sticky;top:0;background:var(--surface-2);color:var(--fg);font-size:11px}
+    .tbl tr:nth-child(even) td{background:#FAFBFD}
+    .footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:1360px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:12px}
+    @media(max-width:760px){.c-wrap{padding:14px 12px 40px}.c-card{padding:14px}#chart{height:400px}.price-big{font-size:22px}}
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+  <main class="c-wrap">
+    <section class="c-card">
+      <div class="c-head">
+        <div style="flex:1 1 100%">
+          <div class="kicker">KIS 실전연습 · 종목 차트</div>
+          <h1>KIS 모의투자 API 종목 차트</h1>
+          <p>서버의 <code>kis.key</code>(모의투자 App Key·Secret)로 KIS Testbed 의 기간별시세·당일분봉 API 를 호출해 캔들 차트를 그립니다. 계좌 설정과 로그인은 필요 없고, 조회 전용입니다. 종목명 또는 6자리 코드를 입력하세요.</p>
+        </div>
+        <div class="c-search">
+          <input id="symbol" value="005930" placeholder="종목명 또는 종목코드 (예: 삼성전자, 005930)" autocomplete="off" aria-label="종목 검색">
+          <div id="sug" class="c-sug"></div>
+        </div>
+        <div class="c-tools">
+          <div class="seg" id="periods">
+            <button data-p="1m">1분</button><button data-p="D" class="on">일</button><button data-p="W">주</button><button data-p="M">월</button><button data-p="Y">년</button>
+          </div>
+          <select id="count" aria-label="캔들 수"><option value="60">60개</option><option value="120" selected>120개</option><option value="200">200개</option><option value="300">300개</option></select>
+          <label class="chk"><input type="checkbox" id="ma" checked> 이동평균 5·20·60</label>
+          <button class="btn" id="load">차트 조회</button>
+        </div>
+      </div>
+      <div id="quote"></div>
+      <div id="msg"></div>
+    </section>
+
+    <section class="c-card">
+      <div class="legend" id="legend">캔들 위에 마우스를 올리면 시가·고가·저가·종가·거래량이 표시됩니다.</div>
+      <div id="chart"><div class="loading" id="loading">KIS Testbed 에서 캔들을 불러오는 중…</div></div>
+      <div class="notice" style="margin-top:10px">모의투자 시세는 실전과 다를 수 있으며 KIS Testbed 호출 제한을 피하기 위해 같은 조회는 30초 동안 서버가 캐시합니다. 1분봉은 당일 데이터만 제공되므로 휴장일에는 비어 있을 수 있습니다.</div>
+    </section>
+
+    <section class="c-card">
+      <details><summary style="cursor:pointer;font-size:13px;font-weight:900;color:var(--fg)">캔들 데이터 표 <small id="tblCount" style="color:var(--muted);font-weight:700"></small></summary>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>일시</th><th>시가</th><th>고가</th><th>저가</th><th>종가</th><th>등락</th><th>거래량</th><th>거래대금</th></tr></thead><tbody id="tbody"></tbody></table></div>
+      </details>
+    </section>
+  </main>
+  <footer class="footer"><div>EDUMGT · KIS 모의투자 API 종목 차트 · 조회 전용 · 교육용 콘텐츠</div></footer>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-chart"></script><script src="/js/kis-chart.js?v=20260920-1"></script>
+</body>
+</html>

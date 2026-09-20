@@ -6,7 +6,7 @@
   <title>KIS 실전연습 3단계 · 테스트 — 모의투자</title>
   <link rel="icon" href="/img/favicon.png">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260920-kis-split">
+  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
 
   <style>
     .learn-wrap{max-width:1080px;margin:0 auto;padding:32px 20px 48px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.title{margin:0 0 7px;font-size:23px;font-weight:900;color:var(--fg)}.desc{margin:0;color:var(--fg-2);font-size:14px;line-height:1.75}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}.flow span{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:13px;font-weight:800;color:var(--fg)}.flow i{color:var(--accent);font-style:normal;font-weight:900}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}.box{padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.box b{display:block;color:var(--fg);font-size:14px}.box p{margin:5px 0 0;color:var(--fg-2);font-size:12px;line-height:1.65}.steps{display:grid;gap:10px;margin-top:16px}.step{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:13px;font-weight:900}.step h3{margin:0;color:var(--fg);font-size:15px;font-weight:900}.step p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.table-wrap{overflow:auto;margin-top:14px}.table{width:100%;min-width:680px;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.table th{background:var(--surface-2);color:var(--muted);font-size:11px}.guide-figure{margin:18px auto 0;max-width:940px;overflow:hidden;border:1px solid #D7E1EE;border-radius:12px;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.guide-figure img{display:block;width:100%;height:auto}.guide-figure figcaption{padding:10px 14px;border-top:1px solid var(--border);color:var(--fg-2);font-size:12px;line-height:1.55}.code{margin:14px 0 0;padding:16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}.notice{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF8E8;color:#854D0E;font-size:13px;line-height:1.7}.danger{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF1F2;color:#9F1239;font-size:13px;line-height:1.7}.check{display:flex;gap:8px;align-items:flex-start;margin-top:9px;color:var(--fg-2);font-size:13px;line-height:1.55}.check input{margin-top:3px;accent-color:var(--accent)}.btn{display:inline-block;margin-top:14px;padding:9px 13px;border:0;border-radius:7px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:800}.btn-alt{display:inline-block;margin:14px 0 0 8px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;color:var(--fg);text-decoration:none;font-size:13px;font-weight:800}@media(max-width:760px){.learn-wrap{padding:20px 12px 30px}.card{padding:17px}.grid{grid-template-columns:1fr}.title{font-size:20px}.guide-figure figcaption{padding:9px 11px;font-size:11px}}
@@ -34,6 +34,22 @@
       </tbody></table></div>
       <div class="notice">주문 흐름 테스트는 Testbed에서 낮은 지정가로 주문한 뒤 정정·취소하는 점검용 기능입니다. 임의 종목·수량·가격 입력, 자동 반복 주문, 체결 통보 WebSocket은 아직 제공하지 않습니다. 이 서비스의 <code>/openapi/v1/*</code>는 자체 가상 주식계좌 API이며 KIS API가 아닙니다.</div>
     </section>
+    <section class="card">
+      <div class="kicker">유의사항 · 시간 제약</div><h2 class="title">KIS Testbed 는 시간 제한이 많습니다. 실습 전에 알아 두세요</h2>
+      <p class="desc">이 웹앱을 만들고 검증하면서 실제로 걸렸던 제한을 정리했습니다. 대부분 "잠시 기다렸다가 한 번만 다시" 하면 풀리며, 새로고침·버튼 연타는 오히려 제한 시간을 늘립니다.</p>
+      <div class="table-wrap"><table class="table"><thead><tr><th>제약</th><th>증상 (오류 코드)</th><th>이 웹앱의 처리</th><th>실습자가 할 일</th></tr></thead><tbody>
+        <tr><td><strong>접근 토큰 발급 1분당 1회</strong></td><td>HTTP 403, <code>EGW00133</code> 또는 "접근토큰 발급 잠시 후 다시 시도하세요(1분당 1회)"</td><td>토큰을 약 24시간 서버 메모리에 캐시해 재사용합니다. 단, 백엔드 컨테이너를 재시작하면 캐시가 사라져 새로 발급합니다.</td><td>백엔드를 1분 안에 두 번 재시작하지 않습니다. 재시작 직후 첫 조회가 실패하면 1분 뒤 한 번만 다시 시도합니다.</td></tr>
+        <tr><td><strong>초당 거래건수 제한</strong></td><td><code>EGW00201</code> "초당 거래건수를 초과하였습니다" (HTTP 500)</td><td>시세 호출은 0.5~1초, 계좌 TR 은 1.1초, 주문 호출은 0.6초 간격을 두고 제한 응답이면 1~2회 자동 재시도합니다. 현재가는 3초, 차트는 30초 캐시합니다.</td><td>버튼을 연속으로 누르지 않습니다. 여러 사람이 같은 키·같은 공인 IP 로 동시에 실습하면 한 사람의 연타가 전체를 막을 수 있습니다.</td></tr>
+        <tr><td><strong>모의투자 영업일·장 운영시간</strong></td><td><code>40100000</code> "모의투자 영업일이 아닙니다", 장 마감 후 주문 거부</td><td>주문 흐름 테스트는 거절 메시지를 그대로 표시하고 주문을 남기지 않습니다.</td><td>주문 흐름 테스트는 영업일 09:00–15:30 에만 실행합니다. 조회(현재가·차트·잔고)는 휴장일에도 마지막 값이 조회됩니다.</td></tr>
+        <tr><td><strong>1분봉은 당일만 제공</strong></td><td>휴장일·장 시작 전에는 분봉이 비어 있음</td><td>KIS 종목 차트는 "당일 분봉 데이터가 없습니다" 안내 후 일봉으로 확인하도록 합니다.</td><td>분봉 실습은 장중에 합니다. 휴장일에는 일·주·월봉으로 진행합니다.</td></tr>
+        <tr><td><strong>호출당 건수 제한 → 여러 번 호출</strong></td><td>기간별시세 100건, 당일분봉 30건, 잔고 20건, 일별주문체결 15건(모의 기준)</td><td>차트 300개는 최대 4회, 분봉 240개는 최대 8회 호출을 1초 간격으로 이어 붙이므로 4~10초가 걸립니다. 탐색기는 최초 페이지만 조회합니다.</td><td>차트 로딩 표시가 사라질 때까지 기다립니다. 캔들 수를 늘릴수록 오래 걸립니다.</td></tr>
+        <tr><td><strong>주문 흐름 동시 실행 금지</strong></td><td>"모의 주문 흐름 테스트가 이미 실행 중입니다"</td><td>서버 락으로 두 번째 실행을 즉시 거부합니다. 한 번의 흐름은 주문·정정·취소 3회 호출과 간격을 합쳐 2~5초, 보정 조회가 붙으면 최대 1분 안팎입니다.</td><td>완료 메시지를 본 뒤 다시 실행합니다. 화면 안내는 "최대 1분"으로 표시됩니다.</td></tr>
+        <tr><td><strong>정정 타임아웃 시 미체결 보정</strong></td><td>정정·취소 응답 없음(네트워크 시간 초과 15초)</td><td>오늘 미체결을 조회해 남은 주문을 모두 취소하고, 실패하면 "모의투자 화면에서 직접 확인" 안내를 냅니다.</td><td>결과의 정정·취소 줄을 끝까지 읽고, 실패 안내가 있으면 한국투자증권 모의투자 화면에서 미체결을 확인합니다.</td></tr>
+        <tr><td><strong>프록시·요청 시간 초과</strong></td><td>"서버 응답을 해석할 수 없습니다 (HTTP 502/504)"</td><td>KIS 호출 1건당 15초 제한, nginx 는 200초까지 기다립니다. 백엔드가 내려가 있으면 상태 코드만 안내합니다.</td><td>백엔드 컨테이너 상태(<code>docker compose ps</code>)를 확인한 뒤 다시 시도합니다.</td></tr>
+      </tbody></table></div>
+      <div class="notice"><strong>실습 진행 팁:</strong> 한 화면에서 한 번에 하나씩 호출하고, 실패하면 오류 코드를 기록한 뒤 위 표의 "할 일"대로 기다렸다가 재시도하세요. 진행자는 실습 전에 백엔드를 한 번만 기동해 토큰이 미리 발급되도록 하고, 주문 흐름 실습은 장중 시간대로 잡습니다.</div>
+    </section>
+
 
 <section class="card">
       <div class="kicker">STEP 1 · 첫 연결</div><h2 class="title">현재가 하나부터 확인합니다</h2>
@@ -43,7 +59,7 @@
         <div class="step"><span class="num">2</span><div><h3>시세 조회 버튼 선택</h3><p>종목코드는 KRX 6자리 숫자만 허용됩니다. 연속 클릭하지 말고 한 번의 결과를 확인합니다.</p></div></div>
         <div class="step"><span class="num">3</span><div><h3>오류는 키 유형과 대기 시간을 먼저 확인</h3><p>모의 키인지, Testbed 서비스 신청이 완료됐는지, 이전 토큰 발급 후 충분히 기다렸는지를 확인합니다.</p></div></div>
       </div>
-      <a class="btn" href="/broker-api-test.html">KIS 연결 테스트 열기 →</a>
+      <a class="btn" href="/broker-api-test.html">KIS 연결 테스트 열기 →</a><a class="btn-alt" href="/kis-api-explorer.html">KIS API 탐색기 열기 →</a>
       <a class="btn-alt" href="/learning/kis-dev.html">키 설정을 다시 보려면 2단계로 ←</a>
     </section>
 
@@ -281,6 +297,6 @@ cd python-stock-backend &amp;&amp; python kis_quote_test.py --symbol 005930</cod
 <!-- curriculum:end -->
 </main>
   <footer class="footer"><div>EDUMGT · KIS 실전연습 3단계 · Testbed 조회와 모의 주문 흐름 테스트 · 교육용 콘텐츠</div></footer>
-  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-kis-split"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-chart"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
 </body>
 </html>
