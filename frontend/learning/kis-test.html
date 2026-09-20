@@ -35,6 +35,30 @@
       <div class="notice">주문 흐름 테스트는 Testbed에서 낮은 지정가로 주문한 뒤 정정·취소하는 점검용 기능입니다. 임의 종목·수량·가격 입력, 자동 반복 주문, 체결 통보 WebSocket은 아직 제공하지 않습니다. 이 서비스의 <code>/openapi/v1/*</code>는 자체 가상 주식계좌 API이며 KIS API가 아닙니다.</div>
     </section>
     <section class="card">
+      <div class="kicker">호출 경로 · 이 저장소 백엔드 vs KIS 직접</div><h2 class="title">브라우저는 KIS 를 직접 호출하지 않고, 항상 이 저장소의 백엔드를 거칩니다</h2>
+      <p class="desc">KIS 실전연습의 모든 화면은 <strong>브라우저 → nginx(<code>/api/*</code> 프록시) → Flask 백엔드(<code>python-stock-backend</code>) → KIS Testbed</strong> 순서로 동작합니다. App Key·Secret·계좌번호·접근 토큰은 백엔드에만 있고, 브라우저에는 백엔드가 정리한 JSON 만 돌아옵니다. 브라우저가 <code>openapivts.koreainvestment.com</code> 에 직접 접속하는 코드는 없습니다(키 노출과 CORS 문제 때문입니다). KIS 를 직접 호출하는 것은 아래 표의 마지막 두 줄(CLI 스크립트, MCP)뿐입니다.</p>
+      <div class="flow"><span>브라우저 (화면 JS)</span><i>→</i><span>이 저장소 API <code>/api/…</code></span><i>→</i><span>백엔드가 kis.key 로 토큰 발급·캐시</span><i>→</i><span>KIS Testbed <code>/uapi/…</code></span><i>→</i><span>정리된 JSON 응답</span></div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>화면 · 기능</th><th>브라우저가 호출하는 이 저장소 API</th><th>백엔드가 호출하는 KIS Testbed API (tr_id)</th><th>구분</th></tr></thead><tbody>
+        <tr><td><a href="/broker-api-test.html">KIS 연결 테스트</a> · 현재가</td><td><code>GET /api/broker-test/kis/quote</code></td><td><code>quotations/inquire-price</code> (FHKST01010100)</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td>KIS 연결 테스트 · 일봉</td><td><code>GET /api/broker-test/kis/chart</code></td><td><code>quotations/inquire-daily-itemchartprice</code> (FHKST03010100)</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td>KIS 연결 테스트 · 호가</td><td><code>GET /api/broker-test/kis/orderbook</code></td><td><code>quotations/inquire-asking-price-exp-ccn</code> (FHKST01010200)</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td>KIS 연결 테스트 · 시장지수</td><td><code>GET /api/broker-test/kis/index</code></td><td><code>quotations/inquire-index-price</code> (FHPUP02100000)</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td>KIS 연결 테스트 · 잔고</td><td><code>GET /api/broker-test/kis/balance</code></td><td><code>trading/inquire-balance</code> (VTTC8434R) · 계좌는 서버 kis.key 의 account</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td><a href="/kis-order-flow-test.html">모의 주문 흐름 테스트</a></td><td><code>POST /api/broker-test/kis/order-flow-test</code> (로그인 세션 필요)</td><td><code>trading/order-cash</code> (VTTC0012U) → <code>trading/order-rvsecncl</code> 정정·취소 (VTTC0013U) → 실패 시 <code>trading/inquire-daily-ccld</code> (VTTC8001R) 보정</td><td>저장소 백엔드 경유 · 주문 로직·안전장치는 백엔드에 있음</td></tr>
+        <tr><td><a href="/kis-api-explorer.html">KIS API 탐색기</a> · 목록</td><td><code>GET /api/kis-explorer/catalog</code></td><td>없음 (백엔드에 저장된 <code>kis_api_catalog.json</code>. 공식 GitHub 예제를 분석해 미리 생성)</td><td>저장소 내부 데이터</td></tr>
+        <tr><td>KIS API 탐색기 · 호출</td><td><code>POST /api/kis-explorer/call</code> (계좌 API 는 로그인 필요)</td><td>선택한 API 의 URL 과 모의 tr_id 로 백엔드가 대신 호출. Testbed 지원 GET 18개 중 조회 16개만 실행, 주문 POST 2개와 실전 전용 API 는 거부</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td><a href="/kis-chart.html">KIS 종목 차트</a> · 일/주/월/년봉</td><td><code>GET /api/kis-chart/candles</code></td><td><code>quotations/inquire-daily-itemchartprice</code> (FHKST03010100) 를 100건 단위로 1~4회</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td>KIS 종목 차트 · 1분봉</td><td><code>GET /api/kis-chart/minutes</code></td><td><code>quotations/inquire-time-itemchartprice</code> (FHKST03010200) 를 30건 단위로 1~8회</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td>KIS 종목 차트 · 종목명 검색</td><td><code>GET /api/stocks/search</code></td><td>없음 (이 저장소의 KRX 종목 마스터)</td><td>저장소 내부 데이터</td></tr>
+        <tr><td>공통 · 접근 토큰</td><td>브라우저는 호출하지 않음</td><td><code>POST /oauth2/tokenP</code> · 백엔드가 발급해 약 24시간 캐시, 모든 KIS 요청 헤더에 사용</td><td>저장소 백엔드 내부</td></tr>
+        <tr><td>curriculum 의 <code>curl</code> 예제</td><td><code>http://localhost:3333/api/broker-test/kis/…</code></td><td>위와 동일 (백엔드가 대신 호출)</td><td>저장소 백엔드 경유</td></tr>
+        <tr><td>CLI 점검 <code>python kis_quote_test.py</code></td><td>없음 (백엔드 미사용)</td><td><code>/oauth2/tokenP</code> → <code>quotations/inquire-price</code> 를 스크립트가 직접 호출</td><td><strong>KIS 직접 호출</strong> (서버 터미널에서만)</td></tr>
+        <tr><td>선택 · KIS MCP (VS Code)</td><td>없음 (이 웹앱과 무관)</td><td>공식 MCP 서버가 166개 API 를 직접 호출</td><td><strong>KIS 직접 호출</strong> (개발자 로컬 도구, 웹앱 백엔드 미경유)</td></tr>
+      </tbody></table></div>
+      <div class="notice"><strong>구분 기준:</strong> "저장소 백엔드 경유"는 <code>python-stock-backend/broker_test.py</code>, <code>kis_api_explorer.py</code>, <code>kis_chart_api.py</code> 가 KIS 를 호출하는 경우입니다. 응답 필드명(<code>price</code>, <code>candles</code> 등)은 백엔드가 KIS 원본(<code>stck_prpr</code>, <code>output2</code> 등)을 정리한 것이며, 탐색기만 KIS 원문 JSON 을 그대로 보여 줍니다. 실전 도메인(<code>openapi.koreainvestment.com:9443</code>)은 어느 경로에도 없습니다.</div>
+    </section>
+
+    <section class="card">
       <div class="kicker">유의사항 · 시간 제약</div><h2 class="title">KIS Testbed 는 시간 제한이 많습니다. 실습 전에 알아 두세요</h2>
       <p class="desc">이 웹앱을 만들고 검증하면서 실제로 걸렸던 제한을 정리했습니다. 대부분 "잠시 기다렸다가 한 번만 다시" 하면 풀리며, 새로고침·버튼 연타는 오히려 제한 시간을 늘립니다.</p>
       <div class="table-wrap"><table class="table"><thead><tr><th>제약</th><th>증상 (오류 코드)</th><th>이 웹앱의 처리</th><th>실습자가 할 일</th></tr></thead><tbody>

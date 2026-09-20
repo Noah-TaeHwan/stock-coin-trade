@@ -84,6 +84,7 @@
       <div class="kicker">KIS 실전연습 · API 탐색기</div>
       <h1>한국투자증권 국내주식 Open API 탐색기</h1>
       <p>공식 저장소 <a href="https://github.com/koreainvestment/open-trading-api" target="_blank" rel="noopener noreferrer" style="color:var(--accent-dark);text-decoration:underline">koreainvestment/open-trading-api</a>의 <code>examples_llm/domestic_stock</code> 예제를 분석해 만든 목록입니다. 왼쪽에서 API 를 고르고 파라미터를 채운 뒤 호출하면, 서버가 <strong>모의투자(Testbed)</strong>에 대신 요청하고 응답 JSON 을 표·필드·원문으로 보여 줍니다. App Key·Secret·계좌번호는 브라우저로 오지 않습니다.</p>
+      <p style="margin:8px 0 0;font-size:12px;color:var(--muted)"><strong>호출 경로:</strong> 브라우저 → 이 저장소 백엔드 <code>/api/kis-explorer/catalog(저장소 내부 JSON)·/api/kis-explorer/call</code> → KIS Testbed <code>선택한 API 의 URL·모의 tr_id</code>. 브라우저가 KIS 를 직접 호출하지 않으며 키·토큰은 백엔드에만 있습니다. 자세한 표는 <a href="/learning/kis-test.html" style="text-decoration:underline">3단계 · 테스트</a>의 "호출 경로" 참고.</p>
       <div class="x-stats" id="stats"></div>
     </section>
 

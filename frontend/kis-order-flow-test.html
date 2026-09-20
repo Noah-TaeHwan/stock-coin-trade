@@ -19,6 +19,7 @@
       <div class="kicker">KIS TESTBED · LOGIN REQUIRED</div>
       <h1 style="margin:7px 0;font-size:29px;font-weight:900;color:var(--fg)">KIS 모의 주문 흐름 테스트</h1>
       <p class="desc">서버가 KIS Testbed에서 삼성전자 1주 저가 지정가 주문을 내고, 즉시 정정한 뒤 취소합니다. App Key·Secret·계좌번호·접근 토큰·주문번호는 브라우저로 전송하지 않습니다.</p>
+      <p class="desc" style="margin-top:8px;font-size:12px;color:var(--muted)"><strong>호출 경로:</strong> 브라우저 → 이 저장소 백엔드 <code>POST /api/broker-test/kis/order-flow-test</code> → KIS Testbed <code>trading/order-cash → order-rvsecncl (VTTC0012U·VTTC0013U)</code>. 브라우저가 KIS 를 직접 호출하지 않으며 키·토큰은 백엔드에만 있습니다. 자세한 표는 <a href="/learning/kis-test.html" style="text-decoration:underline">3단계 · 테스트</a>의 "호출 경로" 참고.</p>
     </section>
     <section class="card">
       <div class="kicker">실행 내용</div>

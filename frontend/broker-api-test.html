@@ -27,6 +27,7 @@
       <div class="kicker">KIS TESTBED · READ-ONLY SERVER TEST</div>
       <h1 style="margin:7px 0;font-size:28px;font-weight:900;color:var(--fg)">한국투자증권 KIS Open API 연결 테스트</h1>
       <p class="lead">KIS 모의투자(Testbed)의 국내주식 시세·일봉·호가·잔고·시장지수를 점검합니다. 인증정보는 서버에서만 읽으며 브라우저에는 App Key·Secret·계좌번호·접근 토큰을 전달하지 않습니다.</p>
+      <p class="lead" style="margin-top:8px;font-size:12px;color:var(--muted)"><strong>호출 경로:</strong> 브라우저 → 이 저장소 백엔드 <code>/api/broker-test/kis/quote·chart·orderbook·index·balance</code> → KIS Testbed <code>quotations/inquire-price 등 5개 조회 API</code>. 브라우저가 KIS 를 직접 호출하지 않으며 키·토큰은 백엔드에만 있습니다. 자세한 표는 <a href="/learning/kis-test.html" style="text-decoration:underline">3단계 · 테스트</a>의 "호출 경로" 참고.</p>
 
       <div class="setup-grid" aria-label="KIS 테스트 사용 방법">
         <div class="setup-step"><b>1. KIS 모의투자 키 준비</b>KIS Developers에서 모의투자 App Key와 App Secret을 발급받습니다. 실전투자 키가 아닌 <strong>모의투자용 키</strong>를 사용하세요.</div>
