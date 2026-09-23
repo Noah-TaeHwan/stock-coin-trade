@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KIS 모의투자 실습 2단계 · 키 발급</title>
+  <link rel="icon" href="/img/favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
+
+  <style>
+    .learn-wrap{max-width:1080px;margin:0 auto;padding:32px 20px 48px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.title{margin:0 0 7px;font-size:23px;font-weight:900;color:var(--fg)}.desc{margin:0;color:var(--fg-2);font-size:14px;line-height:1.75}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}.flow span{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:13px;font-weight:800;color:var(--fg)}.flow i{color:var(--accent);font-style:normal;font-weight:900}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}.box{padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.box b{display:block;color:var(--fg);font-size:14px}.box p{margin:5px 0 0;color:var(--fg-2);font-size:12px;line-height:1.65}.steps{display:grid;gap:10px;margin-top:16px}.step{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:13px;font-weight:900}.step h3{margin:0;color:var(--fg);font-size:15px;font-weight:900}.step p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.table-wrap{overflow:auto;margin-top:14px}.table{width:100%;min-width:680px;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.table th{background:var(--surface-2);color:var(--muted);font-size:11px}.guide-figure{margin:18px auto 0;max-width:940px;overflow:hidden;border:1px solid #D7E1EE;border-radius:12px;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.guide-figure img{display:block;width:100%;height:auto}.guide-figure figcaption{padding:10px 14px;border-top:1px solid var(--border);color:var(--fg-2);font-size:12px;line-height:1.55}.code{margin:14px 0 0;padding:16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}.notice{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF8E8;color:#854D0E;font-size:13px;line-height:1.7}.danger{margin-top:14px;padding:13px 14px;border-radius:9px;background:#FFF1F2;color:#9F1239;font-size:13px;line-height:1.7}.check{display:flex;gap:8px;align-items:flex-start;margin-top:9px;color:var(--fg-2);font-size:13px;line-height:1.55}.check input{margin-top:3px;accent-color:var(--accent)}.btn{display:inline-block;margin-top:14px;padding:9px 13px;border:0;border-radius:7px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:800}.btn-alt{display:inline-block;margin:14px 0 0 8px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;color:var(--fg);text-decoration:none;font-size:13px;font-weight:800}@media(max-width:760px){.learn-wrap{padding:20px 12px 30px}.card{padding:17px}.grid{grid-template-columns:1fr}.title{font-size:20px}.guide-figure figcaption{padding:9px 11px;font-size:11px}}
+  .card figure{width:min(100%,920px);margin:20px auto 0;border:1px solid #D7E1EE;border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.card figure img{display:block;width:100%;height:auto}.card figcaption{padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);color:var(--fg-2);font-size:12px;line-height:1.55}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:1080px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:12px}.stage-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}.stage-nav a{display:block;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);text-decoration:none;color:var(--fg-2)}.stage-nav a b{display:block;color:var(--fg);font-size:14px;font-weight:900}.stage-nav a small{display:block;margin-top:3px;font-size:12px;line-height:1.5}.stage-nav a.on{border-color:var(--accent);background:#EEF4FF;color:var(--accent-dark)}.stage-nav a.on b{color:var(--accent-dark)}.stage-nav a.on::before{content:'현재 단계 · ';font-size:11px;font-weight:900;color:var(--accent)}@media(max-width:760px){.stage-nav{grid-template-columns:1fr}}</style>
+</head>
+<body>
+  <div id="header-mount"></div>
+  <main class="learn-wrap">
+    <section style="padding:28px;border:1px solid #C9DAFF;border-radius:15px;background:linear-gradient(135deg,#E4F0FF,#F9FBFF);">
+      <div class="kicker">KIS 모의투자 실습 · 2단계 키 발급</div>
+      <h1 style="margin:7px 0;font-size:30px;line-height:1.25;font-weight:900;color:var(--fg);">가입 후 KIS Developers에서 모의 API 키를 발급받고 서버에 설정하기</h1>
+      <p class="desc" style="max-width:850px">1단계에서 준비한 모의투자 계좌로 KIS Developers에 API 서비스를 신청하면 <strong>모의투자용 App Key·App Secret</strong>이 발급됩니다. 이 단계에서는 키를 발급받아 저장소 루트의 <code>kis.key</code>(또는 <code>.env</code>)에만 저장하고, Git에 잡히지 않는지까지 확인합니다.</p>
+      <div class="flow"><span>KIS Developers 로그인</span><i>→</i><span>모의 계좌로 API 신청</span><i>→</i><span>App Key·Secret 확인</span><i>→</i><span>kis.key 저장</span><i>→</i><span>다음: 테스트</span></div>
+      <nav class="stage-nav" aria-label="KIS 모의투자 실습 단계"><a href="/learning/kis-regist.html"><b>1단계 · 가입</b><small>한국투자증권 계좌와 모의투자 계좌 준비</small></a><a href="/learning/kis-dev.html" class="on"><b>2단계 · 키 발급</b><small>KIS Developers API 신청과 kis.key 설정</small></a><a href="/learning/kis-test.html"><b>3단계 · 테스트</b><small>현재가 조회부터 모의 주문 흐름까지 점검</small></a></nav>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 0 · 보안 원칙</div><h2 class="title">키는 브라우저가 아닌 서버에만 둡니다</h2>
+      <div class="grid"><div class="box"><b>모의 App Key·Secret</b><p>KIS Developers에서 모의투자용으로 발급받습니다. 실전용 키와 섞어 쓰지 않습니다.</p></div><div class="box"><b>계좌번호</b><p>1단계에서 확인한 모의 계좌번호를 <code>CANO-상품코드</code> 형식 그대로 서버 설정에만 둡니다.</p></div><div class="box"><b>접근 토큰</b><p>필요할 때 서버가 발급·보관하고 만료 시 갱신합니다. 화면·로그·Git에 출력하지 않습니다.</p></div></div>
+      <div class="danger"><strong>절대 금지:</strong> App Secret, 접근 토큰, 계좌번호 전체를 이 웹사이트의 입력창·브라우저 저장소·프론트엔드 JavaScript에 넣거나 Git에 커밋하지 마세요. 이 사이트의 기존 Open API 키와 KIS API 키는 서로 다른 키입니다.</div>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 1 · KIS Developers API 신청</div><h2 class="title">Testbed용 계좌·키를 따로 발급받습니다</h2>
+      <p class="desc">KIS Developers는 서비스 신청 후 상품에 맞는 API 문서, 종목 정보 파일, Testbed와 GitHub REST·WebSocket 샘플을 제공합니다. 이 웹앱에서 필요한 것은 국내주식 <strong>모의투자(Testbed)</strong> 범위입니다.</p>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div><h3>1단계의 모의투자 계좌 준비 확인</h3><p><a href="/learning/kis-regist.html">1단계 · 가입</a>에서 모의투자 참가 신청을 마치고 모의 계좌번호를 확인했는지 다시 확인합니다. API 신청은 이 모의 계좌를 기준으로 진행하며 실전 계좌번호를 복사하지 않습니다.</p></div></div>
+        <div class="step"><span class="num">2</span><div><h3>KIS Developers에서 API 신청</h3><p>로그인 후 상단의 <strong>API 신청</strong>으로 이동해 모의투자 계좌와 사용할 서비스를 선택합니다. 화면에 표시되는 약관·이용 조건·신청 가능 여부를 확인하고 완료합니다.</p></div></div>
+        <div class="step"><span class="num">3</span><div><h3>신청현황에서 모의 App Key·App Secret 확인</h3><p>발급된 값은 한 번만 안전한 비밀 저장소에 보관합니다. 이 웹앱에는 모의 키만 사용하며, 계좌번호는 잔고 조회를 사용할 때만 필요합니다.</p></div></div>
+      </div>
+      <figure class="guide-figure"><img src="/images/kis-service-application-status-guide.svg" alt="KIS Developers 서비스 신청현황 예시. 실전투자계좌 행은 사용하지 않고, 모의투자계좌 행의 계좌번호 형식과 App Key, App Secret을 확인하는 화면" width="1200" height="650"><figcaption>서비스 신청현황 예시 · 개인정보를 제외한 교육용 재구성 이미지입니다. 모의투자계좌 행만 확인하고 App Key·App Secret은 즉시 비밀 저장소로 옮긴 뒤 화면·채팅·Git에 남기지 마세요.</figcaption></figure>
+      <div class="notice"><strong>이 화면에서 필요한 정보:</strong> ① <strong>구분</strong>이 모의투자계좌인지, ② <strong>계좌번호</strong>가 <code>CANO-상품코드</code> 형태인지, ③ 모의투자 행에 연결된 <strong>App Key</strong>와 <strong>App Secret</strong>이 발급됐는지, ④ 신청일자·만료일을 통해 서비스가 유효한지를 확인합니다. 실전투자계좌 행의 값은 이 웹앱에 사용하지 않습니다.</div>
+      <figure style="margin:16px 0 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)"><img src="/images/kis-app-key-security.svg" alt="신청현황에서 모의투자계좌의 App Key와 App Secret을 확인하고 환경변수 파일에만 저장하는 보안 안내" width="1200" height="640" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">신청현황 화면 예시 · 본인 키만 복사하고, 키 문자열이나 계좌번호가 포함된 화면을 공유하지 마세요.</figcaption></figure>
+      <div class="table-wrap"><table class="table"><thead><tr><th>구분</th><th>이 페이지에서 사용할 값</th><th>사용하지 않을 값</th></tr></thead><tbody>
+        <tr><td>서버</td><td><code>openapivts.koreainvestment.com:29443</code> (Testbed)</td><td>실전 Open API 서버</td></tr>
+        <tr><td>인증키</td><td>모의투자용 App Key / App Secret</td><td>실전용 App Key / App Secret</td></tr>
+        <tr><td>계좌</td><td>모의투자 계좌 CANO와 상품코드</td><td>실전 계좌번호</td></tr>
+      </tbody></table></div>
+      <a class="btn-alt" href="https://www.truefriend.com/main/research/virtual/_static/TF07da010000.jsp" target="_blank" rel="noopener noreferrer">한국투자증권 모의투자 안내 ↗</a>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 2 · 모의/실전 분리</div><h2 class="title">테스트에서는 모의 서버와 VTTC 거래 ID만 사용합니다</h2>
+      <div class="table-wrap"><table class="table"><thead><tr><th>구분</th><th>모의투자 (Testbed)</th><th>실전투자 (Production)</th></tr></thead><tbody>
+        <tr><td><strong>REST 도메인</strong></td><td><code>https://openapivts.koreainvestment.com:29443</code></td><td><code>https://openapi.koreainvestment.com:9443</code></td></tr>
+        <tr><td><strong>현금 매수 tr_id (현재 공식 샘플)</strong></td><td><code>VTTC0012U</code></td><td><code>TTTC0012U</code></td></tr>
+        <tr><td><strong>현금 매도 tr_id (현재 공식 샘플)</strong></td><td><code>VTTC0011U</code></td><td><code>TTTC0011U</code></td></tr>
+        <tr><td><strong>이 실전연습의 사용 범위</strong></td><td><strong style="color:#15803D">허용 · 연습 전용</strong></td><td><strong style="color:#E11D48">사용하지 않음</strong></td></tr>
+      </tbody></table></div>
+      <div class="notice">이 웹앱 백엔드는 Testbed 도메인과 <code>V</code>로 시작하는 모의 거래 ID를 코드에 고정하고 있어 설정값으로 실전 전환이 되지 않습니다. 거래 ID와 필수 주문 필드는 API 버전·상품에 따라 달라질 수 있으므로, 구현 시점에는 반드시 <strong>공식 저장소의 최신 <code>order_cash</code> 예제</strong>와 API 문서를 다시 대조합니다. <code>production</code> 전환은 별도 검토·권한·손실 한도를 갖춘 배포 작업으로 분리해야 합니다.</div>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 3 · kis.key 만들기</div><h2 class="title">키는 서버의 <code>kis.key</code>로 전달합니다</h2>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div><h3>모의 키 두 값을 정확히 기록</h3><p><code>App-KEY</code>와 <code>Secret</code>은 KIS가 발급한 그대로 사용합니다. 공백·따옴표·키 이름 오타가 있으면 인증에 실패합니다.</p></div></div>
+        <div class="step"><span class="num">2</span><div><h3>프로젝트 루트에 <code>kis.key</code> 생성</h3><p>Docker 실행 시 이 파일은 컨테이너의 <code>/run/secrets/kis.key</code>로 읽기 전용 전달됩니다. <code>*.key</code>와 <code>.env</code>는 Git 제외 대상입니다.</p></div></div>
+        <div class="step"><span class="num">3</span><div><h3>잔고 조회를 할 경우에만 모의계좌 추가</h3><p>계좌번호는 <code>12345678-01</code>처럼 CANO와 상품코드를 하이픈으로 연결합니다. 현재가·차트·호가·지수 조회에는 필요하지 않습니다.</p></div></div>
+      </div>
+      <pre class="code"># 프로젝트 루트의 kis.key (절대 커밋하지 않음)
+app_key=모의투자_App_Key
+secret=모의투자_App_Secret
+account=12345678-01</pre>
+      <div class="notice"><strong>파일 대신 환경변수를 쓰려면:</strong> <code>.env</code>의 <code>KIS_APP_KEY</code>, <code>KIS_APP_SECRET</code>, <code>KIS_ACCOUNT_NO</code>(<code>12345678-01</code> 형식)를 채우면 <code>docker-compose.yml</code>을 거쳐 컨테이너로 전달되어 <code>kis.key</code>보다 우선합니다. 비워 두면 <code>kis.key</code>를 읽습니다. 두 방식 중 하나만 쓰고, 값이 바뀌면 백엔드 컨테이너를 재생성합니다.</div>
+      <div class="danger"><strong>주의:</strong> 키·Secret·접근 토큰·계좌번호는 이 페이지나 테스트 화면의 입력창에 넣지 않습니다. 서버 파일 또는 배포 Secret에만 둡니다. 외부에 공개된 환경이라면 잔고 조회 경로에 별도의 접근 통제도 필요합니다.</div>
+    </section>
+
+<section class="card">
+      <div class="kicker">STEP 4 · <code>kis.key</code> 상세</div><h2 class="title">파일 형식·읽는 위치·사용 범위를 정확히 맞춥니다</h2>
+      <p class="desc">이 웹앱은 <code>/home/ubuntu/stock-coin-trade/kis.key</code>를 직접 읽거나, Docker 컨테이너 안의 <code>/run/secrets/kis.key</code>를 읽습니다. 현재 파일에 인증 키만 있다면 시세·차트·호가·지수는 가능하지만, 잔고 조회와 주문성 API에는 <code>account</code>도 필요합니다.</p>
+      <div class="table-wrap"><table class="table"><thead><tr><th>항목</th><th>필수 여부</th><th>형식 및 용도</th></tr></thead><tbody>
+        <tr><td><code>app_key</code></td><td>필수</td><td>KIS Developers에서 발급한 <strong>모의투자</strong> App Key입니다. <code>App-KEY</code> 표기도 읽을 수 있으나, 이 파일에서는 소문자 <code>app_key</code>를 권장합니다.</td></tr>
+        <tr><td><code>secret</code></td><td>필수</td><td>위 App Key에 대응하는 모의투자 App Secret입니다. 공백·따옴표·인라인 주석을 붙이지 않습니다.</td></tr>
+        <tr><td><code>account</code></td><td>잔고 조회 시 필수</td><td><code>CANO-상품코드</code> 형식입니다. 예: <code>12345678-01</code>. 하이픈 앞은 8자리 계좌번호, 뒤는 계좌상품코드입니다.</td></tr>
+      </tbody></table></div>
+      <pre class="code"># 올바른 예시: 한 줄에 한 값만 둡니다.
+app_key=발급받은_모의_App_Key
+secret=발급받은_모의_App_Secret
+account=12345678-01
+
+# 잘못된 예시: 이 파서는 '#' 뒤쪽도 값으로 읽습니다.
+account=12345678-01 # 모의 계좌</pre>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div><h3>파일 권한과 Git 제외 확인</h3><p>파일은 프로젝트 루트에 두고 Git에 추가하지 않습니다. 이 프로젝트의 <code>.gitignore</code>는 <code>*.key</code>를 제외합니다. 배포 환경에서는 호스트 파일 대신 플랫폼 Secret을 같은 경로로 mount하는 방식을 사용합니다.</p></div></div>
+        <div class="step"><span class="num">2</span><div><h3>우선순위 이해</h3><p>백엔드는 <code>KIS_APP_KEY</code>와 <code>KIS_APP_SECRET</code> 환경변수가 모두 있으면 그것을 먼저 사용하고, 없을 때 <code>kis.key</code>를 사용합니다. 계좌는 <code>KIS_ACCOUNT_NO</code>가 우선이며 없으면 파일의 <code>account</code>를 읽습니다.</p></div></div>
+        <div class="step"><span class="num">3</span><div><h3>Docker 재생성 후 확인</h3><p>컨테이너는 <code>kis.key</code>를 읽기 전용으로 mount합니다. 파일을 새로 만들거나 변경했다면 <code>docker compose up -d --build --no-deps python-backend</code>로 백엔드를 재생성한 뒤 조회합니다.</p></div></div>
+      </div>
+      <div class="danger"><strong>실전 키 금지:</strong> 이 파일에는 실전 App Key·Secret 또는 실전 계좌번호를 넣지 마세요. 현재 이 웹앱 KIS 모듈은 <code>openapivts</code> Testbed 조회에만 사용합니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="kicker">STEP 5 · Git 제외 확인</div><h2 class="title">비밀값 파일이 저장소에 잡히지 않는지 확인합니다</h2>
+      <p class="desc">이 프로젝트의 <code>.gitignore</code>에는 <code>.env</code>, <code>.env.*</code>, <code>*.key</code> 제외 규칙이 설정되어 있습니다. 새 비밀값 파일을 만들었다면 같은 규칙에 포함되는지 확인하고, 공유용 예시는 값이 비어 있는 <code>.env.example</code>과 <code>kis.key.example</code>만 사용하세요.</p>
+      <pre class="code"># .gitignore — 실제 비밀값 파일은 Git에서 제외
+.env
+.env.*
+!.env.example
+*.key
+
+# 확인: 출력이 비어야 정상
+git ls-files | grep -E '\.key$|\.pem$|\.env$'</pre>
+      <div class="danger"><strong>공유 금지:</strong> App Key·App Secret·접근 토큰·계좌번호가 포함된 <code>kis.key</code>, <code>.env</code>, 캡처 이미지, 로그를 Git·메신저·이메일·브라우저 코드에 올리지 마세요. 이미 노출됐다면 KIS Developers에서 해당 키를 폐기하거나 재발급하고, 노출된 저장소 이력도 즉시 점검하세요.</div>
+    </section>
+
+    <section class="card">
+      <div class="kicker">2단계 완료 확인</div><h2 class="title">테스트로 넘어가기 전에 확인합니다</h2>
+      <label class="check"><input type="checkbox"> KIS Developers 신청현황의 <strong>모의투자계좌</strong> 행에서 App Key·App Secret을 확인했다.</label>
+      <label class="check"><input type="checkbox"> 저장소 루트의 <code>kis.key</code>(또는 <code>.env</code>)에 모의 키와 <code>account=CANO-상품코드</code>를 적었다.</label>
+      <label class="check"><input type="checkbox"> <code>git ls-files</code> 확인 결과 <code>kis.key</code>·<code>.env</code>가 추적되지 않는다.</label>
+      <label class="check"><input type="checkbox"> 파일을 만든 뒤 백엔드 컨테이너를 재생성했다.</label>
+      <a class="btn" href="/learning/kis-test.html">3단계 · 간단한 테스트로 →</a><a class="btn-alt" href="/learning/kis-regist.html">← 1단계 · 가입</a>
+    </section>
+
+<section class="card">
+      <div class="kicker">선택 A · MCP의 역할과 경계</div><h2 class="title">MCP는 개발 보조 도구이며, 공개 웹앱의 주문 백엔드가 아닙니다</h2>
+      <p class="desc">공식 <a href="https://github.com/koreainvestment/open-trading-api/blob/main/MCP/README.MD" target="_blank" rel="noopener noreferrer">MCP 안내</a>는 API 문서·샘플을 자연어로 찾는 Code Assistant MCP와, 시세·계좌·주문·정정·취소 API를 호출할 수 있는 Trading MCP를 설명합니다. 특히 Trading MCP는 실제 요청을 만들 수 있으므로 개발자의 제한된 로컬 도구로만 사용합니다.</p>
+      <div class="grid"><div class="box"><b>문서 탐색 MCP</b><p>“국내주식 모의 현재가 API”, “주문 정정 필수값”처럼 문서·샘플을 찾고 이해하는 데 사용합니다. 찾은 결과는 항상 공식 명세로 재확인합니다.</p></div><div class="box"><b>거래 MCP</b><p>계좌·시세·주문성 API를 실행할 수 있습니다. 테스트용 모의 키만, 개발자가 직접 확인하는 세션에서 사용합니다.</p></div><div class="box"><b>웹앱 서버</b><p>사용자 요청을 검증한 자체 백엔드만 KIS REST API를 호출합니다. MCP 프로세스를 브라우저 요청의 프록시로 노출하지 않습니다.</p></div></div>
+      <div class="danger"><strong>금지할 연결:</strong> 브라우저의 자연어 입력을 Trading MCP에 그대로 전달하거나, MCP 설정 파일·App Secret을 프론트엔드에 넣거나, 인터넷에 공개된 MCP 서버로 주문 권한을 제공하지 않습니다. MCP와 웹앱은 별도 프로세스·별도 권한·별도 로그로 분리합니다.</div>
+      <a class="btn-alt" href="https://apiportal.koreainvestment.com/tools-mcp" target="_blank" rel="noopener noreferrer">KIS MCP 안내 ↗</a>
+    </section>
+
+<section class="card">
+      <div class="kicker">선택 B · MCP · VS Code</div><h2 class="title">MCP로 VS Code에서 자연어로 KIS API 사용하기</h2>
+      <p class="desc">3단계의 <code>broker-api-test.html</code> 연결 테스트와는 별개로, 한국투자증권이 공식 배포하는 <strong>MCP(Model Context Protocol) 서버</strong>를 VS Code(GitHub Copilot Chat 에이전트 모드)·Claude Desktop·Cursor에 연결하면 자연어로 KIS Open API를 호출할 수 있습니다. 이 프로젝트의 <code>broker_test.py</code>를 감싼 것이 아니라, 한투 공식 저장소의 <code>MCP/Kis Trading MCP</code> 서버를 별도로 clone해 그대로 사용합니다. 국내·해외 주식, 선물옵션, 채권, ETF 등 <strong>166개 API</strong>를 도구로 제공합니다.</p>
+
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div><h3>공식 MCP 서버 clone과 의존성 설치</h3><p>저장소 루트에서 실행합니다. 이 clone은 이 프로젝트의 Git 이력에 포함되지 않습니다(<code>.gitignore</code>의 <code>/mcp/</code>). Python 3.11+와 <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv</a>가 필요합니다.</p></div></div>
+        <div class="step"><span class="num">2</span><div><h3>모의투자 키 재사용</h3><p>이미 발급받은 <code>kis.key</code>의 모의 App Key·Secret을 그대로 재사용합니다. 실전 키는 설정하지 않아 실전 거래 도구는 비활성 상태로 남습니다.</p></div></div>
+        <div class="step"><span class="num">3</span><div><h3><code>.vscode/mcp.json</code>에 서버 등록</h3><p>계좌번호는 저장소 어디에도 저장하지 않고, VS Code가 서버를 처음 실행할 때 안전한 입력창(<code>inputs</code>)으로 물어보도록 구성합니다.</p></div></div>
+        <div class="step"><span class="num">4</span><div><h3>Copilot Chat 에이전트 모드에서 사용</h3><p>워크스페이스를 열고 계좌번호를 입력하면, 채팅에서 자연어로 시세·잔고 조회를 요청할 수 있습니다.</p></div></div>
+      </div>
+
+      <pre class="code"># 1. 공식 MCP 서버 저장소를 로컬에 clone
+mkdir -p mcp
+git clone --depth 1 https://github.com/koreainvestment/open-trading-api.git mcp/open-trading-api
+
+# 2. 의존성 설치
+cd "mcp/open-trading-api/MCP/Kis Trading MCP"
+uv sync</pre>
+
+      <pre class="code"># mcp/kis-trade-mcp.env — gitignore 처리됨(/mcp/), Git에 절대 커밋하지 않습니다
+KIS_PAPER_APP_KEY=&lt;kis.key의 App-KEY 값&gt;
+KIS_PAPER_APP_SECRET=&lt;kis.key의 Secret 값&gt;</pre>
+
+      <pre class="code">// .vscode/mcp.json — .vscode/는 이미 .gitignore에 포함되어 있습니다
+{
+  "inputs": [
+    { "type": "promptString", "id": "kis-paper-account", "description": "KIS 모의투자 계좌번호 앞 8자리" },
+    { "type": "promptString", "id": "kis-hts-id", "description": "한국투자증권 HTS ID (선택)" }
+  ],
+  "servers": {
+    "kis-trade-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["--directory", "${workspaceFolder}/mcp/open-trading-api/MCP/Kis Trading MCP", "run", "python", "server.py"],
+      "envFile": "${workspaceFolder}/mcp/kis-trade-mcp.env",
+      "env": {
+        "ENV": "live",
+        "MCP_TYPE": "stdio",
+        "KIS_PAPER_STOCK": "${input:kis-paper-account}",
+        "KIS_PROD_TYPE": "01",
+        "KIS_HTS_ID": "${input:kis-hts-id}"
+      }
+    }
+  }
+}</pre>
+
+      <div class="notice"><code>ENV=live</code>는 실전 거래를 뜻하지 않습니다 — MCP 서버가 로드할 전송 설정 파일(<code>.env.live</code>) 이름일 뿐이며, 실전·모의 구분은 <code>KIS_APP_KEY</code>(실전, 비워둠) 대 <code>KIS_PAPER_APP_KEY</code>(모의, 설정함)로 결정됩니다.</div>
+
+      <p class="desc" style="margin-top:14px"><strong>사용:</strong> VS Code에서 이 워크스페이스를 열고 Copilot Chat을 에이전트 모드로 전환하면 계좌번호 입력 프롬프트가 표시됩니다. 이후 채팅에서 자연어로 질문합니다.</p>
+      <div class="table-wrap"><table class="table"><thead><tr><th>질문 예시</th><th>호출되는 영역</th></tr></thead><tbody>
+        <tr><td>"삼성전자 현재가 조회해줘"</td><td>국내주식 시세</td></tr>
+        <tr><td>"모의투자 계좌 잔고 보여줘"</td><td>계좌·잔고</td></tr>
+        <tr><td>"KODEX 200 ETF NAV 비교추이 확인해줘"</td><td>ETF/ETN</td></tr>
+      </tbody></table></div>
+
+      <label class="check"><input type="checkbox"> <code>uv sync</code>가 오류 없이 끝났다.</label>
+      <label class="check"><input type="checkbox"> <code>mcp/kis-trade-mcp.env</code>에는 모의(Paper) 키만 넣었고 실전 키는 비워뒀다.</label>
+      <label class="check"><input type="checkbox"> <code>.vscode/mcp.json</code>과 <code>mcp/</code>가 <code>.gitignore</code>에 포함되어 있음을 확인했다.</label>
+      <label class="check"><input type="checkbox"> VS Code 계좌번호 입력창에 실전 계좌가 아닌 모의투자 계좌번호를 입력했다.</label>
+
+      <div class="danger"><strong>중요:</strong> 실전 거래용 <code>KIS_APP_KEY</code>/<code>KIS_APP_SECRET</code>는 설정하지 마세요. 설정하는 순간 MCP 도구가 실제 자금으로 주문을 실행할 수 있습니다. 이 페이지의 구성은 모의투자 전용입니다.</div>
+
+      <p class="desc" style="margin-top:14px">전체 도구 목록, Docker+SSE 실행 방식, 문제 해결 가이드는 공식 MCP README를 참조하세요.</p>
+      <a class="btn" href="https://github.com/koreainvestment/open-trading-api/blob/main/MCP/README.MD" target="_blank" rel="noopener noreferrer">공식 MCP README 보기 ↗</a><a class="btn-alt" href="https://github.com/koreainvestment/open-trading-api/tree/main/MCP/Kis%20Trading%20MCP" target="_blank" rel="noopener noreferrer">Kis Trading MCP 저장소 ↗</a><a class="btn-alt" href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers" target="_blank" rel="noopener noreferrer">VS Code MCP 문서 ↗</a>
+    </section>
+  </main>
+  <footer class="footer"><div>EDUMGT · KIS 모의투자 실습 2단계 · KIS Developers 키 발급과 설정 · 교육용 콘텐츠</div></footer>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-chart"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
+</body>
+</html>

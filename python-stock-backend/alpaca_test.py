@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import os
+import stat
 import threading
 import time
 from typing import Any
+from urllib.parse import urlsplit
 
 import requests
 
-from broker_test import BrokerApiError, _read_key_file
+from broker_test import BrokerApiError, ROOT_DIR, SECRETS_DIR, _read_key_file
 
 
 ALPACA_PAPER_BASE = "https://paper-api.alpaca.markets/v2"
@@ -17,6 +19,68 @@ ALPACA_DATA_BASE = "https://data.alpaca.markets/v2"
 _alpaca_order_flow_lock = threading.Lock()
 _ALPACA_ORDER_TEST_SYMBOL = "AAPL"
 _ALPACA_ORDER_TEST_LIMIT_PRICE = "1.00"
+
+
+def get_alpaca_configuration_status() -> dict[str, Any]:
+    """Return Paper credential readiness without exposing credential values."""
+    env_key = bool(os.environ.get("ALPACA_API_KEY", "").strip())
+    env_secret = bool(os.environ.get("ALPACA_SECRET_KEY", "").strip())
+    key_path = next((candidate for candidate in (SECRETS_DIR / "al.key", ROOT_DIR / "al.key") if candidate.is_file()), None)
+    file_valid = False
+    file_mode = None
+    if key_path is not None:
+        file_mode = stat.S_IMODE(key_path.stat().st_mode)
+        try:
+            _read_key_file(
+                "al.key",
+                ("key", "api_key", "alpaca_api_key", "apca_api_key_id"),
+                ("secret", "secret_key", "alpaca_secret_key", "apca_api_secret_key"),
+            )
+            file_valid = True
+        except BrokerApiError:
+            pass
+    env_complete = env_key and env_secret
+    source = "environment" if env_complete else "al.key" if file_valid else "missing"
+    return {
+        "configured": bool(env_complete or file_valid),
+        "source": source,
+        "environment": {"apiKey": env_key, "secretKey": env_secret, "complete": env_complete},
+        "keyFile": {
+            "mounted": key_path is not None,
+            "valid": file_valid,
+            "permission": format(file_mode, "03o") if file_mode is not None else None,
+            "securePermission": bool(file_mode is not None and file_mode & 0o077 == 0),
+        },
+        "tradingEndpoint": ALPACA_PAPER_BASE,
+        "dataEndpoint": ALPACA_DATA_BASE,
+        "mode": "paper",
+        "liveEnabled": False,
+    }
+
+
+def _audit_alpaca_call(**kwargs) -> None:
+    try:
+        from api_usage import record_alpaca_gateway_call
+        record_alpaca_gateway_call(**kwargs)
+    except Exception:
+        pass
+
+
+def _audit_response_summary(body: Any) -> dict[str, Any]:
+    """Keep useful diagnostics while excluding account and order identifiers."""
+    if isinstance(body, list):
+        return {"itemCount": len(body)}
+    if not isinstance(body, dict):
+        return {"dataPresent": body is not None}
+    summary = {"dataPresent": bool(body)}
+    for key in ("message", "code", "status", "symbol", "side", "type", "qty", "filled_qty", "is_open"):
+        if body.get(key) is not None:
+            summary[key] = body.get(key)
+    if isinstance(body.get("quote"), dict):
+        summary["quotePresent"] = True
+    if isinstance(body.get("trade"), dict):
+        summary["tradePresent"] = True
+    return summary
 
 
 def _credentials() -> tuple[str, str]:
@@ -37,30 +101,70 @@ def _headers() -> dict[str, str]:
 
 
 def _get(url: str, params: dict[str, Any] | None = None) -> Any:
-    response = requests.get(url, headers=_headers(), params=params, timeout=15)
+    started = time.perf_counter()
+    path = urlsplit(url).path
+    try:
+        response = requests.get(url, headers=_headers(), params=params, timeout=15)
+    except requests.RequestException as exc:
+        _audit_alpaca_call(method="GET", path=path, label="Alpaca 조회", request_data=params,
+                           http_status=503, response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                           success=False, error="Alpaca 서버 연결 실패")
+        raise
     try:
         body = response.json()
     except ValueError as exc:
+        _audit_alpaca_call(method="GET", path=path, label="Alpaca 조회", request_data=params,
+                           http_status=response.status_code, response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                           success=False, error="JSON 응답 아님")
         raise BrokerApiError(f"Alpaca 서버가 JSON 응답을 반환하지 않았습니다. (HTTP {response.status_code})") from exc
     if not response.ok:
         message = body.get("message") or body.get("code") or "요청이 거부되었습니다."
+        _audit_alpaca_call(method="GET", path=path, label="Alpaca 조회", request_data=params,
+                           http_status=response.status_code, response_body=_audit_response_summary(body),
+                           duration_ms=(time.perf_counter() - started) * 1000, success=False, error=message)
         raise BrokerApiError(f"Alpaca API 인증 실패 (HTTP {response.status_code}): {message}")
+    _audit_alpaca_call(method="GET", path=path, label="Alpaca 조회", request_data=params,
+                       http_status=response.status_code, response_body=_audit_response_summary(body),
+                       duration_ms=(time.perf_counter() - started) * 1000, success=True)
     return body
 
 
 def _request(method: str, url: str, *, json: dict[str, Any] | None = None) -> Any:
-    response = requests.request(method, url, headers=_headers(), json=json, timeout=15)
+    started = time.perf_counter()
+    path = urlsplit(url).path
+    if str(method).upper() == "DELETE" and path.startswith("/v2/orders/"):
+        path = "/v2/orders/{order_id}"
+    safe_request = {key: value for key, value in (json or {}).items() if key != "client_order_id"}
+    try:
+        response = requests.request(method, url, headers=_headers(), json=json, timeout=15)
+    except requests.RequestException:
+        _audit_alpaca_call(method=method, path=path, label="Paper 주문 흐름", request_data=safe_request,
+                           http_status=503, response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                           success=False, error="Alpaca 서버 연결 실패")
+        raise
     # Alpaca's successful single-order cancellation may return 204 with no
     # response body. Treat it as a success before attempting JSON parsing.
     if response.status_code == 204:
+        _audit_alpaca_call(method=method, path=path, label="Paper 주문 흐름", request_data=safe_request,
+                           http_status=204, response_body={"status": "accepted"},
+                           duration_ms=(time.perf_counter() - started) * 1000, success=True)
         return {}
     try:
         body = response.json()
     except ValueError as exc:
+        _audit_alpaca_call(method=method, path=path, label="Paper 주문 흐름", request_data=safe_request,
+                           http_status=response.status_code, response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                           success=False, error="JSON 응답 아님")
         raise BrokerApiError(f"Alpaca 서버가 JSON 응답을 반환하지 않았습니다. (HTTP {response.status_code})") from exc
     if not response.ok:
         message = body.get("message") or body.get("code") or "요청이 거부되었습니다."
+        _audit_alpaca_call(method=method, path=path, label="Paper 주문 흐름", request_data=safe_request,
+                           http_status=response.status_code, response_body=_audit_response_summary(body),
+                           duration_ms=(time.perf_counter() - started) * 1000, success=False, error=message)
         raise BrokerApiError(f"Alpaca Paper API 요청 실패 (HTTP {response.status_code}): {message}")
+    _audit_alpaca_call(method=method, path=path, label="Paper 주문 흐름", request_data=safe_request,
+                       http_status=response.status_code, response_body=_audit_response_summary(body),
+                       duration_ms=(time.perf_counter() - started) * 1000, success=True)
     return body
 
 

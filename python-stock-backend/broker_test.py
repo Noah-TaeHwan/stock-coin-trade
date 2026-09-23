@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import os
 import socket
+import stat
 import threading
 import time
 import uuid
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
@@ -22,18 +24,31 @@ SECRETS_DIR = Path(os.environ.get("BROKER_KEYS_DIR", "/run/secrets"))
 KB_API_BASE_URL = "https://developer.kbsec.com:32484"
 KIS_TESTBED_URL = "https://openapivts.koreainvestment.com:29443"
 _kis_token_cache: dict[str, Any] = {"value": None, "expires_at": 0.0}
+_kb_chart_cache: dict[str, dict[str, Any]] = {}
+_kb_chart_lock = threading.Lock()
+_KB_CHART_CACHE_SECONDS = 30
 _kis_token_lock = threading.Lock()
-_kis_quote_cache: dict[str, dict[str, Any]] = {}
+_kis_quote_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _kis_quote_lock = threading.Lock()
 _kis_order_flow_lock = threading.Lock()
+_kis_api_rate_lock = threading.Lock()
+_kis_last_api_call_at = 0.0
+_KIS_API_CALL_GAP_SECONDS = 1.05
+_KIS_RATE_LIMIT_CODE = "EGW00201"
+_KIS_QUOTE_CACHE_MAX = 256
 _KIS_ORDER_TEST_SYMBOL = "005930"
-_KIS_ORDER_TEST_PRICE = 200000
-_KIS_ORDER_TEST_AMENDED_PRICE = 199500
-_KIS_ORDER_TEST_MIN_CURRENT_PRICE = 220000
+# 지정가는 현재가의 90%(호가 단위 내림)로 계산해 비시장성 매수 주문만 낸다. 고정
+# 가격을 쓰면 주가 구간이 바뀔 때 하한가(-30%) 밖이 되거나 체결 위험이 생긴다.
+_KIS_ORDER_TEST_PRICE_RATIO = 0.90
+_KIS_ORDER_TEST_MAX_PRICE_RATIO = 0.95  # 이 비율 이상이면 체결 위험으로 보고 주문하지 않는다.
 
 
 class BrokerApiError(RuntimeError):
     """A user-safe error that never includes credentials or access tokens."""
+
+    def __init__(self, message: str, status_code: int = 502):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def _read_key_file(filename: str, key_names: tuple[str, ...], secret_names: tuple[str, ...]) -> tuple[str, str]:
@@ -61,6 +76,42 @@ def _credentials(prefix: str, filename: str, key_names: tuple[str, ...], secret_
     return _read_key_file(filename, key_names, secret_names)
 
 
+def get_kb_configuration_status() -> dict[str, Any]:
+    """Return KB credential readiness without returning any credential value."""
+    env_key = bool(os.environ.get("KB_APP_KEY", "").strip())
+    env_secret = bool(os.environ.get("KB_APP_SECRET", "").strip())
+    key_path = next((candidate for candidate in (SECRETS_DIR / "kb.key", ROOT_DIR / "kb.key") if candidate.is_file()), None)
+    file_valid = False
+    file_mode = None
+    if key_path is not None:
+        file_mode = stat.S_IMODE(key_path.stat().st_mode)
+        try:
+            _read_key_file("kb.key", ("appkey", "app_key"), ("secret", "appsecret", "app_secret"))
+            file_valid = True
+        except BrokerApiError:
+            pass
+    env_complete = env_key and env_secret
+    source = "environment" if env_complete else "kb.key" if file_valid else "missing"
+    return {
+        "configured": bool(env_complete or file_valid), "source": source,
+        "environment": {"appKey": env_key, "appSecret": env_secret, "complete": env_complete},
+        "keyFile": {
+            "mounted": key_path is not None, "valid": file_valid,
+            "permission": format(file_mode, "03o") if file_mode is not None else None,
+            "securePermission": bool(file_mode is not None and file_mode & 0o077 == 0),
+        },
+        "endpoint": KB_API_BASE_URL, "mode": "production", "readOnly": True,
+    }
+
+
+def _audit_kb_call(**kwargs) -> None:
+    try:
+        from api_usage import record_kb_gateway_call
+        record_kb_gateway_call(**kwargs)
+    except Exception:
+        pass
+
+
 def _json(response: requests.Response, broker: str) -> dict[str, Any]:
     try:
         return response.json()
@@ -70,30 +121,43 @@ def _json(response: requests.Response, broker: str) -> dict[str, Any]:
 
 def _kb_token_response() -> dict[str, Any]:
     app_key, app_secret = _credentials("KB", "kb.key", ("appkey", "app_key"), ("secret", "appsecret", "app_secret"))
-    response = requests.post(
-        f"{KB_API_BASE_URL}/oauth2/token",
-        headers={"Content-Type": "application/json"},
-        # KB's official kb-openapi repository uses the common B2C request
-        # envelope. The public portal's shortened guide shows a flat OAuth
-        # example, but that form returns E021 for the currently issued keys.
-        json={
-            "dataHeader": {"ipAddr": "", "macAddr": ""},
-            "dataBody": {
-                "appKey": app_key,
-                "appSecret": app_secret,
-                "grantType": "client_credentials",
+    started = time.perf_counter()
+    try:
+        response = requests.post(
+            f"{KB_API_BASE_URL}/oauth2/token",
+            headers={"Content-Type": "application/json"},
+            # The official sample repository's B2C proxy uses this common envelope.
+            json={
+                "dataHeader": {"ipAddr": "", "macAddr": ""},
+                "dataBody": {
+                    "appKey": app_key,
+                    "appSecret": app_secret,
+                    "grantType": "client_credentials",
+                },
             },
-        },
-        timeout=20,
-    )
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        _audit_kb_call(method="POST", path="/oauth2/token", tr_id="OAUTH", label="토큰 발급", request_data={},
+                       http_status=503, response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                       success=False, error="KB증권 서버 연결 실패")
+        raise exc
     body = _json(response, "KB증권")
     token = body.get("access_token") or body.get("dataBody", {}).get("access_token")
+    header = body.get("dataHeader", {})
+    code = header.get("processCode") or body.get("error") or body.get("code")
+    message = header.get("processMessage") or body.get("error_description") or body.get("message")
+    _audit_kb_call(
+        method="POST", path="/oauth2/token", tr_id="OAUTH", label="토큰 발급", request_data={},
+        http_status=response.status_code,
+        response_body={"tokenIssued": bool(token), "tokenType": body.get("token_type") or body.get("dataBody", {}).get("token_type"),
+                       "processCode": code, "processMessage": message},
+        duration_ms=(time.perf_counter() - started) * 1000, success=bool(response.ok and token),
+        error=None if token else message or "토큰 발급 실패",
+    )
     if token:
         return body
-    header = body.get("dataHeader", {})
-    code = header.get("processCode") or body.get("error") or body.get("code") or "unknown"
-    message = header.get("processMessage") or body.get("error_description") or body.get("message") or "토큰 발급 실패"
-    raise BrokerApiError(f"KB증권 인증 실패 (HTTP {response.status_code}, {code}): {message}")
+    raise BrokerApiError(f"KB증권 인증 실패 (HTTP {response.status_code}, {code or 'unknown'}): {message or '토큰 발급 실패'}")
 
 
 def _kb_data_header() -> dict[str, str]:
@@ -129,19 +193,38 @@ def _kb_investment_info(endpoint: str, data_body: dict[str, str]) -> dict[str, A
     app_key, _ = _credentials("KB", "kb.key", ("appkey", "app_key"), ("secret", "appsecret", "app_secret"))
     token_body = _kb_token_response()
     access_token = token_body.get("access_token") or token_body.get("dataBody", {}).get("access_token")
-    response = requests.post(
-        f"{KB_API_BASE_URL}{endpoint}",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"bearer {access_token}",
-            "appKey": app_key,
-        },
-        json={"dataHeader": _kb_data_header(), "dataBody": data_body},
-        timeout=20,
-    )
+    started = time.perf_counter()
+    try:
+        response = requests.post(
+            f"{KB_API_BASE_URL}{endpoint}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {access_token}",
+                "appKey": app_key,
+            },
+            json={"dataHeader": _kb_data_header(), "dataBody": data_body},
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        _audit_kb_call(method="POST", path=endpoint, tr_id=endpoint.rsplit("/", 1)[-1].upper(), label="운영 조회",
+                       request_data=data_body, http_status=503, response_body={},
+                       duration_ms=(time.perf_counter() - started) * 1000, success=False, error="KB증권 서버 연결 실패")
+        raise exc
     body = _json(response, "KB증권")
-    if not response.ok:
-        header = body.get("dataHeader", {})
+    header = body.get("dataHeader", {})
+    code = str(header.get("processCode") or "")
+    # KB TRs use both all-zero success codes and 0024 (normal query complete).
+    business_ok = not code or set(code) == {"0"} or code == "0024"
+    success = bool(response.ok and business_ok)
+    _audit_kb_call(
+        method="POST", path=endpoint, tr_id=endpoint.rsplit("/", 1)[-1].upper(), label="운영 조회",
+        request_data=data_body, http_status=response.status_code,
+        response_body={"processCode": code or None, "processMessage": header.get("processMessage"),
+                       "dataPresent": body.get("dataBody") is not None},
+        duration_ms=(time.perf_counter() - started) * 1000, success=success,
+        error=None if success else header.get("processMessage") or "KB증권 조회 실패",
+    )
+    if not success:
         raise BrokerApiError(
             f"KB증권 조회 실패 (HTTP {response.status_code}, {header.get('processCode') or 'unknown'}): "
             f"{header.get('processMessage') or '요청이 거부되었습니다.'}"
@@ -162,23 +245,81 @@ def get_kb_stock_orderbook(symbol: str) -> dict[str, Any]:
     return {"broker": "KB증권 Open API", "symbol": symbol, "raw": _kb_investment_info("/api/v1/ivu10070", {"is_cd": symbol, "ovtm_mkt_clsf": "0"})}
 
 
-def get_kb_stock_chart(symbol: str) -> dict[str, Any]:
-    return {
-        "broker": "KB증권 Open API",
-        "symbol": symbol,
-        "raw": _kb_investment_info(
-            "/api/v1/ivs11560",
-            {"info_ccd": "1", "mkt_clsf": "1", "chrt_clsf": "D", "minute_tck_indx": "", "is_cd": symbol, "inq_clsf": "1", "strt_dy": "", "inq_cnt": "10"},
-        ),
+def _kb_number(value: Any, *, integer: bool = False) -> int | float | None:
+    raw = str(value or "").strip().replace(",", "")
+    if not raw:
+        return None
+    try:
+        number = float(raw)
+        return int(number) if integer else number
+    except ValueError:
+        return None
+
+
+def get_kb_stock_chart(symbol: str, market: str = "0", period: str = "D", count: int = 60) -> dict[str, Any]:
+    """Return normalized OHLCV candles sourced only from KB IVS11560."""
+    if market not in {"0", "1"}:
+        raise BrokerApiError("시장은 KOSPI(0) 또는 KOSDAQ(1)만 선택할 수 있습니다.", 400)
+    if period not in {"D", "W", "M", "Y"}:
+        raise BrokerApiError("차트 주기는 일·주·월·년만 지원합니다.", 400)
+    if not 10 <= count <= 300:
+        raise BrokerApiError("캔들 수는 10~300 사이여야 합니다.", 400)
+    cache_key = f"{symbol}:{market}:{period}:{count}"
+    now = time.monotonic()
+    with _kb_chart_lock:
+        cached = _kb_chart_cache.get(cache_key)
+        if cached and now - cached["savedAt"] < _KB_CHART_CACHE_SECONDS:
+            return cached["value"]
+
+    raw = _kb_investment_info(
+        "/api/v1/ivs11560",
+        {
+            "info_ccd": "1", "mkt_clsf": market, "chrt_clsf": period,
+            "minute_tck_indx": "", "is_cd": symbol, "inq_clsf": "2",
+            "strt_dy": "", "inq_cnt": str(count),
+        },
+    )
+    candles = []
+    for row in raw.get("out2", []):
+        date_value = str(row.get("dt") or "").strip()
+        if len(date_value) != 8 or not date_value.isdigit():
+            continue
+        candle = {
+            "time": f"{date_value[:4]}-{date_value[4:6]}-{date_value[6:]}",
+            "open": _kb_number(row.get("opn_prc_p2")),
+            "high": _kb_number(row.get("hgh_prc_p2")),
+            "low": _kb_number(row.get("lw_prc_p2")),
+            "close": _kb_number(row.get("cls_prc_p2")),
+            "volume": _kb_number(row.get("vlm"), integer=True),
+            "amount": _kb_number(row.get("dl_tw_amt"), integer=True),
+        }
+        if all(candle[key] is not None for key in ("open", "high", "low", "close")):
+            candles.append(candle)
+    candles.sort(key=lambda item: item["time"])
+    result = {
+        "broker": "KB증권 Open API", "source": "IVS11560",
+        "symbol": symbol, "market": "KOSPI" if market == "0" else "KOSDAQ",
+        "period": period, "count": len(candles), "candles": candles,
     }
+    with _kb_chart_lock:
+        _kb_chart_cache[cache_key] = {"savedAt": now, "value": result}
+    return result
 
 
 def _kis_credentials() -> tuple[str, str]:
+    if os.environ.get("KIS_ENVIRONMENT", "paper").strip().lower() != "paper":
+        raise BrokerApiError("이 서비스는 KIS 모의투자(paper) 환경만 허용합니다.", 503)
+    paper_key = os.environ.get("KIS_PAPER_APP_KEY")
+    paper_secret = os.environ.get("KIS_PAPER_APP_SECRET")
+    if paper_key or paper_secret:
+        if not paper_key or not paper_secret:
+            raise BrokerApiError("KIS_PAPER_APP_KEY와 KIS_PAPER_APP_SECRET을 함께 설정하세요.", 503)
+        return paper_key, paper_secret
     return _credentials("KIS", "kis.key", ("app_key",), ("secret", "app_secret"))
 
 
 def _kis_account() -> tuple[str, str]:
-    account_no = os.environ.get("KIS_ACCOUNT_NO")
+    account_no = os.environ.get("KIS_PAPER_ACCOUNT_NO") or os.environ.get("KIS_ACCOUNT_NO")
     if not account_no:
         values: dict[str, str] = {}
         path = next((c for c in (SECRETS_DIR / "kis.key", ROOT_DIR / "kis.key") if c.is_file()), None)
@@ -191,11 +332,23 @@ def _kis_account() -> tuple[str, str]:
             account_no = values.get("account") or values.get("account_no") or values.get("cano")
     if not account_no or "-" not in account_no:
         raise BrokerApiError(
-            "모의투자 계좌번호가 설정되지 않았습니다. KIS_ACCOUNT_NO 환경변수 또는 kis.key의 account 항목에 "
-            "'CANO-계좌상품코드'(예: 12345678-01) 형식으로 설정하세요."
+            "모의투자 계좌번호가 설정되지 않았습니다. KIS_PAPER_ACCOUNT_NO(또는 기존 KIS_ACCOUNT_NO) "
+            "환경변수나 kis.key의 account 항목에 'CANO-계좌상품코드'(예: 12345678-01) 형식으로 설정하세요.",
+            503,
         )
     cano, _, acnt_prdt_cd = account_no.partition("-")
+    if not (cano.isdigit() and len(cano) == 8 and acnt_prdt_cd.isdigit() and len(acnt_prdt_cd) == 2):
+        raise BrokerApiError("KIS 계좌번호는 '8자리 CANO-2자리 상품코드' 형식이어야 합니다.", 503)
     return cano, acnt_prdt_cd
+
+
+def _audit_kis_call(**kwargs) -> None:
+    """Lazy import keeps standalone quote helpers usable without a Flask app."""
+    try:
+        from api_usage import record_kis_gateway_call
+        record_kis_gateway_call(**kwargs)
+    except Exception:
+        pass
 
 
 def _kis_access_token() -> str:
@@ -204,14 +357,33 @@ def _kis_access_token() -> str:
         access_token = _kis_token_cache["value"] if _kis_token_cache["expires_at"] > time.time() else None
         if access_token:
             return access_token
-        token_response = requests.post(
-            f"{KIS_TESTBED_URL}/oauth2/tokenP",
-            headers={"content-type": "application/json; charset=utf-8"},
-            json={"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret},
-            timeout=15,
-        )
-        token_body = _json(token_response, "한국투자증권")
+        token_payload = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
+        started = time.perf_counter()
+        try:
+            token_response = requests.post(
+                f"{KIS_TESTBED_URL}/oauth2/tokenP",
+                headers={"content-type": "application/json; charset=utf-8"},
+                json=token_payload,
+                timeout=15,
+            )
+            token_body = _json(token_response, "한국투자증권")
+        except (requests.RequestException, BrokerApiError) as exc:
+            _audit_kis_call(
+                method="POST", path="/oauth2/tokenP", tr_id="OAUTH", label="접근 토큰 발급",
+                attempt=1, request_data={"json": token_payload}, http_status=503,
+                response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
+                success=False, error=str(exc),
+            )
+            raise
         access_token = token_body.get("access_token")
+        token_success = bool(access_token)
+        _audit_kis_call(
+            method="POST", path="/oauth2/tokenP", tr_id="OAUTH", label="접근 토큰 발급",
+            attempt=1, request_data={"json": token_payload}, http_status=token_response.status_code,
+            response_body=token_body, duration_ms=(time.perf_counter() - started) * 1000,
+            success=token_success,
+            error=None if token_success else (token_body.get("error_description") or token_body.get("msg1")),
+        )
         if not access_token:
             message = token_body.get("error_description") or token_body.get("msg1") or "토큰 발급 실패"
             raise BrokerApiError(f"한국투자증권 인증 실패 (HTTP {token_response.status_code}): {message}")
@@ -233,23 +405,84 @@ def _kis_headers(tr_id: str) -> dict[str, str]:
     }
 
 
+def kis_request(
+    method: str,
+    path: str,
+    tr_id: str,
+    *,
+    params: dict[str, str] | None = None,
+    payload: dict[str, str] | None = None,
+    label: str,
+    extra_headers: dict[str, str] | None = None,
+    retries: int = 2,
+    raise_for_api_error: bool = True,
+) -> tuple[requests.Response, dict[str, Any]]:
+    """Send every authenticated KIS call through one process-wide limiter.
+
+    Keeping the limiter here prevents the chart, explorer, HTS and order-flow
+    modules from independently exceeding the Testbed's shared App Key limit.
+    """
+    global _kis_last_api_call_at
+    response = None
+    body: dict[str, Any] = {}
+    for attempt in range(retries + 1):
+        with _kis_api_rate_lock:
+            wait = _KIS_API_CALL_GAP_SECONDS - (time.monotonic() - _kis_last_api_call_at)
+            if wait > 0:
+                time.sleep(wait)
+            _kis_last_api_call_at = time.monotonic()
+        if attempt:
+            time.sleep(0.8 * attempt)
+        started = time.perf_counter()
+        request_data = {"params": params or {}, "json": payload or {}}
+        try:
+            response = requests.request(
+                method,
+                f"{KIS_TESTBED_URL}{path}",
+                headers={**_kis_headers(tr_id), **(extra_headers or {})},
+                params=params,
+                json=payload,
+                timeout=15,
+            )
+            body = _json(response, "한국투자증권")
+        except (requests.RequestException, BrokerApiError) as exc:
+            _audit_kis_call(
+                method=method, path=path, tr_id=tr_id, label=label, attempt=attempt + 1,
+                request_data=request_data, http_status=503, response_body={},
+                duration_ms=(time.perf_counter() - started) * 1000,
+                success=False, error=str(exc),
+            )
+            raise
+        success = body.get("rt_cd") == "0"
+        _audit_kis_call(
+            method=method, path=path, tr_id=tr_id, label=label, attempt=attempt + 1,
+            request_data=request_data, http_status=response.status_code, response_body=body,
+            duration_ms=(time.perf_counter() - started) * 1000, success=success,
+            error=None if success else (body.get("msg1") or body.get("msg_cd")),
+        )
+        if body.get("msg_cd") != _KIS_RATE_LIMIT_CODE:
+            break
+    if raise_for_api_error and body.get("rt_cd") != "0":
+        raise BrokerApiError(
+            f"한국투자증권 {label} 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
+        )
+    return response, body
+
+
 def get_kis_quote(symbol: str) -> dict[str, Any]:
     with _kis_quote_lock:
         cached_quote = _kis_quote_cache.get(symbol)
         if cached_quote and cached_quote["expires_at"] > time.time():
+            _kis_quote_cache.move_to_end(symbol)
             return cached_quote["quote"]
+        if cached_quote:
+            _kis_quote_cache.pop(symbol, None)
 
-    quote_response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-price",
-        headers=_kis_headers("FHKST01010100"),
+    _, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-price", "FHKST01010100",
         params={"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": symbol},
-        timeout=15,
+        label="시세 조회",
     )
-    body = _json(quote_response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 시세 조회 실패 (HTTP {quote_response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     output = body.get("output", {})
     quote = {
         "broker": "한국투자증권 Testbed", "symbol": symbol,
@@ -261,28 +494,25 @@ def get_kis_quote(symbol: str) -> dict[str, Any]:
     # double click safe without presenting stale data as a long-lived quote.
     with _kis_quote_lock:
         _kis_quote_cache[symbol] = {"quote": quote, "expires_at": time.time() + 3}
+        _kis_quote_cache.move_to_end(symbol)
+        while len(_kis_quote_cache) > _KIS_QUOTE_CACHE_MAX:
+            _kis_quote_cache.popitem(last=False)
     return quote
 
 
 def get_kis_balance() -> dict[str, Any]:
     """Read-only 모의투자 계좌 잔고/평가액 조회 (inquire-balance, VTTC8434R)."""
     cano, acnt_prdt_cd = _kis_account()
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/trading/inquire-balance",
-        headers=_kis_headers("VTTC8434R"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/trading/inquire-balance", "VTTC8434R",
         params={
             "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
             "AFHR_FLPR_YN": "N", "OFL_YN": "", "INQR_DVSN": "02", "UNPR_DVSN": "01",
             "FUND_STTL_ICLD_YN": "N", "FNCG_AMT_AUTO_RDPT_YN": "N", "PRCS_DVSN": "01",
             "CTX_AREA_FK100": "", "CTX_AREA_NK100": "",
         },
-        timeout=15,
+        label="잔고 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 잔고 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     summary = (body.get("output2") or [{}])[0]
     holdings = [
         {
@@ -307,21 +537,15 @@ def get_kis_daily_chart(symbol: str, days: int = 20) -> dict[str, Any]:
     """Read-only 일봉 캔들 조회 (inquire-daily-itemchartprice, FHKST03010100)."""
     end = time.strftime("%Y%m%d")
     start = time.strftime("%Y%m%d", time.localtime(time.time() - days * 4 * 86400))
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
-        headers=_kis_headers("FHKST03010100"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice", "FHKST03010100",
         params={
             "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": symbol,
             "FID_INPUT_DATE_1": start, "FID_INPUT_DATE_2": end,
             "FID_PERIOD_DIV_CODE": "D", "FID_ORG_ADJ_PRC": "1",
         },
-        timeout=15,
+        label="일봉 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 일봉 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     candles = [
         {
             "date": row.get("stck_bsop_date"), "open": row.get("stck_oprc"),
@@ -335,17 +559,11 @@ def get_kis_daily_chart(symbol: str, days: int = 20) -> dict[str, Any]:
 
 def get_kis_orderbook(symbol: str) -> dict[str, Any]:
     """Read-only 매도/매수 10단계 호가 조회 (inquire-asking-price-exp-ccn, FHKST01010200)."""
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn",
-        headers=_kis_headers("FHKST01010200"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn", "FHKST01010200",
         params={"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": symbol},
-        timeout=15,
+        label="호가 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 호가 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     output1 = body.get("output1") or {}
     levels = [
         {
@@ -366,17 +584,11 @@ _KIS_INDEX_NAMES = {"0001": "코스피", "1001": "코스닥"}
 
 def get_kis_index(index_code: str = "0001") -> dict[str, Any]:
     """Read-only 업종 현재지수 조회 (inquire-index-price, FHPUP02100000). 0001=코스피, 1001=코스닥."""
-    response = requests.get(
-        f"{KIS_TESTBED_URL}/uapi/domestic-stock/v1/quotations/inquire-index-price",
-        headers=_kis_headers("FHPUP02100000"),
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/quotations/inquire-index-price", "FHPUP02100000",
         params={"FID_COND_MRKT_DIV_CODE": "U", "FID_INPUT_ISCD": index_code},
-        timeout=15,
+        label="지수 조회",
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 지수 조회 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     output = body.get("output", {})
     return {
         "broker": "한국투자증권 Testbed", "index": _KIS_INDEX_NAMES.get(index_code, index_code),
@@ -386,44 +598,119 @@ def get_kis_index(index_code: str = "0001") -> dict[str, Any]:
 
 
 def _kis_order_post(path: str, tr_id: str, payload: dict[str, str], label: str) -> dict[str, Any]:
-    response = requests.post(
-        f"{KIS_TESTBED_URL}{path}",
-        headers={**_kis_headers(tr_id), "custtype": "P"},
-        json=payload,
-        timeout=15,
+    _, body = kis_request(
+        "POST", path, tr_id,
+        payload=payload,
+        label=label,
+        extra_headers={"custtype": "P"},
     )
-    body = _json(response, "한국투자증권")
-    if body.get("rt_cd") != "0":
-        raise BrokerApiError(
-            f"한국투자증권 {label} 실패 (HTTP {response.status_code}, {body.get('msg_cd')}): {body.get('msg1')}"
-        )
     return body
+
+
+def _kis_tick_size(price: int) -> int:
+    """KRX 호가 단위(2023-01-25 개편 기준, 전 시장 공통)."""
+    if price < 2_000:
+        return 1
+    if price < 5_000:
+        return 5
+    if price < 20_000:
+        return 10
+    if price < 50_000:
+        return 50
+    if price < 200_000:
+        return 100
+    if price < 500_000:
+        return 500
+    return 1_000
+
+
+def _kis_round_down_to_tick(price: int) -> int:
+    tick = _kis_tick_size(price)
+    return (price // tick) * tick
+
+
+def _kis_order_test_prices(current_price: int) -> tuple[int, int]:
+    """(주문가, 정정가). 둘 다 현재가보다 충분히 낮은 비시장성 가격이어야 한다."""
+    test_price = _kis_round_down_to_tick(int(current_price * _KIS_ORDER_TEST_PRICE_RATIO))
+    amended_price = test_price - _kis_tick_size(test_price)
+    if test_price <= 0 or amended_price <= 0 or test_price >= current_price * _KIS_ORDER_TEST_MAX_PRICE_RATIO:
+        raise BrokerApiError("안전을 위해 현재가 대비 충분히 낮은 지정가를 계산할 수 없어 주문 테스트를 실행하지 않습니다.")
+    return test_price, amended_price
+
+
+def _kis_open_orders_today(cano: str, acnt_prdt_cd: str, symbol: str) -> list[dict[str, Any]]:
+    """오늘 미체결 주문 조회 (inquire-daily-ccld, 모의 VTTC8001R). 보정 단계에서만 사용한다."""
+    today = time.strftime("%Y%m%d", time.localtime())
+    response, body = kis_request(
+        "GET", "/uapi/domestic-stock/v1/trading/inquire-daily-ccld", "VTTC8001R",
+        params={
+            "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
+            "INQR_STRT_DT": today, "INQR_END_DT": today,
+            "SLL_BUY_DVSN_CD": "00", "INQR_DVSN": "00", "PDNO": symbol,
+            "CCLD_DVSN": "02", "ORD_GNO_BRNO": "", "ODNO": "",
+            "INQR_DVSN_3": "00", "INQR_DVSN_1": "",
+            "CTX_AREA_FK100": "", "CTX_AREA_NK100": "",
+        },
+        label="미체결 조회",
+    )
+    rows = body.get("output1") or []
+    open_orders = []
+    for row in rows:
+        try:
+            remaining = int(str(row.get("rmn_qty") or "0").replace(",", ""))
+        except ValueError:
+            remaining = 0
+        if row.get("pdno") == symbol and remaining > 0 and row.get("odno"):
+            open_orders.append(row)
+    return open_orders
+
+
+def _kis_cancel_order(cano: str, acnt_prdt_cd: str, org_no: str, order_no: str) -> dict[str, Any]:
+    return _kis_order_post(
+        "/uapi/domestic-stock/v1/trading/order-rvsecncl",
+        "VTTC0013U",
+        {
+            "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
+            "KRX_FWDG_ORD_ORGNO": org_no, "ORGN_ODNO": order_no,
+            # 잔량 전부 취소: KIS 스펙상 QTY_ALL_ORD_YN=Y 이면 ORD_QTY 는 "0".
+            "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "02", "ORD_QTY": "0", "ORD_UNPR": "0",
+            "QTY_ALL_ORD_YN": "Y", "EXCG_ID_DVSN_CD": "KRX",
+        },
+        "모의 주문 취소",
+    )
+
+
+def _kis_error_text(exc: Exception) -> str:
+    if isinstance(exc, BrokerApiError):
+        return str(exc)
+    return "한국투자증권 서버 응답을 받지 못했습니다(시간 초과 또는 연결 오류)."
 
 
 def run_kis_mock_order_flow_test() -> dict[str, Any]:
     """Run one safe Testbed-only order → amend → cancel verification.
 
-    The fixed limit prices intentionally sit below the permitted current-price
-    threshold. If that safety condition changes, no order is sent.
+    순서: 안전 조건 확인 → 매수 지정가 1주 → 정정(한 호가 아래) → 잔량 취소.
+    정정이나 취소가 실패하면 오늘 미체결 조회로 남은 주문을 찾아 모두 취소하는
+    보정 단계를 거친다. 정정·취소 결과와 사유는 응답 필드로 그대로 전달한다.
     """
-    with _kis_order_flow_lock:
+    if not _kis_order_flow_lock.acquire(blocking=False):
+        raise BrokerApiError("모의 주문 흐름 테스트가 이미 실행 중입니다. 완료된 뒤 다시 시도하세요.")
+    try:
         quote = get_kis_quote(_KIS_ORDER_TEST_SYMBOL)
         try:
             current_price = int(str(quote.get("price") or "").replace(",", ""))
         except ValueError as exc:
             raise BrokerApiError("한국투자증권 현재가를 숫자로 확인할 수 없어 주문 테스트를 중단했습니다.") from exc
-        if current_price <= _KIS_ORDER_TEST_MIN_CURRENT_PRICE:
-            raise BrokerApiError(
-                f"안전을 위해 현재가가 {_KIS_ORDER_TEST_MIN_CURRENT_PRICE:,}원 이하이면 주문 테스트를 실행하지 않습니다."
-            )
-
+        if current_price <= 0:
+            raise BrokerApiError("한국투자증권 현재가가 0원으로 조회되어 주문 테스트를 중단했습니다.")
+        test_price, amended_price = _kis_order_test_prices(current_price)
         cano, acnt_prdt_cd = _kis_account()
         order = _kis_order_post(
             "/uapi/domestic-stock/v1/trading/order-cash",
             "VTTC0012U",
             {
                 "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd, "PDNO": _KIS_ORDER_TEST_SYMBOL,
-                "ORD_DVSN": "00", "ORD_QTY": "1", "ORD_UNPR": str(_KIS_ORDER_TEST_PRICE),
+                "ORD_DVSN": "00", "ORD_QTY": "1", "ORD_UNPR": str(test_price),
                 "EXCG_ID_DVSN_CD": "KRX",
             },
             "모의 매수 주문",
@@ -434,8 +721,8 @@ def run_kis_mock_order_flow_test() -> dict[str, Any]:
         if not org_no or not order_no:
             raise BrokerApiError("모의 주문은 접수됐지만 정정·취소에 필요한 참조값을 받지 못했습니다. 모의투자 화면에서 주문 상태를 확인하세요.")
 
-        amend_ok = False
-        cancel_body: dict[str, Any] | None = None
+        # ── 정정: 실패해도 예외를 삼키고 사유만 기록한 뒤 취소로 진행한다.
+        amend_error: Exception | None = None
         try:
             amended = _kis_order_post(
                 "/uapi/domestic-stock/v1/trading/order-rvsecncl",
@@ -443,36 +730,72 @@ def run_kis_mock_order_flow_test() -> dict[str, Any]:
                 {
                     "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
                     "KRX_FWDG_ORD_ORGNO": org_no, "ORGN_ODNO": order_no,
-                    "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "01", "ORD_QTY": "1",
-                    "ORD_UNPR": str(_KIS_ORDER_TEST_AMENDED_PRICE), "QTY_ALL_ORD_YN": "Y",
+                    "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "01", "ORD_QTY": "0",
+                    "ORD_UNPR": str(amended_price), "QTY_ALL_ORD_YN": "Y",
                     "EXCG_ID_DVSN_CD": "KRX",
                 },
                 "모의 주문 정정",
             )
-            amend_ok = True
             amended_output = amended.get("output") or {}
             org_no = amended_output.get("KRX_FWDG_ORD_ORGNO") or org_no
             order_no = amended_output.get("ODNO") or order_no
-        finally:
-            cancel_body = _kis_order_post(
-                "/uapi/domestic-stock/v1/trading/order-rvsecncl",
-                "VTTC0013U",
-                {
-                    "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
-                    "KRX_FWDG_ORD_ORGNO": org_no, "ORGN_ODNO": order_no,
-                    "ORD_DVSN": "00", "RVSE_CNCL_DVSN_CD": "02", "ORD_QTY": "1", "ORD_UNPR": "0",
-                    "QTY_ALL_ORD_YN": "Y", "EXCG_ID_DVSN_CD": "KRX",
-                },
-                "모의 주문 취소",
-            )
+        except (BrokerApiError, requests.RequestException) as exc:
+            amend_error = exc
+
+        # ── 취소: 정정 성공 시 새 주문번호, 실패 시 원주문 번호로 시도한다.
+        cancel_error: Exception | None = None
+        try:
+            _kis_cancel_order(cano, acnt_prdt_cd, org_no, order_no)
+        except (BrokerApiError, requests.RequestException) as exc:
+            cancel_error = exc
+
+        # ── 보정: 취소가 실패했거나, 정정 결과가 불확실(시간 초과)하면 미체결을 조회해 정리한다.
+        amend_uncertain = isinstance(amend_error, requests.RequestException)
+        reconcile_note: str | None = None
+        leftover: int | None = None
+        if cancel_error is not None or amend_uncertain:
+            try:
+                open_orders = _kis_open_orders_today(cano, acnt_prdt_cd, _KIS_ORDER_TEST_SYMBOL)
+                failed = 0
+                for row in open_orders:
+                    try:
+                        _kis_cancel_order(cano, acnt_prdt_cd, row.get("ord_gno_brno") or org_no, row["odno"])
+                    except (BrokerApiError, requests.RequestException):
+                        failed += 1
+                leftover = failed
+                if open_orders and failed == 0:
+                    reconcile_note = f"미체결 {len(open_orders)}건을 조회해 모두 취소했습니다."
+                    cancel_error = None
+                elif not open_orders:
+                    reconcile_note = "미체결 조회 결과 남은 주문이 없습니다."
+                    cancel_error = None
+                else:
+                    reconcile_note = f"미체결 {len(open_orders)}건 중 {failed}건을 취소하지 못했습니다."
+            except (BrokerApiError, requests.RequestException) as exc:
+                reconcile_note = f"미체결 조회에 실패해 남은 주문을 확인하지 못했습니다: {_kis_error_text(exc)}"
+
+        if cancel_error is not None or (leftover or 0) > 0:
+            parts = ["모의 주문 취소를 완료하지 못했습니다."]
+            if amend_error is not None:
+                parts.append(f"정정: {_kis_error_text(amend_error)}")
+            if cancel_error is not None:
+                parts.append(f"취소: {_kis_error_text(cancel_error)}")
+            if reconcile_note:
+                parts.append(reconcile_note)
+            parts.append("모의투자 화면에서 미체결 주문을 직접 확인·취소하세요.")
+            raise BrokerApiError(" ".join(parts))
 
         return {
             "environment": "KIS Testbed 모의투자",
             "symbol": _KIS_ORDER_TEST_SYMBOL,
             "currentPrice": current_price,
             "order": "success",
-            "amend": "success" if amend_ok else "failed",
-            "cancel": "success" if cancel_body else "failed",
-            "testPrice": _KIS_ORDER_TEST_PRICE,
-            "amendedPrice": _KIS_ORDER_TEST_AMENDED_PRICE,
+            "amend": "failed" if amend_error is not None else "success",
+            "amendMessage": _kis_error_text(amend_error) if amend_error is not None else None,
+            "cancel": "success",
+            "cancelMessage": reconcile_note,
+            "testPrice": test_price,
+            "amendedPrice": amended_price,
         }
+    finally:
+        _kis_order_flow_lock.release()

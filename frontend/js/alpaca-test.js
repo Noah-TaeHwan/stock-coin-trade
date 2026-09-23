@@ -1,5 +1,26 @@
-(() => {
+(async () => {
+  const user = await initPage({ requireAuth: true });
+  if (!user) return;
   const apiBase = window.APP_CONFIG?.apiBase || '';
+  try {
+    const statusResponse = await apiFetch('/api/alpaca-test/status');
+    const statusData = await statusResponse.json();
+    const status = statusData.status || {};
+    const config = document.getElementById('alpacaConfig');
+    const mode = document.getElementById('alpacaMode');
+    if (config) {
+      config.className = `alpaca-status ${status.configured ? 'ok' : 'bad'}`;
+      config.textContent = `${status.configured ? '✓' : '!'} ${status.configured ? `설정 준비 · ${status.source}` : 'Key·Secret 필요'}`;
+    }
+    if (mode) {
+      const paperOnly = status.mode === 'paper' && !status.liveEnabled;
+      mode.className = `alpaca-status ${paperOnly ? 'ok' : 'bad'}`;
+      mode.textContent = `${paperOnly ? '✓' : '!'} ${paperOnly ? 'Paper API 고정' : '환경 확인 필요'}`;
+    }
+  } catch (error) {
+    const config = document.getElementById('alpacaConfig');
+    if (config) { config.className = 'alpaca-status bad'; config.textContent = '! 설정 확인 실패'; }
+  }
   const button = document.getElementById('run-test');
   const result = document.getElementById('result');
   if (button && result) {

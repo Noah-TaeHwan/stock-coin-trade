@@ -83,4 +83,14 @@
   document.querySelectorAll('.run-sm[data-test]').forEach((button) => {
     button.addEventListener('click', () => runGenericTest(button));
   });
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = await initPage();
+    const balanceButton = document.querySelector('[data-test="kis-balance"]');
+    if (balanceButton && !user?.canUseKisAccount) {
+      balanceButton.disabled = true;
+      const result = document.getElementById('kis-balance-result');
+      result.textContent = 'KIS 모의계좌 잔고는 로그인 후 조회할 수 있습니다.';
+      result.classList.add('result--error');
+    }
+  });
 })();

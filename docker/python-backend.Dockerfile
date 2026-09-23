@@ -21,6 +21,11 @@ c.add('warmup', documents=['warmup']); \
 print('fastembed model ready')"
 
 COPY python-stock-backend/*.py .
+# KIS API 탐색기 카탈로그(공식 예제에서 생성한 JSON)
+COPY python-stock-backend/kis_api_catalog.json .
 
 EXPOSE 8200
-CMD ["python", "app.py"]
+# KIS 토큰·호출 제한은 프로세스 메모리에서 공유하므로 worker는 1개로 두고
+# 요청 동시성은 threads로 처리한다. 다중 worker 확장은 Redis 기반 제한기로
+# 전환한 뒤 적용해야 한다.
+CMD ["gunicorn", "--bind", "0.0.0.0:8200", "--workers", "1", "--threads", "8", "--timeout", "120", "app:app"]

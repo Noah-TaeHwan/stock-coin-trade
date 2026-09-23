@@ -1,112 +1,135 @@
+// KIS Testbed 읽기 전용 연결 테스트 화면(/broker-api-test.html) 전용 스크립트.
+// KB증권 테스트는 /kb-api-test.html + /js/kb-api-test.js 로 분리되어 있다.
 (() => {
   const apiBase = window.APP_CONFIG?.apiBase || '';
-  const formatQuote = (data) => {
-    if (!data.ok) return `점검 결과: 실패\n${data.message || '알 수 없는 오류'}`;
-    const q = data.quote;
-    return [
-      '성공', `증권사: ${q.broker}`, `종목코드: ${q.symbol}`,
-      `현재가: ${Number(q.price ?? 0).toLocaleString()}원`,
-      `전일대비: ${q.change ?? '-'}`, `등락률: ${q.changeRate ?? '-'}%`,
-      `누적거래량: ${q.volume ?? '-'}`, `체결시각: ${q.tradeTime || '-'}`,
-    ].join('\n');
+  const SYMBOL_RE = /^\d{6}$/;
+
+  const num = (v, unit = '') => {
+    if (v === null || v === undefined || v === '') return '-';
+    const n = Number(String(v).replace(/,/g, ''));
+    return Number.isFinite(n) ? `${n.toLocaleString()}${unit}` : `${v}${unit}`;
   };
-  const formatTokenCheck = (data) => {
-    if (!data.ok) return `점검 결과: 실패\n${data.message || '알 수 없는 오류'}`;
-    const c = data.check;
-    return [
-      '성공', `증권사: ${c.broker}`, `토큰 유형: ${c.tokenType}`,
-      `유효기간: ${c.expiresIn}초`,
-    ].join('\n');
-  };
-  const runQuoteOrToken = async (button) => {
-    const broker = button.dataset.broker;
-    const result = document.getElementById(`${broker}-result`);
-    let url;
-    if (broker === 'kb') {
-      url = `${apiBase}/api/broker-test/kb/token`;
-    } else {
-      const symbol = document.getElementById(`${broker}-symbol`).value.trim();
-      if (!/^\d{6}$/.test(symbol)) { result.textContent = '종목코드는 6자리 숫자로 입력하세요.'; return; }
-      url = `${apiBase}/api/broker-test/${broker}/quote?symbol=${encodeURIComponent(symbol)}`;
-    }
-    button.disabled = true;
-    result.classList.remove('result--error');
-    result.textContent = '서버에서 읽기 전용 API를 호출하는 중…';
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-      result.textContent = broker === 'kb' ? formatTokenCheck(data) : formatQuote(data);
-      result.classList.toggle('result--error', !data.ok);
-    } catch (error) {
-      result.textContent = `요청 실패\n${error.message}`;
-      result.classList.add('result--error');
-    } finally { button.disabled = false; }
+  const pad = (s, w) => String(s).padStart(w, ' ');
+  const symbol = () => {
+    const value = document.getElementById('kis-symbol').value.trim();
+    if (!SYMBOL_RE.test(value)) throw new Error('종목코드는 6자리 숫자로 입력하세요. (예: 005930)');
+    return value;
   };
 
-  // Additional read-only test rows: each entry builds a URL from the shared
-  // inputs on the page. Responses are pretty-printed as-is (rather than
-  // hand-mapped per field) since these exercise many different KIS/KB
-  // response shapes and raw JSON is the most trustworthy test output.
-  const testBuilders = {
-    'kis-chart': () => {
-      const symbol = document.getElementById('kis-symbol').value.trim();
-      if (!/^\d{6}$/.test(symbol)) throw new Error('종목코드는 6자리 숫자로 입력하세요.');
-      return `/api/broker-test/kis/chart?symbol=${encodeURIComponent(symbol)}`;
+  // ── 응답 포맷터: 서버가 정규화한 KIS 필드만 사람이 읽기 쉬운 줄로 바꾼다.
+  const formatters = {
+    quote(data) {
+      const q = data.quote;
+      return [
+        '성공 · 현재가', `증권사: ${q.broker}`, `종목코드: ${q.symbol}`,
+        `현재가: ${num(q.price, '원')}`, `전일대비: ${num(q.change, '원')}`,
+        `등락률: ${q.changeRate ?? '-'}%`, `누적거래량: ${num(q.volume, '주')}`,
+        `체결시각: ${q.tradeTime || '-'}`,
+      ].join('\n');
     },
-    'kis-orderbook': () => {
-      const symbol = document.getElementById('kis-symbol').value.trim();
-      if (!/^\d{6}$/.test(symbol)) throw new Error('종목코드는 6자리 숫자로 입력하세요.');
-      return `/api/broker-test/kis/orderbook?symbol=${encodeURIComponent(symbol)}`;
+    chart(data) {
+      const c = data.chart;
+      const rows = (c.candles || []).slice(0, 10);
+      const head = `${pad('일자', 8)}  ${pad('시가', 9)} ${pad('고가', 9)} ${pad('저가', 9)} ${pad('종가', 9)} ${pad('거래량', 12)}`;
+      const body = rows.map((r) => `${pad(r.date, 8)}  ${pad(num(r.open), 9)} ${pad(num(r.high), 9)} ${pad(num(r.low), 9)} ${pad(num(r.close), 9)} ${pad(num(r.volume), 12)}`);
+      return [`성공 · 일봉 ${c.candles?.length ?? 0}건 (최근 ${rows.length}건 표시)`, `종목코드: ${c.symbol}`, '', head, ...body].join('\n');
     },
-    'kis-balance': () => '/api/broker-test/kis/balance',
-    'kis-index': () => {
-      const code = document.getElementById('kis-index-code').value;
-      return `/api/broker-test/kis/index?code=${encodeURIComponent(code)}`;
+    orderbook(data) {
+      const o = data.orderbook;
+      const levels = (o.levels || []).slice(0, 10);
+      const head = `${pad('단계', 4)}  ${pad('매도잔량', 10)} ${pad('매도호가', 10)} | ${pad('매수호가', 10)} ${pad('매수잔량', 10)}`;
+      const body = levels.map((l) => `${pad(l.level, 4)}  ${pad(num(l.askQty), 10)} ${pad(num(l.askPrice), 10)} | ${pad(num(l.bidPrice), 10)} ${pad(num(l.bidQty), 10)}`);
+      return [
+        `성공 · 호가 ${levels.length}단계`, `종목코드: ${o.symbol}`,
+        `총 매도잔량: ${num(o.totalAskQty, '주')} · 총 매수잔량: ${num(o.totalBidQty, '주')}`, '', head, ...body,
+      ].join('\n');
     },
-    'kb-quote': () => {
-      const symbol = document.getElementById('kb-symbol').value.trim();
-      if (!/^\d{6}$/.test(symbol)) throw new Error('종목코드는 6자리 숫자로 입력하세요.');
-      return `/api/broker-test/kb/quote?symbol=${encodeURIComponent(symbol)}`;
+    balance(data) {
+      const b = data.balance;
+      const lines = [
+        '성공 · 모의계좌 잔고', `증권사: ${b.broker}`,
+        `예수금: ${num(b.cashBalance, '원')}`, `총 평가금액: ${num(b.totalEvalAmount, '원')}`,
+        `평가손익 합계: ${num(b.totalProfitLoss, '원')}`, `보유 종목 수: ${b.holdingsCount ?? 0}`,
+      ];
+      (b.holdings || []).forEach((h) => {
+        lines.push(`  - ${h.name || h.symbol} (${h.symbol}): ${num(h.quantity, '주')} · 평균단가 ${num(h.avgPrice, '원')} · 평가 ${num(h.evalAmount, '원')} · 손익 ${num(h.profitLoss, '원')} (${h.profitLossRate ?? '-'}%)`);
+      });
+      if (!b.holdings?.length) lines.push('  (보유 종목 없음)');
+      return lines.join('\n');
     },
-    'kb-base-info': () => kbSymbolPath('/base-info'),
-    'kb-orderbook': () => kbSymbolPath('/orderbook'),
-    'kb-chart': () => kbSymbolPath('/chart'),
+    index(data) {
+      const i = data.index;
+      return [
+        `성공 · ${i.index} 지수`, `증권사: ${i.broker}`, `현재 지수: ${num(i.price)}`,
+        `전일대비: ${num(i.change)}`, `등락률: ${i.changeRate ?? '-'}%`, `누적거래량: ${num(i.volume)}`,
+      ].join('\n');
+    },
   };
 
-  function kbSymbolPath(path) {
-    const symbol = document.getElementById('kb-symbol').value.trim();
-    if (!/^\d{6}$/.test(symbol)) throw new Error('종목코드는 6자리 숫자로 입력하세요.');
-    return `/api/broker-test/kb${path}?symbol=${encodeURIComponent(symbol)}`;
+  // ── 각 테스트: 요청 경로와 결과 표시 대상
+  const tests = {
+    'kis-quote': { path: () => `/api/broker-test/kis/quote?symbol=${symbol()}`, format: formatters.quote, result: 'kis-result' },
+    'kis-chart': { path: () => `/api/broker-test/kis/chart?symbol=${symbol()}`, format: formatters.chart, result: 'kis-chart-result' },
+    'kis-orderbook': { path: () => `/api/broker-test/kis/orderbook?symbol=${symbol()}`, format: formatters.orderbook, result: 'kis-orderbook-result' },
+    'kis-balance': { path: () => '/api/broker-test/kis/balance', format: formatters.balance, result: 'kis-balance-result' },
+    'kis-index': {
+      path: () => `/api/broker-test/kis/index?code=${encodeURIComponent(document.getElementById('kis-index-code').value)}`,
+      format: formatters.index, result: 'kis-index-result',
+    },
+  };
+
+  async function parseJson(response) {
+    const text = await response.text();
+    try { return JSON.parse(text); } catch { throw new Error(`서버 응답을 해석할 수 없습니다 (HTTP ${response.status}). 백엔드 상태를 확인하세요.`); }
   }
 
-  const runGenericTest = async (button) => {
-    const testId = button.dataset.test;
-    const result = document.getElementById(`${testId}-result`);
-    let path;
-    try {
-      path = testBuilders[testId]();
-    } catch (error) {
-      result.textContent = error.message;
-      return;
+  const render = (result, text, raw, isError) => {
+    result.textContent = text;
+    result.classList.toggle('result--error', isError);
+    if (raw !== undefined) {
+      const details = document.createElement('details');
+      details.style.marginTop = '8px';
+      const summary = document.createElement('summary');
+      summary.textContent = '원본 응답(JSON) 보기';
+      summary.style.cursor = 'pointer';
+      const pre = document.createElement('pre');
+      pre.style.margin = '6px 0 0';
+      pre.style.whiteSpace = 'pre-wrap';
+      pre.textContent = JSON.stringify(raw, null, 2);
+      details.append(summary, pre);
+      result.append('\n', details);
     }
+  };
+
+  const runTest = async (button) => {
+    const test = tests[button.dataset.test];
+    const result = document.getElementById(test.result);
+    let path;
+    try { path = test.path(); } catch (error) { render(result, error.message, undefined, true); return; }
     button.disabled = true;
-    result.classList.remove('result--error');
-    result.textContent = '서버에서 읽기 전용 API를 호출하는 중…';
+    render(result, '서버에서 KIS Testbed 읽기 전용 API를 호출하는 중…', undefined, false);
     try {
       const response = await fetch(`${apiBase}${path}`);
-      const data = await response.json();
-      result.textContent = JSON.stringify(data, null, 2);
-      result.classList.toggle('result--error', !data.ok);
+      const data = await parseJson(response);
+      if (!data.ok) { render(result, `점검 결과: 실패\n${data.message || '알 수 없는 오류'}`, data, true); return; }
+      render(result, test.format(data), data, false);
     } catch (error) {
-      result.textContent = `요청 실패\n${error.message}`;
-      result.classList.add('result--error');
+      render(result, `요청 실패\n${error.message}`, undefined, true);
     } finally { button.disabled = false; }
   };
 
-  document.querySelectorAll('.run[data-broker]').forEach((button) => {
-    button.addEventListener('click', () => runQuoteOrToken(button));
+  document.querySelectorAll('[data-test]').forEach((button) => {
+    button.addEventListener('click', () => runTest(button));
   });
-  document.querySelectorAll('.run-sm[data-test]').forEach((button) => {
-    button.addEventListener('click', () => runGenericTest(button));
+  document.getElementById('kis-symbol')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') document.querySelector('[data-test="kis-quote"]')?.click();
+  });
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = await initPage();
+    const balanceButton = document.querySelector('[data-test="kis-balance"]');
+    if (balanceButton && !user?.canUseKisAccount) {
+      balanceButton.disabled = true;
+      render(document.getElementById('kis-balance-result'), 'KIS 모의계좌 잔고는 로그인 후 조회할 수 있습니다.', undefined, true);
+    }
   });
 })();

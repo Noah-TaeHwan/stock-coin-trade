@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">한국투자 앱 로그인과 QR코드 스캔 흐름 예시</title>
+  <desc id="desc">한국투자 앱에서 간편비밀번호·생체인증·인증서로 로그인하고, 전체메뉴의 QR코드 스캔으로 PC 홈페이지 로그인을 승인하는 흐름을 요약한 교육용 안내 이미지</desc>
+  <defs>
+    <style>
+      text{font-family:Apple SD Gothic Neo, Malgun Gothic, sans-serif}
+      .h{fill:#172033;font-size:30px;font-weight:700}
+      .s{fill:#64748b;font-size:17px}
+      .t{fill:#172033;font-size:17px;font-weight:700}
+      .b{fill:#334155;font-size:14px}
+      .m{fill:#64748b;font-size:12px}
+      .k{fill:#0b82c5;font-size:14px;font-weight:700}
+      .w{fill:#fff;font-size:14px;font-weight:700}
+      .step{fill:#1e3a8a;font-size:13px;font-weight:700}
+    </style>
+  </defs>
+  <rect width="1200" height="700" fill="#fff"/>
+  <rect x="1" y="1" width="1198" height="698" fill="none" stroke="#d8e0e5"/>
+  <text x="50" y="64" class="h">한국투자 앱으로 로그인하고 PC 로그인을 승인하기</text>
+  <text x="50" y="98" class="s">앱은 계좌 개설·모의투자 참가·인증서 관리에 쓰이고, PC 홈페이지 로그인은 앱의 QR코드 스캔으로 승인할 수 있습니다.</text>
+  <line x1="50" y1="126" x2="1150" y2="126" stroke="#d8e0e5"/>
+
+  <!-- 단계 라벨 -->
+  <text x="110" y="162" class="step">① 앱 설치 후 로그인</text>
+  <text x="500" y="162" class="step">② 전체메뉴 → QR코드 스캔</text>
+  <text x="890" y="162" class="step">③ PC 화면의 QR 승인</text>
+
+  <!-- 화살표 -->
+  <path d="M392 400h60" stroke="#94a3b8" stroke-width="3" fill="none"/><path d="M446 392l14 8-14 8z" fill="#94a3b8"/>
+  <path d="M782 400h60" stroke="#94a3b8" stroke-width="3" fill="none"/><path d="M836 392l14 8-14 8z" fill="#94a3b8"/>
+
+  <!-- 폰 1: 앱 로그인 -->
+  <rect x="110" y="180" width="270" height="480" rx="30" fill="#172033"/>
+  <rect x="122" y="192" width="246" height="456" rx="22" fill="#fff"/>
+  <rect x="200" y="200" width="90" height="10" rx="5" fill="#172033"/>
+  <text x="145" y="248" fill="#0b82c5" font-size="18" font-weight="700">한국투자</text>
+  <text x="222" y="248" class="m">증권</text>
+  <text x="145" y="290" class="t">로그인</text>
+  <rect x="145" y="306" width="200" height="40" rx="8" fill="#eff6ff" stroke="#0b82c5"/>
+  <text x="163" y="331" class="k">간편비밀번호 (6자리)</text>
+  <rect x="145" y="356" width="200" height="40" rx="8" fill="#f3f8fb" stroke="#cbd5e1"/>
+  <text x="163" y="381" class="b">생체인증 (지문·얼굴)</text>
+  <rect x="145" y="406" width="200" height="40" rx="8" fill="#f3f8fb" stroke="#cbd5e1"/>
+  <text x="163" y="431" class="b">인증서 로그인</text>
+  <rect x="145" y="456" width="200" height="40" rx="8" fill="#f3f8fb" stroke="#cbd5e1"/>
+  <text x="163" y="481" class="b">ID · 비밀번호</text>
+  <text x="145" y="530" class="m">처음이면 앱에서 비대면 계좌개설,</text>
+  <text x="145" y="548" class="m">고객 ID 등록, 인증서 발급을 먼저 합니다.</text>
+  <rect x="145" y="575" width="200" height="40" rx="8" fill="#0b82c5"/>
+  <text x="203" y="600" class="w">로그인</text>
+
+  <!-- 폰 2: 전체메뉴 QR 스캔 -->
+  <rect x="500" y="180" width="270" height="480" rx="30" fill="#172033"/>
+  <rect x="512" y="192" width="246" height="456" rx="22" fill="#fff"/>
+  <rect x="590" y="200" width="90" height="10" rx="5" fill="#172033"/>
+  <text x="535" y="248" class="t">전체메뉴</text>
+  <text x="700" y="248" class="m">✕</text>
+  <line x1="535" y1="262" x2="735" y2="262" stroke="#d8e0e5"/>
+  <text x="535" y="292" class="b">나의자산</text>
+  <text x="535" y="322" class="b">트레이딩</text>
+  <text x="535" y="352" class="b">뱅킹/청약/대출</text>
+  <text x="535" y="382" class="b">모의투자</text>
+  <rect x="527" y="398" width="216" height="38" rx="8" fill="#eff6ff" stroke="#0b82c5"/>
+  <text x="543" y="422" class="k">QR코드 스캔</text>
+  <text x="535" y="466" class="b">인증/보안센터 · 인증서 관리</text>
+  <text x="535" y="496" class="b">고객센터</text>
+  <!-- 카메라 프레임 -->
+  <rect x="580" y="514" width="110" height="100" rx="8" fill="#f3f8fb" stroke="#cbd5e1"/>
+  <path d="M592 526h18M592 526v18M678 526h-18M678 526v18M592 602h18M592 602v-18M678 602h-18M678 602v-18" stroke="#0b82c5" stroke-width="3" fill="none"/>
+  <rect x="612" y="546" width="46" height="46" fill="#172033"/>
+  <rect x="619" y="553" width="12" height="12" fill="#fff"/><rect x="639" y="553" width="12" height="12" fill="#fff"/><rect x="619" y="573" width="12" height="12" fill="#fff"/><rect x="641" y="575" width="8" height="8" fill="#fff"/>
+  <text x="562" y="637" class="m" font-size="11">PC 화면의 QR코드를 카메라로 비춥니다</text>
+
+  <!-- PC 화면 3: QR 승인 -->
+  <rect x="890" y="230" width="270" height="200" rx="12" fill="#fff" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="890" y="230" width="270" height="34" rx="12" fill="#f3f8fb"/>
+  <rect x="890" y="252" width="270" height="12" fill="#f3f8fb"/>
+  <circle cx="908" cy="247" r="5" fill="#cbd5e1"/><circle cx="924" cy="247" r="5" fill="#cbd5e1"/><circle cx="940" cy="247" r="5" fill="#cbd5e1"/>
+  <text x="908" y="290" class="t">로그인 · 스마트폰 인증</text>
+  <rect x="908" y="304" width="90" height="90" rx="6" fill="#fff" stroke="#cbd5e1"/>
+  <rect x="922" y="318" width="62" height="62" fill="#172033"/>
+  <rect x="930" y="326" width="16" height="16" fill="#fff"/><rect x="960" y="326" width="16" height="16" fill="#fff"/><rect x="930" y="356" width="16" height="16" fill="#fff"/><rect x="962" y="358" width="10" height="10" fill="#fff"/>
+  <text x="1012" y="330" class="b">한국투자 앱으로</text>
+  <text x="1012" y="350" class="b">QR코드 스캔</text>
+  <text x="1012" y="378" class="m">인증 유효시간 안에 승인</text>
+  <rect x="990" y="470" width="70" height="60" rx="8" fill="#cbd5e1"/>
+  <rect x="980" y="430" width="90" height="46" rx="6" fill="#94a3b8"/>
+  <rect x="890" y="560" width="270" height="70" rx="10" fill="#eff6ff" stroke="#0b82c5"/>
+  <text x="908" y="588" class="k">승인 완료 → PC 홈페이지 로그인</text>
+  <text x="908" y="612" class="m">이후 모의투자 신청·나의계좌 확인 진행</text>
+
+  <text x="50" y="682" class="m">교육용 재구성 이미지입니다. 실제 메뉴 이름·인증 수단·유효시간은 한국투자 앱과 홈페이지의 최신 화면을 따르세요. 앱과 PC 화면의 인증 정보는 공식 채널에만 입력합니다.</text>
+</svg>

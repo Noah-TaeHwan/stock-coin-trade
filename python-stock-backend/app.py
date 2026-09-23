@@ -1,5 +1,13 @@
 import os
 from datetime import timedelta
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Docker 없이 `python app.py`로 직접 실행할 때 저장소 루트의 .env를 읽는다.
+# 이미 설정된 환경변수(Compose environment 등)가 우선하며, 파일이 없으면 무시된다.
+# 다른 모듈이 import 시점에 os.environ을 읽으므로 반드시 그 import보다 먼저 실행한다.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 from flask import Flask, jsonify, request, g, session, got_request_exception
 import threading
@@ -16,6 +24,10 @@ from alpaca_test_api import alpaca_test_bp
 from alpaca_test_aws_api import aws_alpaca_test_bp
 from api_keys import api_key_bp
 from broker_test_api import broker_test_bp
+from kis_api_explorer import kis_explorer_bp
+from kis_chart_api import kis_chart_bp
+from kis_practice import ensure_kis_practice_tables, kis_practice_bp
+from kis_real import kis_real_bp
 from broker_test_aws_api import aws_broker_test_bp
 from crypto import ensure_crypto_tables, market_bp, trade_bp
 from crypto_exchange_test_api import crypto_exchange_test_bp
@@ -36,6 +48,9 @@ from stocks import stock_bp
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
 CORS(
     app,
@@ -58,6 +73,10 @@ app.register_blueprint(aws_alpaca_test_bp)
 app.register_blueprint(stock_bp)
 app.register_blueprint(api_key_bp)
 app.register_blueprint(broker_test_bp)
+app.register_blueprint(kis_explorer_bp)
+app.register_blueprint(kis_chart_bp)
+app.register_blueprint(kis_practice_bp)
+app.register_blueprint(kis_real_bp)
 app.register_blueprint(aws_broker_test_bp)
 app.register_blueprint(open_api_bp)
 app.register_blueprint(ohlcv_db_bp)
@@ -68,6 +87,7 @@ app.register_blueprint(api_usage_bp)
 
 ensure_tables()
 ensure_member_tables()
+ensure_kis_practice_tables()
 ensure_crypto_tables()
 seed_demo_investors()
 seed_ganada_dataset()
@@ -86,7 +106,7 @@ def _capture_unhandled_exception(sender, exception, **extra):
 
 @app.before_request
 def _start_api_usage_timer():
-    if request.path.startswith(("/api/broker-test/", "/api/aws-broker-test/", "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/")):
+    if request.path.startswith(("/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/kis-real/", "/api/aws-broker-test/", "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/")):
         g.api_usage_started_at = time.perf_counter()
 
 
