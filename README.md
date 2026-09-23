@@ -1,5 +1,14 @@
 # 모의투자 · OpenAPI 실습 플랫폼
 
+## 개인 포트폴리오 작업
+
+이 저장소는 강사 원본 [edumgt/stock-coin-trade](https://github.com/edumgt/stock-coin-trade)을 기반으로 한 개인 포크입니다. 아래에 소개하는 화면·차트·모의거래·증권사 연동 기능은 원본에 이미 구현되어 있습니다.
+
+현재 개인 기여는 로컬 Docker 자원 격리, 브로커·클라우드 키와 Docker socket 전달 제한, DB 준비 상태 대기, 실행·검증 기록입니다. 개인 개선과 원본 기능을 구분해 기록합니다.
+
+- [포트폴리오용 로컬 실행](PORTFOLIO_LOCAL.md)
+- [가입·로그인·모의거래·DB 재시작 검증과 남은 문제](docs/evidence/README.md)
+
 <p align="center">
   <img src="./archi.png" alt="시스템 아키텍처 다이어그램" width="900">
 </p>
