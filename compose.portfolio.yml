@@ -1,0 +1,46 @@
+services:
+  frontend:
+    container_name: !reset null
+    ports: !override
+      - "127.0.0.1:${FRONTEND_PORT:-3333}:80"
+
+  mariadb:
+    container_name: !reset null
+    environment: !override
+      MARIADB_DATABASE: mockinv
+      MARIADB_USER: ${MARIADB_USER:?set MARIADB_USER in .env.portfolio}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD in .env.portfolio}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set MARIADB_ROOT_PASSWORD in .env.portfolio}
+
+  postgres:
+    container_name: !reset null
+    environment: !override
+      POSTGRES_DB: ${QUANT_DB_NAME:?set QUANT_DB_NAME in .env.portfolio}
+      POSTGRES_USER: ${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}
+      POSTGRES_PASSWORD: ${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}
+
+  python-backend:
+    container_name: !reset null
+    volumes: !reset []
+    environment: !override
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_NAME: mockinv
+      DB_USER: ${MARIADB_USER:?set MARIADB_USER in .env.portfolio}
+      DB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD in .env.portfolio}
+      QUANT_DATABASE_URL: postgresql+psycopg://${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}:${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}@postgres:5432/${QUANT_DB_NAME:?set QUANT_DB_NAME in .env.portfolio}
+      OHLCV_DATABASE_URL: postgresql+psycopg://${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}:${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}@postgres:5432/${QUANT_DB_NAME:?set QUANT_DB_NAME in .env.portfolio}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env.portfolio}
+      KIS_ENVIRONMENT: paper
+      DEMO_SEED_ENABLED: "true"
+      QDRANT_URL: ":memory:"
+      SESSION_COOKIE_SECURE: "false"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+volumes:
+  lean-data: !reset null
+  lean-results: !reset null

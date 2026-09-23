@@ -1,0 +1,57 @@
+{
+  "api": {
+    "base": "http://127.0.0.1:3333",
+    "homepageStatus": 200,
+    "unauthenticatedAccountStatus": 401,
+    "anonymousMeLoggedIn": false,
+    "registrationStatus": 200,
+    "initialCash": 100000000,
+    "preview": {
+      "status": 200,
+      "mutated": false
+    },
+    "buy": {
+      "status": 200,
+      "quantity": 1,
+      "amount": 285500
+    },
+    "sell": {
+      "status": 200,
+      "quantity": 1,
+      "amount": 285500
+    },
+    "invalidZeroQuantityStatus": 400,
+    "logoutProtectedStatus": {
+      "error": "UNAUTHORIZED",
+      "message": "로그인이 필요합니다."
+    },
+    "final": {
+      "cash": 100000000,
+      "positions": [],
+      "history": [
+        [
+          "SELL",
+          "005930",
+          1,
+          285500,
+          285500
+        ],
+        [
+          "BUY",
+          "005930",
+          1,
+          285500,
+          285500
+        ]
+      ]
+    },
+    "logoutLoginPersistence": true,
+    "restartPersistence": true
+  },
+  "postgres": {
+    "table": "market_data",
+    "beforeRows": 1260,
+    "afterRows": 1260,
+    "persisted": true
+  }
+}
