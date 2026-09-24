@@ -105,7 +105,7 @@ def _get(url: str, params: dict[str, Any] | None = None) -> Any:
     path = urlsplit(url).path
     try:
         response = requests.get(url, headers=_headers(), params=params, timeout=15)
-    except requests.RequestException as exc:
+    except requests.RequestException:
         _audit_alpaca_call(method="GET", path=path, label="Alpaca 조회", request_data=params,
                            http_status=503, response_body={}, duration_ms=(time.perf_counter() - started) * 1000,
                            success=False, error="Alpaca 서버 연결 실패")

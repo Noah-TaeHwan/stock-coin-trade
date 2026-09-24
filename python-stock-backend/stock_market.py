@@ -338,7 +338,7 @@ def get_quote_cached(symbol: str) -> dict:
             "changeRate": change_rate,
             "volume":     volume,
         }
-    except Exception as yahoo_error:
+    except Exception:
         try:
             data = _fetch_naver_quote(symbol, info)
         except Exception as naver_error:
@@ -398,7 +398,7 @@ def get_chart_cached(symbol: str, period: str, include_ma: bool = False) -> tupl
                 "c": round(float(row["Close"]), 2),
                 "v": int(row["Volume"]),
             })
-    except Exception as yahoo_error:
+    except Exception:
         try:
             ohlcv = _fetch_naver_chart(symbol, period, include_ma)
         except Exception as naver_error:

@@ -6,7 +6,7 @@ import time
 from typing import Any
 
 import requests
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, session
 
 from api_usage import record_kis_gateway_call
 from db import session_scope

@@ -1,116 +1,125 @@
-import os
-from datetime import timedelta
-from pathlib import Path
+"""Flask application factory for the stock/coin paper-trading backend.
 
-from dotenv import load_dotenv
+Run the web server with `gunicorn 'app:create_app()'`. Importing this module
+has no side effects on the database or the scheduler: tables and seed data
+come from `flask --app app init-db` / `seed-demo` (bootstrap.py), and the
+recurring jobs run in their own process (worker.py).
+"""
+
+from settings import load_env_file
 
 # Docker 없이 `python app.py`로 직접 실행할 때 저장소 루트의 .env를 읽는다.
 # 이미 설정된 환경변수(Compose environment 등)가 우선하며, 파일이 없으면 무시된다.
 # 다른 모듈이 import 시점에 os.environ을 읽으므로 반드시 그 import보다 먼저 실행한다.
-load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
+load_env_file()
 
-from flask import Flask, jsonify, request, g, session, got_request_exception
-import threading
-import time
-import requests as _req
-from flask_cors import CORS
+import threading  # noqa: E402
+import time  # noqa: E402
+import traceback  # noqa: E402
 
-from admin import admin_bp
-from api_usage import api_usage_bp, ensure_api_usage_table, record_api_usage
-from alternatives import alternative_bp, ensure_tables
-from ai import ai_bp
-from ai_sheet import ai_sheet_bp
-from alpaca_test_api import alpaca_test_bp
-from alpaca_test_aws_api import aws_alpaca_test_bp
-from api_keys import api_key_bp
-from broker_test_api import broker_test_bp
-from kis_api_explorer import kis_explorer_bp
-from kis_chart_api import kis_chart_bp
-from kis_practice import ensure_kis_practice_tables, kis_practice_bp
-from kis_real import kis_real_bp
-from broker_test_aws_api import aws_broker_test_bp
-from crypto import ensure_crypto_tables, market_bp, trade_bp
-from crypto_exchange_test_api import crypto_exchange_test_bp
-from error_analysis import ensure_error_analysis_table, error_analysis_bp, record_error
-from demo_seed import seed_bababa_dataset, seed_demo_investors, seed_ganada_dataset
-from market_bots import ensure_bot_accounts
-from members import ensure_member_tables, member_bp
-from openapi import open_api_bp
-from ohlcv_db import ohlcv_db_bp
-from quant import quant_bp
-from scheduler import start_scheduler
-from stock_market import (
-    BASE_PRICES, STOCKS, get_chart_cached, get_dashboard_stock_quotes, get_index_cached, get_market_cap_rankings,
+import click  # noqa: E402
+import requests as _req  # noqa: E402
+from flask import Blueprint, Flask, g, got_request_exception, jsonify, request, session  # noqa: E402
+from flask_cors import CORS  # noqa: E402
+
+import bootstrap  # noqa: E402
+from admin import admin_bp  # noqa: E402
+from ai import ai_bp  # noqa: E402
+from ai_sheet import ai_sheet_bp  # noqa: E402
+from alpaca_test_api import alpaca_test_bp  # noqa: E402
+from alpaca_test_aws_api import aws_alpaca_test_bp  # noqa: E402
+from alternatives import alternative_bp  # noqa: E402
+from api_keys import api_key_bp  # noqa: E402
+from api_usage import api_usage_bp, record_api_usage  # noqa: E402
+from broker_test_api import broker_test_bp  # noqa: E402
+from broker_test_aws_api import aws_broker_test_bp  # noqa: E402
+from crypto import market_bp, trade_bp  # noqa: E402
+from crypto_exchange_test_api import crypto_exchange_test_bp  # noqa: E402
+from error_analysis import error_analysis_bp, record_error  # noqa: E402
+from kis_api_explorer import kis_explorer_bp  # noqa: E402
+from kis_chart_api import kis_chart_bp  # noqa: E402
+from kis_practice import kis_practice_bp  # noqa: E402
+from kis_real import kis_real_bp  # noqa: E402
+from members import member_bp  # noqa: E402
+from ohlcv_db import ohlcv_db_bp  # noqa: E402
+from openapi import open_api_bp  # noqa: E402
+from quant import quant_bp  # noqa: E402
+from settings import Settings  # noqa: E402
+from stock_market import (  # noqa: E402
+    BASE_PRICES, get_chart_cached, get_dashboard_stock_quotes, get_index_cached, get_market_cap_rankings,
     get_quote_cached, get_stock_info, list_krx_stocks, search_krx_stocks,
 )
-from stocks import stock_bp
+from stocks import stock_bp  # noqa: E402
 
-app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+# Routes that used to be declared directly on the module-level app.
+core_bp = Blueprint("core", __name__)
 
-CORS(
-    app,
-    resources={
-        r"/api/*": {"origins": ["http://localhost:*", "http://127.0.0.1:*"]},
-        r"/openapi/*": {"origins": "*"},
-    },
-    supports_credentials=True,
+# Registration order matches the original module-level app.
+BLUEPRINTS = (
+    member_bp, market_bp, trade_bp, crypto_exchange_test_bp, admin_bp, ai_bp, ai_sheet_bp,
+    alpaca_test_bp, aws_alpaca_test_bp, stock_bp, api_key_bp, broker_test_bp, kis_explorer_bp,
+    kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp, open_api_bp, ohlcv_db_bp,
+    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp,
 )
 
-app.register_blueprint(member_bp)
-app.register_blueprint(market_bp)
-app.register_blueprint(trade_bp)
-app.register_blueprint(crypto_exchange_test_bp)
-app.register_blueprint(admin_bp)
-app.register_blueprint(ai_bp)
-app.register_blueprint(ai_sheet_bp)
-app.register_blueprint(alpaca_test_bp)
-app.register_blueprint(aws_alpaca_test_bp)
-app.register_blueprint(stock_bp)
-app.register_blueprint(api_key_bp)
-app.register_blueprint(broker_test_bp)
-app.register_blueprint(kis_explorer_bp)
-app.register_blueprint(kis_chart_bp)
-app.register_blueprint(kis_practice_bp)
-app.register_blueprint(kis_real_bp)
-app.register_blueprint(aws_broker_test_bp)
-app.register_blueprint(open_api_bp)
-app.register_blueprint(ohlcv_db_bp)
-app.register_blueprint(quant_bp)
-app.register_blueprint(alternative_bp)
-app.register_blueprint(error_analysis_bp)
-app.register_blueprint(api_usage_bp)
-
-ensure_tables()
-ensure_member_tables()
-ensure_kis_practice_tables()
-ensure_crypto_tables()
-seed_demo_investors()
-seed_ganada_dataset()
-seed_bababa_dataset()
-ensure_bot_accounts()
-ensure_error_analysis_table()
-ensure_api_usage_table()
-start_scheduler()
+_API_USAGE_PREFIXES = (
+    "/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/kis-real/", "/api/aws-broker-test/",
+    "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/",
+)
 
 
-@got_request_exception.connect_via(app)
+def create_app(settings: Settings | None = None) -> Flask:
+    """Build the Flask app. Pure: no database access, no background threads."""
+    settings = settings or Settings.from_env()
+    app = Flask(__name__)
+    app.config.update(settings.flask_config())
+
+    CORS(
+        app,
+        resources={
+            r"/api/*": {"origins": ["http://localhost:*", "http://127.0.0.1:*"]},
+            r"/openapi/*": {"origins": "*"},
+        },
+        supports_credentials=True,
+    )
+
+    for blueprint in BLUEPRINTS:
+        app.register_blueprint(blueprint)
+    app.register_blueprint(core_bp)
+
+    got_request_exception.connect(_capture_unhandled_exception, app, weak=False)
+    app.before_request(_start_api_usage_timer)
+    app.after_request(_record_failed_response)
+
+    app.cli.add_command(init_db_command)
+    app.cli.add_command(seed_demo_command)
+    return app
+
+
+@click.command("init-db")
+def init_db_command() -> None:
+    """Create the MariaDB tables (idempotent)."""
+    bootstrap.create_tables()
+    click.echo("init-db: tables are ready")
+
+
+@click.command("seed-demo")
+def seed_demo_command() -> None:
+    """Add sample investors, their datasets and market-bot accounts (idempotent)."""
+    bootstrap.seed_demo_data()
+    click.echo("seed-demo: done")
+
+
 def _capture_unhandled_exception(sender, exception, **extra):
     """Keep the exception until after_request persists its diagnostic details."""
     g.unhandled_error = exception
 
 
-@app.before_request
 def _start_api_usage_timer():
-    if request.path.startswith(("/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/kis-real/", "/api/aws-broker-test/", "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/")):
+    if request.path.startswith(_API_USAGE_PREFIXES):
         g.api_usage_started_at = time.perf_counter()
 
 
-@app.after_request
 def _record_failed_response(response):
     """Capture handled API failures too, not only Flask exceptions."""
     if getattr(g, "api_usage_started_at", None) is not None:
@@ -124,7 +133,7 @@ def _record_failed_response(response):
                 source="SERVER", severity="CRITICAL" if response.status_code >= 500 else "WARNING",
                 status=response.status_code, method=request.method, path=request.full_path.rstrip("?"),
                 error_type=type(exc).__name__ if exc else "HTTPError",
-                message=message, stack_trace="".join(__import__("traceback").format_exception(exc)) if exc else None,
+                message=message, stack_trace="".join(traceback.format_exception(exc)) if exc else None,
                 request_meta={"endpoint": request.endpoint, "remoteAddr": request.remote_addr}, member_id=session.get("member_id"),
             )
         except Exception:
@@ -133,13 +142,13 @@ def _record_failed_response(response):
 
 
 # ── Health ──────────────────────────────────────────────────────────────────
-@app.get("/health")
+@core_bp.get("/health")
 def health():
     return jsonify({"status": "ok"})
 
 
 # ── Stock list ───────────────────────────────────────────────────────────────
-@app.get("/api/stocks/list")
+@core_bp.get("/api/stocks/list")
 def stock_list():
     try:
         limit = max(1, min(int(request.args.get("limit", 30)), 100))
@@ -149,7 +158,7 @@ def stock_list():
         return jsonify({"message": f"KRX 종목 목록을 가져오지 못했습니다: {exc}"}), 503
 
 
-@app.get("/api/stocks/search")
+@core_bp.get("/api/stocks/search")
 def stock_search():
     query = request.args.get("q", "")
     try:
@@ -160,7 +169,7 @@ def stock_search():
 
 
 # ── Market indices ───────────────────────────────────────────────────────────
-@app.get("/api/stocks/market")
+@core_bp.get("/api/stocks/market")
 def market():
     kospi  = get_index_cached("^KS11")
     kosdaq = get_index_cached("^KQ11")
@@ -168,7 +177,7 @@ def market():
 
 
 # ── Quote ────────────────────────────────────────────────────────────────────
-@app.get("/api/stocks/quote")
+@core_bp.get("/api/stocks/quote")
 def quote():
     symbol = request.args.get("symbol", "").upper()
     if not symbol:
@@ -184,7 +193,7 @@ def quote():
 
 
 # ── Chart ────────────────────────────────────────────────────────────────────
-@app.get("/api/stocks/chart")
+@core_bp.get("/api/stocks/chart")
 def chart():
     symbol = request.args.get("symbol", "").upper()
     period = request.args.get("period", "1m")
@@ -203,7 +212,7 @@ def chart():
 
 
 # ── Market Movers ─────────────────────────────────────────────────────────────
-@app.get("/api/stocks/movers")
+@core_bp.get("/api/stocks/movers")
 def movers():
     quotes = []
     for q in get_dashboard_stock_quotes().values():
@@ -218,7 +227,7 @@ def movers():
 
 
 # ── Batch Prices (실시간 마켓 리스트용) ──────────────────────────────────────
-@app.get("/api/stocks/prices")
+@core_bp.get("/api/stocks/prices")
 def batch_prices():
     result = {}
     requested = [symbol.strip().upper() for symbol in request.args.get("symbols", "").split(",") if symbol.strip()]
@@ -251,14 +260,14 @@ def batch_prices():
     return jsonify({"prices": result})
 
 
-@app.get("/api/stocks/market-cap-rankings")
+@core_bp.get("/api/stocks/market-cap-rankings")
 def market_cap_rankings():
     return jsonify({"rankings": get_market_cap_rankings(10)})
 
 
 # ── Qdrant / RAG endpoints ────────────────────────────────────────────────────
 
-@app.post("/api/stocks/ai/qdrant/search")
+@core_bp.post("/api/stocks/ai/qdrant/search")
 def ai_qdrant_search():
     data  = request.get_json(silent=True) or {}
     query = str(data.get("query", "")).strip()
@@ -272,7 +281,7 @@ def ai_qdrant_search():
         return jsonify({"error": str(exc)}), 503
 
 
-@app.get("/api/stocks/ai/qdrant/stats")
+@core_bp.get("/api/stocks/ai/qdrant/stats")
 def ai_qdrant_stats():
     try:
         import qdrant_service as qs
@@ -281,7 +290,7 @@ def ai_qdrant_stats():
         return jsonify({"error": str(exc)}), 503
 
 
-@app.get("/api/stocks/ai/qdrant/list")
+@core_bp.get("/api/stocks/ai/qdrant/list")
 def ai_qdrant_list():
     try:
         import qdrant_service as qs
@@ -291,7 +300,7 @@ def ai_qdrant_list():
         return jsonify({"error": str(exc)}), 503
 
 
-@app.post("/api/stocks/ai/qdrant/add")
+@core_bp.post("/api/stocks/ai/qdrant/add")
 def ai_qdrant_add():
     data     = request.get_json(silent=True) or {}
     text     = str(data.get("text", "")).strip()
@@ -334,7 +343,7 @@ def _krx_pdf_url(noti_no: str) -> str:
     return f"{_KRX_FILE_BASE}/obk/dyn/noti/{date}0000{serial}2.pdf"
 
 
-@app.get("/api/stocks/news/krx")
+@core_bp.get("/api/stocks/news/krx")
 def krx_news():
     now = time.time()
     with _news_lock:
@@ -381,4 +390,11 @@ def krx_news():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8200, debug=False)
+    # Direct `python app.py` run for development: same behaviour as before the
+    # factory split (tables, seeds and the scheduler in this one process).
+    from scheduler import start_scheduler
+
+    bootstrap.create_tables()
+    bootstrap.seed_demo_data()
+    start_scheduler()
+    create_app().run(host="0.0.0.0", port=8200, debug=False)

@@ -1,4 +1,7 @@
+import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from flask import Flask
@@ -22,19 +25,44 @@ class KbLabTest(unittest.TestCase):
         response = self.client.get("/api/broker-test/kb/status")
         self.assertEqual(response.status_code, 401)
 
-    @patch("broker_test_api.get_kb_configuration_status")
-    def test_kb_status_returns_no_secret_values(self, status):
-        status.return_value = {
-            "configured": True, "source": "kb.key", "environment": {"complete": False},
-            "keyFile": {"mounted": True, "valid": True, "permission": "600", "securePermission": True},
-            "endpoint": broker_test.KB_API_BASE_URL, "mode": "production", "readOnly": True,
-        }
-        self.login()
-        response = self.client.get("/api/broker-test/kb/status")
+    # Same idea as the Alpaca status tests: call the real
+    # get_kb_configuration_status() and check that no credential value
+    # reaches the response. The earlier version mocked the function and then
+    # asserted on the mock's output, so it could not fail.
+    def _status_with(self, env, key_file_text=None):
+        with tempfile.TemporaryDirectory() as key_dir:
+            key_dir = Path(key_dir)
+            if key_file_text is not None:
+                key_path = key_dir / "kb.key"
+                key_path.write_text(key_file_text, encoding="utf-8")
+                key_path.chmod(0o600)
+            with patch.dict(os.environ, env, clear=False), \
+                    patch("broker_test.SECRETS_DIR", key_dir), patch("broker_test.ROOT_DIR", key_dir):
+                self.login()
+                return self.client.get("/api/broker-test/kb/status")
+
+    def test_kb_status_from_environment_does_not_echo_credentials(self):
+        response = self._status_with({"KB_APP_KEY": "KB-ENV-KEY-3d8e1f", "KB_APP_SECRET": "KB-ENV-SECRET-a47b20"})
         self.assertEqual(response.status_code, 200)
-        body = response.get_json()
-        self.assertTrue(body["status"]["configured"])
-        self.assertNotIn("appSecret", str(body))
+        status = response.get_json()["status"]
+        self.assertTrue(status["configured"])
+        self.assertEqual(status["source"], "environment")
+        body = response.get_data(as_text=True)
+        self.assertNotIn("KB-ENV-KEY-3d8e1f", body)
+        self.assertNotIn("KB-ENV-SECRET-a47b20", body)
+
+    def test_kb_status_from_key_file_does_not_echo_credentials(self):
+        response = self._status_with(
+            {"KB_APP_KEY": "", "KB_APP_SECRET": ""},
+            key_file_text="AppKey=KB-FILE-KEY-66c2b9\nSecret=KB-FILE-SECRET-1f0e87\n",
+        )
+        self.assertEqual(response.status_code, 200)
+        status = response.get_json()["status"]
+        self.assertTrue(status["configured"])
+        self.assertEqual(status["source"], "kb.key")
+        body = response.get_data(as_text=True)
+        self.assertNotIn("KB-FILE-KEY-66c2b9", body)
+        self.assertNotIn("KB-FILE-SECRET-1f0e87", body)
 
     @patch("broker_test._audit_kb_call")
     @patch("broker_test._kb_data_header", return_value={})

@@ -37,6 +37,14 @@ docker compose --env-file .env.portfolio -p stock-portfolio-local -f docker-comp
 
 `config --services`는 서비스 이름만 출력한다. 전체 `config` 출력에는 비밀번호와 세션 키가 포함되므로 공유하지 않는다. 초기 이미지 빌드에는 시간이 걸릴 수 있다.
 
+서비스는 여섯 개다: `frontend`, `mariadb`, `postgres`, `init`, `python-backend`, `worker`.
+
+- `init`은 테이블 생성(`flask --app app init-db`)과 샘플 데이터 시드(`flask --app app seed-demo`)를 한 번 실행하고 종료 코드 0으로 끝난다.
+  - `python-backend`와 `worker`는 `init`이 성공한 뒤에 시작한다.
+  - 두 명령은 멱등이라 `up`을 다시 실행해 `init`이 또 돌아도 기존 데이터는 바뀌지 않는다.
+- `worker`는 코인 랭킹·업비트 마켓 동기화와 시장 봇 같은 주기 작업을 웹 서버와 분리된 프로세스에서 실행한다.
+- 따라서 `ps`에서 `init`이 `Exited (0)`인 것은 정상이다.
+
 ## 확인
 
 1. `http://127.0.0.1:3333/`에서 홈 화면을 열고, `http://127.0.0.1:3333/member/login.html`에서 앱 자체 로그인을 확인한다. 포트를 바꿨으면 URL도 바꾼다.
@@ -66,3 +74,5 @@ docker compose --env-file .env.portfolio -p stock-portfolio-local -f docker-comp
 `down`은 컨테이너와 네트워크만 내리고 MariaDB·PostgreSQL 볼륨을 보존한다. 데이터 보존이 필요하므로 `down -v`는 사용하지 않는다. 로컬 접속만 허용하도록 프런트엔드 포트는 `127.0.0.1`에 바인딩한다.
 
 2026-09-23 로컬 빌드·실행, 브라우저 가입·로그인·모의 매수, API 모의 매수·매도, 두 DB와 백엔드 재시작 후 데이터 보존을 확인했다. [실행 증거와 남은 문제](docs/evidence/README.md)를 참고한다. AWS 배포는 수행하지 않았다. 이 포크에서는 원본의 자동 운영 배포 워크플로를 제거했다.
+
+2026-09-24에는 앱 팩토리·`init`·`worker` 분리 후 같은 절차(API 가입·로그인·모의 매수, DB와 백엔드 재시작 후 보존)를 다시 확인했다. [기반 작업 검증](docs/evidence/foundation-2026-09-24.md)을 참고한다.
