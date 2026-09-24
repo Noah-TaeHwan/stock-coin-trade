@@ -8,11 +8,14 @@
 
 - [README.md](README.md): 기능 개요, 아키텍처, 빠른 시작(Docker Compose), 기본 계정, API 요약, 저장소 구조 전체
 - [.env.example](.env.example): 필요한 환경 변수 전체 목록 (DB, SECRET_KEY, CMC/ANTHROPIC 키, KIS/KB/Alpaca 키)
-- [docker-compose.yml](docker-compose.yml): frontend / python-backend / mariadb(local profile) / postgres(local-db profile) 구성
+- [docker-compose.yml](docker-compose.yml): frontend / init(일회성 DB 초기화) / python-backend / worker(주기 작업) / mariadb·postgres(local-db profile) 구성
+- [pyproject.toml](pyproject.toml), [tests/](tests/), [.github/workflows/ci.yml](.github/workflows/ci.yml): pytest·ruff 설정, 테스트(unit·integration·labs), CI
+- [docs/adr/](docs/adr/): 설계 결정 기록, [docs/evidence/](docs/evidence/): 검증 기록
 
 ## 백엔드 (python-stock-backend/)
 
-- [app.py](python-stock-backend/app.py): Flask 앱 진입점, Blueprint 등록
+- [app.py](python-stock-backend/app.py): `create_app()` 팩토리(import 부작용 없음), Blueprint 등록, `init-db`·`seed-demo` CLI
+- [settings.py](python-stock-backend/settings.py): `APP_PROFILE`(local·public)과 기동 검사, [bootstrap.py](python-stock-backend/bootstrap.py): 테이블·시드, [worker.py](python-stock-backend/worker.py): 주기 작업 프로세스
 - [members.py](python-stock-backend/members.py): 회원가입·로그인·세션
 - [stocks.py](python-stock-backend/stocks.py), [stock_trading.py](python-stock-backend/stock_trading.py), [stock_market.py](python-stock-backend/stock_market.py): 국내 주식 모의 주문·시세·차트
 - [crypto.py](python-stock-backend/crypto.py): 코인 시세·모의 주문
@@ -24,7 +27,7 @@
 - [quant.py](python-stock-backend/quant.py): PostgreSQL 퀀트 API(백테스트·시그널·OHLCV)
 - [ai.py](python-stock-backend/ai.py), [ai_sheet.py](python-stock-backend/ai_sheet.py), [qdrant_service.py](python-stock-backend/qdrant_service.py): AI 분석·AI Sheet·Qdrant 지식 검색
 - [models.py](python-stock-backend/models.py), [db.py](python-stock-backend/db.py): SQLAlchemy 모델과 DB 연결
-- [requirements.txt](python-stock-backend/requirements.txt): Python 의존성
+- [requirements.txt](python-stock-backend/requirements.txt): 직접 의존성, [requirements.lock](python-stock-backend/requirements.lock): uv로 만든 해시 고정 lock(설치는 `--require-hashes`)
 
 ## 프론트엔드 (frontend/)
 

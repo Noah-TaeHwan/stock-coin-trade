@@ -1,6 +1,6 @@
 # 코인 차익·김프(ARB) 화면 검증 — 2026-09-24
 
-대상은 브랜치 `claude/loving-planck-cuh4xn`이고, 기준은 `main`의 `2e7bab4`다. 새 화면 1개와 백엔드 Blueprint 1개를 추가했고, 기존 화면은 공통 셸에 메뉴 1개와 명령 1개만 더했다.
+대상은 브랜치 `claude/loving-planck-cuh4xn`이다. 처음에는 `main`의 `2e7bab4`를 기준으로 만들었고, 그 뒤 `main`에 들어온 기반 작업(`16a581c`, 앱 팩토리·CI·테스트 구조)을 병합해 다시 검증했다. 새 화면 1개와 백엔드 Blueprint 1개를 추가했고, 기존 화면은 공통 셸에 메뉴 1개와 명령 1개만 더했다.
 
 ## 무엇을 만들었나
 
@@ -34,9 +34,9 @@
 
 | 항목 | 방법 | 결과 |
 |---|---|---|
-| 계산 단위 테스트 | `python -m unittest test_arbitrage` | 13개 통과. 검사 대상: 김프·USDT 프리미엄 식, VWAP 매수·매도와 깊이 부족, 수수료 차감 후 순손익 부호, 출금 수수료 초과, 지역 제한·연결 실패 소스가 있어도 200 응답, 캐시 적중·만료, 잘못된 코인·주기 거부, 캔들 시각 정렬 |
-| 기존 회귀 | 백엔드 컨테이너에서 기존 테스트 5개 파일과 함께 실행 | 39개 전부 통과 |
-| 문법·공백 | `python3 -m py_compile python-stock-backend/*.py`, `node --check frontend/js/*.js`, `git diff --check` | 통과 |
+| 계산 단위 테스트 | `pytest tests/unit/test_arbitrage.py` | 15개 통과. 검사 대상: 김프·USDT 프리미엄 식, VWAP 매수·매도와 깊이 부족, 수수료 차감 후 순손익 부호, 출금 수수료 초과, 지역 제한·연결 실패 소스가 있어도 200 응답, 캐시 적중·만료, 잘못된 코인·주기 거부, 캔들 시각 정렬 |
+| 기존 회귀 | CI와 같은 명령 `pytest -m "not integration"`(잠긴 `requirements-dev.lock` 설치) | 69개 통과, 통합 테스트 4개는 DB가 필요해 제외. 라우트 스냅샷(`tests/unit/snapshots/routes_local.txt`)에는 `/api/arb/*` 4개만 추가됐다(122 → 126). import·`create_app()`이 DB 접속이나 스레드를 만들지 않는다는 기존 검사도 통과했다. 호가 병렬 조회용 스레드 풀은 첫 요청 때 스레드를 만든다. |
+| 린트·문법·공백 | `ruff check .`, `ruff format --check tests/unit tests/integration tests/conftest.py`, `node --check frontend/js/*.js`, `git diff --check` | 통과 |
 | API(nginx 경유) | `curl 127.0.0.1:3333/api/arb/...` | snapshot·matrix·history(1D)·network 모두 200. 소스 상태: 원화 4곳·OKX·환율 `ok`, Binance `blocked` |
 | 김프 수기 대조 | 브라우저에서 snapshot 원값으로 `업비트 ÷ (OKX × 업비트 USDT) − 1`을 다시 계산 | API 값과 소수 넷째 자리까지 일치하고, 화면 KPI도 같은 값 |
 | 명령줄 | `ARB` Enter, `ARB XRP` Enter | `/arbitrage.html`, `/arbitrage.html?symbol=XRP`로 이동 |
@@ -51,6 +51,17 @@
 모바일 대비 점검 중 선택 코인 KPI의 작은 글씨가 옆 칸과 겹치는 것을 스크린샷에서 발견했다. 900px 이하에서는 선택 코인 KPI를 한 줄 전체로 쓰고 줄바꿈을 허용하도록 고친 뒤 다시 검사했다.
 
 별개로, 비로그인으로 주식 화면(`/trade/stock.html`)을 열면 `로그인이 필요합니다.` 미처리 예외가 한 건 난다. `stock.js`의 요청 도우미가 401을 예외로 던지기 때문이다. 이번 변경 전부터 있던 동작이라 여기서는 고치지 않았다.
+
+### `main` 병합 후 재검증 (2026-09-25 02:10 KST 전후)
+
+`16a581c`(앱 팩토리·`init`·`worker` 분리)를 병합하면서 두 가지를 맞췄다. `arb_bp`는 `app.py`의 `BLUEPRINTS` 끝에 등록했고, 테스트는 `tests/unit/test_arbitrage.py`(pytest)로 옮겼다.
+
+같은 방식으로 이미지를 다시 빌드해 여섯 서비스를 올렸다. `init`은 `Exited (0)`으로 끝났고, 나머지 다섯 서비스는 healthy였다.
+
+- `/health`와 `/api/arb/*` 4개 경로가 200을 반환했다. 소스 상태는 이전과 같다(Binance만 `blocked`).
+- 브라우저 검사 21개 항목이 모두 다시 통과했다. 1440×900은 390개, 390×844는 383개 요소를 검사했고, 대비 3:1 미만은 0개였다.
+- 이 시각 BTC 온체인 비용은 2 sat/vB로 약 322원이었다. 거래소 출금 수수료 참고값(약 57,460원)이 그 178배다.
+- 아래 스크린샷은 병합 전 실행에서 찍었다.
 
 ## 확인 시점의 관찰 (2026-09-24 21:31 KST 전후)
 

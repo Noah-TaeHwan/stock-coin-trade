@@ -5,5 +5,12 @@ services:
   frontend:
     image: ${ECR_REGISTRY:?Set ECR_REGISTRY to your ECR registry}/stock-coin-trade-frontend:${IMAGE_TAG:?Set IMAGE_TAG to a pushed ECR image tag}
 
+  # init·worker는 백엔드와 같은 이미지로 명령만 다르게 실행한다.
+  init:
+    image: ${ECR_REGISTRY:?Set ECR_REGISTRY to your ECR registry}/stock-coin-trade-python-backend:${IMAGE_TAG:?Set IMAGE_TAG to a pushed ECR image tag}
+
   python-backend:
+    image: ${ECR_REGISTRY:?Set ECR_REGISTRY to your ECR registry}/stock-coin-trade-python-backend:${IMAGE_TAG:?Set IMAGE_TAG to a pushed ECR image tag}
+
+  worker:
     image: ${ECR_REGISTRY:?Set ECR_REGISTRY to your ECR registry}/stock-coin-trade-python-backend:${IMAGE_TAG:?Set IMAGE_TAG to a pushed ECR image tag}

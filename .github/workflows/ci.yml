@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Third-party actions are pinned to full commit SHAs (GitHub "secure use"
+# guidance); the comment names the release the SHA was resolved from.
+
+jobs:
+  lint-unit:
+    name: Lint, unit tests, JS syntax, dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - name: Install locked dependencies (hash-checking mode)
+        run: python -m pip install --require-hashes -r requirements-dev.lock
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff format (portfolio test code)
+        run: ruff format --check tests/unit tests/integration tests/conftest.py
+      - name: Unit tests
+        run: pytest -m "not integration"
+      - name: JavaScript syntax
+        run: |
+          for file in frontend/js/*.js; do
+            node --check "$file"
+          done
+      - name: Dependency audit (fails on vulnerabilities not in .github/pip-audit-known-vulns.txt)
+        run: |
+          mapfile -t known < <(grep -v '^#' .github/pip-audit-known-vulns.txt | awk 'NF {print $1}')
+          args=()
+          for id in "${known[@]}"; do args+=(--ignore-vuln "$id"); done
+          echo "Tracked known vulnerabilities: ${#known[@]}" >> "$GITHUB_STEP_SUMMARY"
+          pip-audit --require-hashes -r python-stock-backend/requirements.lock "${args[@]}"
+
+  integration:
+    name: Integration tests (MariaDB 11.4, PostgreSQL 16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: mockinv
+          MARIADB_USER: mockinv
+          MARIADB_PASSWORD: ci-only-password
+          MARIADB_ROOT_PASSWORD: ci-only-root-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: quant_research
+          POSTGRES_USER: quant
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U quant -d quant_research"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      RUN_INTEGRATION: "1"
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_NAME: mockinv
+      DB_USER: mockinv
+      DB_PASSWORD: ci-only-password
+      QUANT_DATABASE_URL: postgresql+psycopg://quant:ci-only-password@127.0.0.1:5432/quant_research
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - name: Install locked dependencies (hash-checking mode)
+        run: python -m pip install --require-hashes -r requirements-dev.lock
+      - name: Load schemas (what docker-entrypoint-initdb.d does in Compose)
+        run: |
+          docker exec -i "${{ job.services.mariadb.id }}" mariadb -umockinv -pci-only-password mockinv < database/db.sql
+          docker exec -i "${{ job.services.postgres.id }}" psql -q -v ON_ERROR_STOP=1 -U quant -d quant_research < database/quant-postgres.sql
+      - name: Integration tests
+        run: pytest -m integration
+
+  docker:
+    name: Compose config and image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate Compose files
+        env:
+          # Placeholders only: the portfolio overlay requires these to be set.
+          MARIADB_USER: ci
+          MARIADB_PASSWORD: ci
+          MARIADB_ROOT_PASSWORD: ci
+          QUANT_DB_NAME: ci
+          QUANT_DB_USER: ci
+          QUANT_DB_PASSWORD: ci
+          SECRET_KEY: ci
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.yml -f compose.portfolio.yml --profile local-db config --quiet
+          ECR_REGISTRY=example.invalid IMAGE_TAG=ci docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
+      - name: Build frontend image
+        run: docker build -f docker/frontend.Dockerfile -t ci/frontend .
+      - name: Build backend image
+        run: docker build -f docker/python-backend.Dockerfile -t ci/python-backend .
+      - name: Backend image imports without a database
+        run: |
+          docker run --rm -e DB_HOST=127.0.0.1 -e DB_PORT=9 ci/python-backend \
+            python -c "import app; assert app.create_app().test_client().get('/health').status_code == 200; print('ok')"

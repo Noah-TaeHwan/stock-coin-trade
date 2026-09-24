@@ -8,11 +8,19 @@
 
 Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령줄·기능키·티커, 패널형 주식·코인 워크스페이스), 포트폴리오 브랜딩, 격리된 로컬 Compose 실행, 브로커·클라우드 키와 Docker socket 전달 제한, DB 준비 상태 대기, KIS MCP의 모의투자 키 입력 경계 보강, 자동 운영 배포 경로 제거와 배포 값의 명시적 설정 요구, 로컬 실행·검증 기록입니다. 개인 배포는 아직 수행하지 않았습니다.
 
+포트폴리오 개발 계획의 기반 단계에서는 다음을 더했습니다.
+- pytest·ruff 설정, 해시로 고정한 의존성 lock, GitHub Actions CI(단위·MariaDB/PostgreSQL 통합·의존성 감사·이미지 빌드)
+- import 부작용을 없앤 `create_app()` 팩토리, `APP_PROFILE`별 기동 검사, 테이블·시드를 맡는 일회성 `init` 서비스, 주기 작업을 맡는 `worker` 서비스
+
+HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
+
 - [포트폴리오용 로컬 실행](PORTFOLIO_LOCAL.md)
 - [브랜딩 전 가입·로그인·모의거래·DB 재시작 검증](docs/evidence/README.md)
 - [브랜딩 후 로컬 화면·모의거래 검증](docs/evidence/portfolio-brand-2026-09-23.md)
 - [터미널형 UI 전환 검증](docs/evidence/terminal-ui-2026-09-24.md)
+- [기반 작업(테스트·CI·앱 팩토리) 검증](docs/evidence/foundation-2026-09-24.md)
 - [코인 차익·김프 화면 검증](docs/evidence/arbitrage-2026-09-24.md)
+- 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
 
@@ -73,7 +81,7 @@ Nginx Frontend (:3333)
 | Frontend | Nginx, HTML, Vanilla JS, Tailwind CDN | 화면·오프캔버스 메뉴·API 호출 |
 | Backend | Flask, SQLAlchemy, Requests | 회원·모의 주문·시세·Open API·외부 API 테스트 |
 | Data | MariaDB, PostgreSQL, Qdrant(선택) | 사용자·주문, 퀀트 시계열/백테스트, AI 지식 검색 |
-| 운영 | Docker Compose | frontend, python-backend, mariadb(local profile) |
+| 운영 | Docker Compose | frontend, init(일회성 DB 초기화), python-backend, worker(주기 작업), mariadb·postgres(local-db profile) |
 
 ## 빠른 시작
 
@@ -457,17 +465,23 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 │   ├── js/common.js                   # 모든 페이지 공통 offcanvas 메뉴
 │   └── images/                        # 학습용 이미지·안내도
 ├── python-stock-backend/              # Flask API
-│   ├── app.py                         # 앱 진입점과 Blueprint 등록
+│   ├── app.py                         # create_app() 팩토리, Blueprint 등록, init-db·seed-demo CLI
+│   ├── settings.py                    # APP_PROFILE(local·public)과 기동 검사
+│   ├── bootstrap.py / worker.py       # 테이블·시드 단계, 주기 작업 프로세스
 │   ├── members.py / stocks.py          # 회원·주식 모의거래
 │   ├── crypto.py / alternatives.py     # 코인·대체자산
 │   ├── arbitrage.py                    # 코인 차익·김프 (공개 시세 계산)
 │   ├── openapi.py / api_keys.py        # 외부 연동 API와 키 관리
 │   ├── broker_test*.py                 # KIS·KB 조회, KIS Testbed 주문 흐름
 │   ├── alpaca_test*.py                 # Alpaca Paper 조회·주문 흐름
-│   └── stock_market.py                 # 국내 주식 시세·차트
+│   ├── stock_market.py                 # 국내 주식 시세·차트
+│   └── requirements.txt / .lock        # 직접 의존성, uv로 만든 해시 고정 lock
+├── tests/                             # unit·integration·labs(기존 실습 테스트) pytest
 ├── database/db.sql                    # MariaDB 초기 스키마·예제 데이터
 ├── docker/                            # Frontend·Backend 이미지와 Nginx 설정
 ├── docker-compose.yml                 # 로컬 실행 구성
+├── .github/workflows/ci.yml           # CI: lint·unit·통합·의존성 감사·이미지 빌드
+├── docs/                              # evidence(검증 기록)·adr(설계 결정)·provenance(허락 기록)
 ├── scripts/ec2/deploy.sh              # 사용자 ECR 레지스트리의 이미지 배포 스크립트
 ├── .env.example                       # 공유 가능한 환경 변수 예시
 └── mcp/                                # (Git 미추적) 한투 공식 KIS MCP 서버와 전용 실행 환경
@@ -475,11 +489,18 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 
 ## 개발·검증
 
-### Python 문법 검사
+### 테스트와 lint
 
 ```bash
-python3 -m py_compile python-stock-backend/*.py
+python3.11 -m venv .venv && . .venv/bin/activate
+pip install --require-hashes -r requirements-dev.lock
+ruff check .
+pytest -m "not integration"
 ```
+
+- `pyproject.toml`은 pytest 수집 패턴을 `test_*.py`로 제한합니다. 기본 패턴 `*_test.py`는 운영 모듈 `python-stock-backend/alpaca_test.py`의 실제 API 호출 함수까지 테스트로 수집하기 때문입니다.
+- 통합 테스트(`-m integration`)는 실제 MariaDB·PostgreSQL이 필요합니다. `RUN_INTEGRATION=1`과 `DB_*`, `QUANT_DATABASE_URL`을 지정해 실행하며, 절차는 `.github/workflows/ci.yml`의 `integration` 작업과 같습니다.
+- 의존성을 바꾸면 `requirements.txt`를 고친 뒤 lock 두 개를 다시 생성합니다(명령은 `requirements-dev.in` 머리말). CI의 `pip-audit`은 `.github/pip-audit-known-vulns.txt`에 추적 중인 취약점 외에는 실패합니다.
 
 ### 로컬 실행 검증
 

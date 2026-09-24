@@ -8,8 +8,10 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends docker-cli \
     && rm -rf /var/lib/apt/lists/*
 
-COPY python-stock-backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# requirements.txt는 직접 의존성, requirements.lock은 uv로 만든 전이 의존성까지의
+# 고정 버전·해시다. 해시 검사 모드라 lock에 없는 패키지나 다른 파일은 설치하지 않는다.
+COPY python-stock-backend/requirements.lock .
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 
 # Pre-download fastembed model (intfloat/multilingual-e5-small, ~118MB)
 # so the container starts instantly without network access at runtime
@@ -28,4 +30,6 @@ EXPOSE 8200
 # KIS 토큰·호출 제한은 프로세스 메모리에서 공유하므로 worker는 1개로 두고
 # 요청 동시성은 threads로 처리한다. 다중 worker 확장은 Redis 기반 제한기로
 # 전환한 뒤 적용해야 한다.
-CMD ["gunicorn", "--bind", "0.0.0.0:8200", "--workers", "1", "--threads", "8", "--timeout", "120", "app:app"]
+# 테이블·시드는 `flask --app app init-db`/`seed-demo`(Compose의 init 서비스),
+# 주기 작업은 `python worker.py`(Compose의 worker 서비스)가 맡는다.
+CMD ["gunicorn", "--bind", "0.0.0.0:8200", "--workers", "1", "--threads", "8", "--timeout", "120", "app:create_app()"]

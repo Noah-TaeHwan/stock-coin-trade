@@ -3,6 +3,7 @@ import os
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import text
@@ -63,10 +64,20 @@ def sync_upbit_markets():
             ))
 
 
-def start_scheduler() -> BackgroundScheduler:
-    scheduler = BackgroundScheduler(timezone="Asia/Seoul")
+def build_scheduler(scheduler_cls: type[BaseScheduler] = BackgroundScheduler) -> BaseScheduler:
+    """Return an unstarted scheduler with the recurring jobs registered.
+
+    worker.py runs it with BlockingScheduler in its own process so the web
+    workers never run these jobs.
+    """
+    scheduler = scheduler_cls(timezone="Asia/Seoul")
     scheduler.add_job(sync_coinmarketcap_rankings, CronTrigger(minute=0, timezone="Asia/Seoul"))
     scheduler.add_job(sync_upbit_markets, CronTrigger(hour=18, minute=0, timezone="Asia/Seoul"))
     scheduler.add_job(run_bot_trading_round, IntervalTrigger(minutes=10))
+    return scheduler
+
+
+def start_scheduler() -> BackgroundScheduler:
+    scheduler = build_scheduler(BackgroundScheduler)
     scheduler.start()
     return scheduler
