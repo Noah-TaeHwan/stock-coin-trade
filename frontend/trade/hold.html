@@ -18,8 +18,8 @@
   <style>
     /* 탭 막대는 main(공용 app-shell-layout이 스크롤을 담당하는 유일한 영역) 안에서
        sticky로 고정하고, 탭을 전환해도 필요할 때만 그 안에서 스크롤되게 한다. */
-    .hold-tabs { position:sticky; top:0; z-index:5; display:flex; gap:8px; margin:0 0 20px; padding:10px; border-bottom:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:var(--shadow-sm); overflow-x:auto; }
-    .hold-tab { flex:0 0 auto; padding:10px 18px; border:1px solid transparent; border-radius:9px; color:var(--muted); background:transparent; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; transition:background .15s,border-color .15s,color .15s; }
+    .hold-tabs { position:sticky; top:0; z-index:5; display:flex; gap:8px; margin:0 0 20px; padding:10px; border-bottom:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow-sm); overflow-x:auto; }
+    .hold-tab { flex:0 0 auto; padding:10px 18px; border:1px solid transparent; border-radius:var(--radius); color:var(--muted); background:transparent; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; transition:background .15s,border-color .15s,color .15s; }
     .hold-tab:hover { color:var(--accent-dark); background:var(--accent-light); border-color:rgba(41,98,255,.18); }
     .hold-tab.active { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); box-shadow:none; }
     .hold-panel { display:none; }
@@ -104,11 +104,11 @@
         <div class="stat-card"><div class="stat-label">주식 평가손익</div><div class="stat-value"><span id="stockPortfolioPnl">-</span><span style="font-size:13px;font-weight:500;color:var(--muted);margin-left:4px;">KRW</span></div></div>
       </div>
       <div class="grid grid-cols-1 gap-4 px-4 pb-4 lg:grid-cols-2">
-        <div class="rounded-lg p-3" style="border:1px solid var(--border);background:var(--surface-2);">
+        <div class=" p-3" style="border:1px solid var(--border);background:var(--surface-2);">
           <div class="mb-1 flex items-center justify-between"><h4 class="text-sm font-extrabold" style="color:var(--fg);">종목별 평가 비중</h4><span class="text-xs" style="color:var(--muted);">평가금액 기준</span></div>
           <div id="stockAllocationChart" class="min-h-[270px]"></div>
         </div>
-        <div class="rounded-lg p-3" style="border:1px solid var(--border);background:var(--surface-2);">
+        <div class=" p-3" style="border:1px solid var(--border);background:var(--surface-2);">
           <div class="mb-1 flex items-center justify-between"><h4 class="text-sm font-extrabold" style="color:var(--fg);">섹터별 평가금액</h4><span class="text-xs" style="color:var(--muted);">보유 종목 합산</span></div>
           <div id="stockSectorChart" class="min-h-[270px]"></div>
         </div>

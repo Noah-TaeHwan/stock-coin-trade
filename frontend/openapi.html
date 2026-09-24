@@ -21,14 +21,14 @@
     .endpoint-table th, .endpoint-table td { padding:8px 12px; font-size:13px; }
     .endpoint-table th { text-align:left; color:var(--muted); font-weight:700; border-bottom:1px solid var(--border); }
     .endpoint-table td { border-bottom:1px solid var(--border); color:var(--fg); vertical-align:top; }
-    .method-badge { display:inline-block; font-size:11px; font-weight:800; padding:1px 8px; border-radius:99px; }
+    .method-badge { display:inline-block; font-size:11px; font-weight:800; padding:1px 8px; border-radius:var(--radius); }
     .method-get   { background:rgba(37,99,235,0.12); color:var(--info); }
     .method-post  { background:rgba(225,29,72,0.12); color:var(--down); }
     pre.code-block {
-      background:#0F172A; color:#E2E8F0; border-radius:10px; padding:14px 16px;
+      background:#0F172A; color:#E2E8F0; border-radius:var(--radius); padding:14px 16px;
       font-size:12.5px; line-height:1.65; overflow-x:auto; white-space:pre;
     }
-    code.inline-code { background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:1px 6px; font-size:12.5px; }
+    code.inline-code { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); padding:1px 6px; font-size:12.5px; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -48,7 +48,7 @@
     </p>
     <div class="mt-4">
       <button onclick="location.href='/member/api-keys.html'"
-        style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:.55rem 1.1rem;font-size:13.5px;font-weight:700;cursor:pointer;">
+        style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:var(--radius);padding:.55rem 1.1rem;font-size:13.5px;font-weight:700;cursor:pointer;">
         🔑 API 키 발급받기
       </button>
     </div>

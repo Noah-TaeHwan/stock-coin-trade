@@ -12,22 +12,22 @@
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     .pine-page { max-width:none; min-height:calc(100vh - 126px); margin:0; padding:20px 18px 30px; }
-    .pine-card { border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:var(--shadow-sm); }
+    .pine-card { border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow-sm); }
     .pine-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
-    .pine-select { min-width:190px; padding:8px 10px; border:1px solid var(--border); border-radius:7px; color:var(--fg); background:var(--surface-2); font:inherit; font-size:13px; }
-    .period { padding:5px 9px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--fg-2); font-size:12px; font-weight:700; cursor:pointer; }
+    .pine-select { min-width:190px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); color:var(--fg); background:var(--surface-2); font:inherit; font-size:13px; }
+    .period { padding:5px 9px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--fg-2); font-size:12px; font-weight:700; cursor:pointer; }
     .period.active { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
     #pineChart { height:min(52vh,530px); min-height:330px; }
     .editor-grid { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:14px; margin-top:14px; }
     .editor-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid var(--border); }
     #pineScript { display:block; width:100%; min-height:315px; resize:vertical; padding:15px; border:0; outline:0; background:#131722; color:#D1D4DC; font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2; }
-    .signal { padding:13px; border-radius:9px; background:var(--surface-2); }
+    .signal { padding:13px; border-radius:var(--radius); background:var(--surface-2); }
     .signal-value { margin-top:4px; font-size:20px; font-weight:900; color:var(--fg); }
-    .primary { padding:9px 12px; border:0; border-radius:7px; background:var(--accent); color:var(--accent-ink); font:700 13px inherit; cursor:pointer; }
+    .primary { padding:9px 12px; border:0; border-radius:var(--radius); background:var(--accent); color:var(--accent-ink); font:700 13px inherit; cursor:pointer; }
     .primary:hover { background:var(--accent-dark); }.primary:disabled { opacity:.5; cursor:not-allowed; }
-    .secondary { padding:8px 10px; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--fg-2); font:700 12px inherit; cursor:pointer; }
+    .secondary { padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--fg-2); font:700 12px inherit; cursor:pointer; }
     .notice { margin:0; padding:11px 14px; color:var(--muted); font-size:12px; line-height:1.65; }
-    .log { max-height:165px; overflow:auto; margin:10px 0 0; padding:10px; border-radius:7px; background:var(--surface-2); color:var(--muted); font:11px/1.6 ui-monospace,monospace; white-space:pre-wrap; }
+    .log { max-height:165px; overflow:auto; margin:10px 0 0; padding:10px; border-radius:var(--radius); background:var(--surface-2); color:var(--muted); font:11px/1.6 ui-monospace,monospace; white-space:pre-wrap; }
     .pine-footer { border-top:1px solid var(--border); background:var(--surface); }
     .pine-footer-inner { display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:none; margin:0; padding:14px 18px; }
     @media (max-width:900px) { .editor-grid { grid-template-columns:1fr; } .pine-page { padding:14px 10px 24px; } .pine-footer-inner { padding:12px 14px; } }
@@ -60,7 +60,7 @@
         <h2 style="margin:0;font-size:15px;font-weight:900;">전략 신호 · 모의주문</h2>
         <div class="signal" style="margin-top:12px;"><span style="font-size:11px;color:var(--muted);">최신 신호</span><div id="pineSignal" class="signal-value">계산 대기</div><div id="pineSignalDetail" style="margin-top:4px;font-size:11px;color:var(--muted);">스크립트를 실행해 신호를 확인하세요.</div><div id="pineRiskLevels" style="display:none;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-size:11px;line-height:1.65;"></div></div>
         <label for="pineQuantity" style="display:block;margin-top:14px;font-size:12px;font-weight:800;color:var(--fg);">주문 수량 (주)</label>
-        <input id="pineQuantity" type="number" min="1" step="1" value="1" style="width:100%;margin-top:6px;padding:9px;border:1px solid var(--border);border-radius:7px;font:inherit;font-size:13px;">
+        <input id="pineQuantity" type="number" min="1" step="1" value="1" style="width:100%;margin-top:6px;padding:9px;border:1px solid var(--border);border-radius:var(--radius);font:inherit;font-size:13px;">
         <button id="pineOrder" class="primary" disabled style="width:100%;margin-top:10px;">신호대로 모의주문 실행</button>
         <p id="pineOrderMessage" style="min-height:20px;margin:9px 0 0;font-size:12px;"></p>
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);">실행된 주문은 내 거래이력에 <strong>PINE</strong> 출처로 기록됩니다.</div>

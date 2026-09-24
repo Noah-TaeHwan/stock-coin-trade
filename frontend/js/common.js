@@ -774,9 +774,9 @@ async function runAiAnalysis() {
     const listEl = document.getElementById('rag-context-list');
     if (listEl) {
       listEl.innerHTML = ragDocs.map((doc, i) => `
-        <div style="border-left:3px solid var(--info);padding:.45rem .7rem;margin-bottom:.5rem;background:var(--surface-2);border-radius:0 2px 2px 0;">
+        <div style="border-left:3px solid var(--info);padding:.45rem .7rem;margin-bottom:.5rem;background:var(--surface-2);border-radius:0 var(--radius-xs) var(--radius-xs) 0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:.2rem;">
-            <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:2px;">${_catLabel(doc.category)}</span>
+            <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:var(--radius-xs);">${_catLabel(doc.category)}</span>
             <span style="font-size:11px;font-weight:700;color:var(--fg);">${doc.title}</span>
             <span style="font-size:10px;color:var(--muted);margin-left:auto;">유사도 ${(doc.score * 100).toFixed(0)}%</span>
           </div>
@@ -851,11 +851,11 @@ async function runQdrantSearch() {
       return;
     }
     res.innerHTML = hits.map(h => `
-      <div style="border:1px solid var(--border);border-left:3px solid var(--info);border-radius:2px;padding:.7rem .9rem;margin-bottom:.5rem;background:var(--surface);">
+      <div style="border:1px solid var(--border);border-left:3px solid var(--info);border-radius:var(--radius-xs);padding:.7rem .9rem;margin-bottom:.5rem;background:var(--surface);">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:.4rem;">
-          <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:2px;">${_catLabel(h.category)}</span>
+          <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:var(--radius-xs);">${_catLabel(h.category)}</span>
           <span style="font-size:12.5px;font-weight:800;color:var(--fg);flex:1;">${h.title}</span>
-          <div style="font-size:10px;font-weight:800;color:#000;background:${_scoreColor(h.score)};border-radius:2px;padding:1px 7px;font-family:var(--font-mono);">${(h.score*100).toFixed(0)}%</div>
+          <div style="font-size:10px;font-weight:800;color:#000;background:${_scoreColor(h.score)};border-radius:var(--radius-xs);padding:1px 7px;font-family:var(--font-mono);">${(h.score*100).toFixed(0)}%</div>
         </div>
         <p style="font-size:12px;color:var(--fg-2);margin:0;line-height:1.65;">${h.text}</p>
       </div>`).join('');
@@ -892,8 +892,8 @@ async function loadDataset() {
     const docs = data.documents ?? [];
     if (listEl) listEl.innerHTML = docs.length
       ? docs.map(d => `
-        <div style="display:flex;align-items:baseline;gap:6px;padding:.35rem .5rem;border-radius:2px;margin-bottom:.2rem;background:var(--surface);border:1px solid var(--border);">
-          <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent-dark);padding:2px 6px;border-radius:2px;white-space:nowrap;">${_catLabel(d.category)}</span>
+        <div style="display:flex;align-items:baseline;gap:6px;padding:.35rem .5rem;border-radius:var(--radius-xs);margin-bottom:.2rem;background:var(--surface);border:1px solid var(--border);">
+          <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent-dark);padding:2px 6px;border-radius:var(--radius-xs);white-space:nowrap;">${_catLabel(d.category)}</span>
           <span style="font-size:13px;font-weight:600;color:var(--fg);flex:1;">${d.title}</span>
         </div>`).join('')
       : '<p style="color:var(--muted);font-size:12px;text-align:center;">문서가 없습니다.</p>';
@@ -988,7 +988,7 @@ async function loadKrxNews() {
           onmouseover="this.style.background='var(--surface-3)'" onmouseout="this.style.background='transparent'">
           <div style="font-size:12px;font-weight:600;color:var(--fg);line-height:1.45;margin-bottom:3px;">${n.title}</div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:10px;color:var(--info);background:var(--info-bg);border-radius:2px;padding:0 5px;">PDF</span>
+            <span style="font-size:10px;color:var(--info);background:var(--info-bg);border-radius:var(--radius-xs);padding:0 5px;">PDF</span>
             <span style="font-size:10.5px;color:var(--muted);font-family:var(--font-mono);">${dateStr}</span>
             <span style="font-size:10px;color:var(--muted);margin-left:auto;">조회 ${n.view_cnt}</span>
           </div>

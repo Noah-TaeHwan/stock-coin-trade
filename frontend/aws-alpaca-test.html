@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
   
   <style>
-    .test-wrap{max-width:none;margin:0;padding:32px 20px 56px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.result{display:block;min-height:158px;margin-top:16px;padding:15px;border-radius:9px;background:#111827;color:#e5e7eb;font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}.result--error{background:#4c0519;color:#ffe4e6}.run{margin-top:16px;padding:10px 14px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:800;cursor:pointer}.run:disabled{opacity:.65;cursor:wait}.notice{margin-top:14px;padding:13px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.65}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:none;margin:0;padding:14px 20px;color:var(--muted);font-size:12px}
+    .test-wrap{max-width:none;margin:0;padding:32px 20px 56px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.result{display:block;min-height:158px;margin-top:16px;padding:15px;border-radius:var(--radius);background:#111827;color:#e5e7eb;font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}.result--error{background:#4c0519;color:#ffe4e6}.run{margin-top:16px;padding:10px 14px;border:0;border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font-weight:800;cursor:pointer}.run:disabled{opacity:.65;cursor:wait}.notice{margin-top:14px;padding:13px 14px;border-radius:var(--radius);background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.65}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:none;margin:0;padding:14px 20px;color:var(--muted);font-size:12px}
     .test-list{margin-top:18px;padding-top:16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
     .test-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .test-row label{font-size:13px;font-weight:800;color:var(--fg-2);flex:1;min-width:140px}
-    .run-sm{padding:8px 12px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--fg);font-weight:800;font-size:12px;cursor:pointer}
+    .run-sm{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);font-weight:800;font-size:12px;cursor:pointer}
     .run-sm:disabled{opacity:.6;cursor:wait}
     .result--sm{min-height:0;max-height:240px;overflow:auto;margin-top:0;padding:12px;font-size:11.5px}
   </style>
@@ -33,7 +33,7 @@
       <div id="positions-result" class="result result--sm" role="status">조회 대기 중</div>
       <div class="test-row"><label>미국 시장 개장 상태</label><button class="run-sm" data-test="clock">마켓 시계 조회</button></div>
       <div id="clock-result" class="result result--sm" role="status">조회 대기 중</div>
-      <div class="test-row"><label for="asset-symbol">종목 거래 가능 여부</label><input id="asset-symbol" value="AAPL" maxlength="10" aria-label="Alpaca 종목 심볼" style="width:110px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);font:inherit"><button class="run-sm" data-test="asset">종목 정보 조회</button></div>
+      <div class="test-row"><label for="asset-symbol">종목 거래 가능 여부</label><input id="asset-symbol" value="AAPL" maxlength="10" aria-label="Alpaca 종목 심볼" style="width:110px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font:inherit"><button class="run-sm" data-test="asset">종목 정보 조회</button></div>
       <div id="asset-result" class="result result--sm" role="status">조회 대기 중</div>
     </div>
   </section></main>
