@@ -35,39 +35,101 @@ if (!document.getElementById('fontawesome-css')) {
   document.head.appendChild(iconStylesheet);
 }
 
-// 일부 기존 화면이 /css/style.css를 장기 캐시하더라도 GNB가 기본 HTML처럼
-// 보이지 않도록, 헤더 핵심 규칙은 공통 스크립트와 함께 보장한다.
+// 일부 기존 화면이 /css/style.css를 장기 캐시하더라도 터미널 헤더가 기본
+// HTML처럼 보이지 않도록, 헤더 골격 규칙은 공통 스크립트와 함께 보장한다.
 if (!document.getElementById('gnb-core-style')) {
   const gnbStyle = document.createElement('style');
   gnbStyle.id = 'gnb-core-style';
   gnbStyle.textContent = `
-    #site-header{background:rgba(255,255,255,.96);border-bottom:1px solid #dce3ef;box-shadow:0 1px 4px rgba(0,0,0,.06);position:sticky;top:0;z-index:100}
-    .gnb-shell{display:flex!important;align-items:center!important;gap:18px;min-height:58px;padding:0 22px}
-    .gnb-brand{flex:0 0 auto;color:#0d47a1!important;text-decoration:none!important;font-size:18px!important;font-weight:900!important;white-space:nowrap}.gnb-brand i{margin-right:6px}
-    .gnb-nav{display:flex!important;align-items:stretch!important;gap:2px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:thin}
-    .gnb-link,.gnb-group summary{display:flex!important;align-items:center!important;gap:6px;height:58px;padding:0 10px;color:#334155!important;text-decoration:none!important;font-size:14.3px!important;font-weight:750!important;white-space:nowrap;cursor:pointer;list-style:none}
-    .gnb-group{position:relative;flex:0 0 auto}.gnb-group summary::-webkit-details-marker{display:none}.gnb-group summary i{font-size:11px}.gnb-link:hover,.gnb-group summary:hover{color:#0d47a1!important;background:#edf3ff}
-    .gnb-dropdown{position:absolute;z-index:220;display:grid;min-width:210px;padding:6px;border:1px solid #dce3ef;border-radius:9px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,.12)}.gnb-dropdown a{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;color:#334155!important;text-decoration:none!important;font-size:14.3px!important;font-weight:650!important;white-space:nowrap}.gnb-dropdown a:hover{background:#edf3ff;color:#0d47a1!important}.gnb-user{flex:0 0 auto;white-space:nowrap}
-    .gnb-shortcuts{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto}.gnb-shortcuts a{padding:8px 12px;border-radius:6px;color:#1e53e5!important;text-decoration:none!important;font-size:16px!important;font-weight:800!important;white-space:nowrap}.gnb-shortcuts a:hover{background:#e3f0ff}
-    .site-header-inner{display:grid!important;grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr);align-items:center!important;gap:16px;min-height:56px;padding:0 18px}.site-header-left,.site-header-actions{display:flex;align-items:center;gap:12px;min-width:0}.site-header-actions{justify-self:end}.header-menu-label{display:inline}
-    #oc-panel .oc-group-toggle,#ai-panel .oc-group-toggle{font-size:15.4px!important;line-height:1.4!important}#oc-panel .oc-nav-item,#ai-panel .oc-nav-item{font-size:15.4px!important;line-height:1.4!important}#oc-panel .oc-nav-item--sub,#ai-panel .oc-nav-item--sub{font-size:14.3px!important}#oc-panel .oc-header,#ai-panel .oc-header{font-size:16.5px!important}#oc-panel .oc-footer,#ai-panel .oc-footer{font-size:12.1px!important}
-    /* 메뉴 3단계(패널 제목 → 그룹 → 항목)를 캐시와 무관하게 구분한다. */
-    #oc-panel .oc-header{background:linear-gradient(135deg,#1746B5,#2962FF)!important;border-bottom-color:#123D91!important;color:#fff!important}
-    #oc-panel .oc-header .brand-logo-text{background:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
-    #oc-panel .oc-close-btn{background:rgba(255,255,255,.16)!important;color:#fff!important}
-    #oc-panel .oc-nav{padding:.45rem .55rem .8rem!important;background:#F7F9FD!important}
-    #oc-panel .oc-group-toggle{margin:5px 0 2px!important;padding:.62rem .72rem!important;border:1px solid #D3DEEE!important;border-radius:8px!important;background:#E9EEF7!important;color:#233653!important;font-weight:800!important}
-    #oc-panel .oc-group-toggle:hover{border-color:#AFC7F6!important;background:#DCE9FF!important;color:#123D91!important}
-    #oc-panel .oc-group.open>.oc-group-toggle{border-color:#8EAFE9!important;background:#CFE0FF!important;color:#0D3A91!important;box-shadow:inset 4px 0 0 #2962FF!important}
-    #oc-panel .oc-nav-item--sub{position:relative!important;margin:2px 4px 2px 12px!important;padding:.52rem .65rem .52rem 1.45rem!important;border:1px solid transparent!important;border-radius:7px!important;background:#fff!important;color:#475569!important;font-weight:500!important}
-    #oc-panel .oc-nav-item--sub:hover{border-color:#C9DAFF!important;background:#EDF4FF!important;color:#1746B5!important}
-    #oc-panel .oc-nav-item--sub::before{content:''!important;position:absolute!important;left:.62rem!important;top:50%!important;width:5px!important;height:5px!important;border-radius:50%!important;background:#86A5DF!important;transform:translateY(-50%)!important}
-    #oc-panel .oc-nav-item--sub.active{border-color:#1746B5!important;background:linear-gradient(135deg,#2962FF,#1746B5)!important;color:#fff!important;font-weight:800!important;box-shadow:0 3px 9px rgba(41,98,255,.24)!important}
-    #oc-panel .oc-nav-item--sub.active::before{background:#fff!important;box-shadow:0 0 0 3px rgba(255,255,255,.22)!important}
-    @media(max-width:760px){.site-header-inner{grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;padding:4px 10px}.site-header-left,.site-header-actions{gap:6px}.site-header-left{grid-column:1}.site-header-actions{grid-column:3}.header-menu-label{display:none}.gnb-shortcuts{grid-column:1/-1;grid-row:2;justify-content:center;padding-bottom:2px}.gnb-shortcuts a{padding:5px 8px;font-size:14px!important}.site-header-actions button{padding-inline:7px!important}.site-header-actions span{display:none}}
-    @media(max-width:900px){.gnb-shell{gap:10px;padding:0 12px;flex-wrap:wrap;padding-bottom:3px}.gnb-nav{order:3;flex-basis:100%;height:42px}.gnb-link,.gnb-group summary{height:40px;padding:0 8px;font-size:13.2px!important}.gnb-user span{display:none}.gnb-dropdown{position:fixed;left:12px;right:12px;min-width:0}}
+    #site-header{position:sticky;top:0;z-index:100;background:#000;border-bottom:1px solid #3A4150;color:#E8E6E3}
+    .term-cmdbar{display:flex;align-items:center;gap:8px;min-height:34px;padding:0 8px}
+    .term-fkeys{display:flex;align-items:stretch;gap:1px;min-height:26px;padding:0 8px;overflow-x:auto;background:#0B0D11;border-top:1px solid #262B35}
+    .term-fkey{display:inline-flex;align-items:center;gap:6px;padding:0 10px;color:#C9CDD4;text-decoration:none;white-space:nowrap}
+    .term-tape{position:relative;overflow:hidden;height:24px;background:#050608;border-top:1px solid #262B35}
+    #oc-panel,#ai-panel{background:#0B0D11;color:#E8E6E3}
   `;
   document.head.appendChild(gnbStyle);
+}
+
+// AG Grid 기본 테마를 공식 dark 모드로 전환한다(themeQuartz의 colorSchemeVariable).
+document.documentElement.dataset.agThemeMode = 'dark';
+
+// 색각이상 대응 팔레트 선택은 브라우저별 편의 설정이다.
+try { if (localStorage.getItem('term.cvd') === '1') document.documentElement.dataset.cvd = '1'; } catch (_) {}
+
+/* ── Terminal theme helpers ─────────────────────────────────────────────── */
+function termColors() {
+  const css = getComputedStyle(document.documentElement);
+  const read = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+  return {
+    bg: read('--bg', '#000000'),
+    surface: read('--surface', '#0B0D11'),
+    surface2: read('--surface-2', '#12151B'),
+    border: read('--border', '#262B35'),
+    borderStrong: read('--border-strong', '#3A4150'),
+    fg: read('--fg', '#E8E6E3'),
+    fg2: read('--fg-2', '#C9CDD4'),
+    muted: read('--muted', '#8B919C'),
+    accent: read('--accent', '#FF9F1A'),
+    info: read('--info', '#4FC3F7'),
+    up: read('--up', '#00D26A'),
+    down: read('--down', '#FF4D4D'),
+    flat: read('--flat', '#9AA0A6'),
+    mono: read('--font-mono', 'monospace'),
+  };
+}
+
+// 등락 값의 부호로 의미 색을 고른다. 인라인 style 문자열에 그대로 넣을 수 있다.
+function priceColor(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n === 0) return 'var(--flat)';
+  return n > 0 ? 'var(--up)' : 'var(--down)';
+}
+
+// lightweight-charts는 CSS 변수를 해석하지 못하므로 계산된 값을 넘긴다.
+function termChartOptions(extra = {}) {
+  const c = termColors();
+  const base = {
+    layout: { background: { type: 'solid', color: c.surface }, textColor: c.muted, fontFamily: c.mono, fontSize: 11 },
+    grid: { vertLines: { color: '#161A21' }, horzLines: { color: '#161A21' } },
+    crosshair: {
+      mode: 0,
+      vertLine: { color: c.accent, width: 1, style: 2, labelBackgroundColor: c.accent },
+      horzLine: { color: c.accent, width: 1, style: 2, labelBackgroundColor: c.accent },
+    },
+    rightPriceScale: { borderColor: c.borderStrong },
+    timeScale: { borderColor: c.borderStrong },
+    // 브라우저 로캘과 무관하게 한국식 천 단위 구분으로 가격 축을 표시한다.
+    localization: { locale: 'ko-KR', priceFormatter: p => Number(p).toLocaleString('ko-KR', { maximumFractionDigits: Math.abs(p) >= 100 ? 0 : 4 }) },
+  };
+  const merge = (target, source) => {
+    Object.entries(source).forEach(([key, value]) => {
+      if (value && typeof value === 'object' && !Array.isArray(value) && target[key] && typeof target[key] === 'object') merge(target[key], value);
+      else target[key] = value;
+    });
+    return target;
+  };
+  return merge(base, extra);
+}
+
+function termCandleColors() {
+  const c = termColors();
+  return {
+    upColor: c.up, downColor: c.down,
+    borderUpColor: c.up, borderDownColor: c.down,
+    wickUpColor: c.up, wickDownColor: c.down,
+  };
+}
+
+// 범주형 차트 색. 상승·하락 의미와 겹치지 않게 초록·빨강 계열은 뺐다.
+const TERM_PALETTE = ['#FF9F1A', '#4FC3F7', '#B39DFF', '#5EEAD4', '#FF6FAE', '#FFD60A', '#A3E635', '#F97316'];
+
+// 거래량 막대처럼 투명도가 필요한 곳을 위해 #RRGGBB를 rgba로 바꾼다.
+function termAlpha(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex).trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
 /* ── API fetch wrapper ───────────────────────────────────────────────────── */
@@ -85,8 +147,10 @@ async function getCurrentUser() {
   try {
     const res = await apiFetch('/api/member/me');
     if (res.ok) return await res.json();
+    // 401 등 HTTP 응답이 왔다면 서버에는 연결된 상태다.
+    return { loggedIn: false };
   } catch {}
-  return { loggedIn: false };
+  return { loggedIn: false, __apiReachable: false };
 }
 
 async function logout() {
@@ -173,13 +237,13 @@ function renderHeader(user) {
   ];
 
   const userSection = user?.loggedIn
-    ? `<div style="display:flex;align-items:center;gap:8px;">
-         <span style="font-size:15.4px;font-weight:700;color:var(--fg);">${user.username}님</span>
-         <button onclick="logout()" style="background:rgba(225,29,72,0.06);color:#E11D48;border:1.5px solid rgba(225,29,72,0.2);border-radius:6px;padding:0.3rem 0.9rem;font-size:14.3px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(225,29,72,0.12)'" onmouseout="this.style.background='rgba(225,29,72,0.06)'">로그아웃</button>
+    ? `<div class="term-user">
+         <span class="term-user-name"><i class="fa-solid fa-user" aria-hidden="true"></i> ${user.username}</span>
+         <button type="button" class="term-icon-btn term-btn-danger" onclick="logout()">로그아웃</button>
        </div>`
-    : `<div style="display:flex;align-items:center;gap:6px;">
-         <button onclick="location.href='/member/login.html'" style="background:transparent;color:var(--fg-2);border:1.5px solid var(--border);border-radius:6px;padding:0.3rem 0.9rem;font-size:14.3px;font-weight:600;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='transparent'">로그인</button>
-         <button onclick="location.href='/member/register.html'" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.9rem;font-size:14.3px;font-weight:600;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">회원가입</button>
+    : `<div class="term-user">
+         <button type="button" class="term-icon-btn" onclick="location.href='/member/login.html'">로그인</button>
+         <button type="button" class="term-icon-btn term-btn-primary" onclick="location.href='/member/register.html'">회원가입</button>
        </div>`;
 
   const isLoggedIn = !!user?.loggedIn;
@@ -257,55 +321,297 @@ function renderHeader(user) {
     <!-- 왼쪽 오프캔버스 — 네비게이션 메뉴 -->
     <aside id="oc-panel">
       <div class="oc-header">
-        <span class="brand-logo-text" style="font-size:18.7px;letter-spacing:1.5px;"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>Noah Trading Desk</span>
-        <button class="oc-close-btn" onclick="closeOffcanvas()">✕</button>
+        <span class="brand-logo-text">Noah TD <small style="color:var(--muted);font-size:11px;">· 실전연습</small></span>
+        <button class="oc-close-btn" onclick="closeOffcanvas()" aria-label="메뉴 닫기">✕</button>
       </div>
       <nav class="oc-nav" aria-label="TR 실전연습 메뉴">
         ${isLoggedIn ? ocNavAuthed : ocNavGuest}
       </nav>
-      <div class="oc-footer" style="font-size:12.1px;color:var(--muted);">
-        <div>Noah Trading Desk</div>
+      <div class="oc-footer" style="font-size:11px;color:var(--muted);">
+        <div>NOAH TRADING DESK</div>
         <div>모의투자·OpenAPI 실습</div>
       </div>
     </aside>
 
-    <!-- 기존 오프캔버스를 유지하고, AI 3개 기능만 상단 GNB 바로가기로 제공한다. -->
+    <!-- 터미널 헤더: 명령줄 · 기능키 · 티커 테이프 -->
     <header id="site-header">
-      <div class="site-header-inner">
-        <div class="site-header-left">
-          <button onclick="openOffcanvas()" aria-label="메뉴 열기" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .12s;color:var(--fg-2);font-size:15.4px;font-weight:600;"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="header-menu-label">메뉴</span></button>
-          <a href="/index.html" style="text-decoration:none;display:flex;align-items:center;"><span class="brand-logo-text"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>Noah Trading Desk</span></a>
+      <div class="term-cmdbar">
+        <button type="button" class="term-icon-btn" onclick="openOffcanvas()" aria-label="실전연습 메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="term-menu-label">실전연습</span></button>
+        <a class="term-brand" href="/index.html" aria-label="Noah Trading Desk 대시보드">NOAH TD <small>TERMINAL</small></a>
+        <form class="term-cmd" role="search" onsubmit="event.preventDefault(); runTerminalCommand(this.elements.cmd.value);">
+          <span class="term-cmd-prompt" aria-hidden="true">&gt;</span>
+          <input name="cmd" id="term-cmd-input" autocomplete="off" spellcheck="false" aria-label="명령 또는 종목 입력" placeholder="명령·종목 입력 (예: 005930, BTC, HOLD, HELP) · / 키">
+          <button type="submit" class="term-go">GO</button>
+          <div class="term-cmd-help" id="term-cmd-help" role="listbox" aria-label="명령 목록"></div>
+        </form>
+        <div class="term-meta">
+          <span class="term-clock" id="term-clock" aria-label="한국 시간">--:--:-- KST</span>
+          <span class="term-mode" title="모든 주문은 모의투자입니다.">PAPER</span>
+          <button type="button" class="term-icon-btn" onclick="openAiPanel()" aria-label="도구 메뉴 열기"><i class="fa-solid fa-toolbox" aria-hidden="true"></i><span class="term-menu-label">도구</span></button>
+          ${userSection}
         </div>
-        <nav class="gnb-shortcuts" aria-label="AI 기능 바로가기"><a href="/ai-analysis.html"><i class="fa-solid fa-robot" aria-hidden="true"></i> AI 분석</a><a href="/knowledge-search.html"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> 지식 검색</a><a href="/knowledge-dataset.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i> 데이터셋</a></nav>
-        <div class="site-header-actions"><button onclick="openAiPanel()" aria-label="분석 도구 메뉴 열기" style="border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--accent-dark);padding:6px 9px;font-size:13.2px;font-weight:800;cursor:pointer;white-space:nowrap;"><i class="fa-solid fa-toolbox" aria-hidden="true"></i> 도구 메뉴</button>${userSection}</div>
+      </div>
+      <nav class="term-fkeys" aria-label="기능 화면">
+        ${TERMINAL_FKEYS.map(renderFkey).join('')}
+        <span class="term-fkeys-sep" aria-hidden="true"></span>
+        ${TERMINAL_SHORTCUTS.map(renderFkey).join('')}
+      </nav>
+      <div class="term-tape" id="term-tape" aria-label="시세 티커">
+        <div class="term-tape-track" id="term-tape-track"><span class="term-tape-empty">시세 연결 중…</span></div>
       </div>
     </header>
 
     <!-- 오른쪽 오프캔버스 오버레이 -->
-    <div id="ai-overlay" onclick="closeAiPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:399;backdrop-filter:blur(3px);"></div>
+    <div id="ai-overlay" onclick="closeAiPanel()" style="display:none;position:fixed;inset:0;z-index:399;"></div>
 
     <!-- 오른쪽 오프캔버스 — 대시보드·분석·연동 메뉴 -->
-    <aside id="ai-panel" style="position:fixed;top:0;right:0;height:100vh;width:460px;max-width:94vw;background:#FFFFFF;border-left:1px solid var(--border);box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:400;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;">
-
-      <!-- 패널 헤더 -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.1rem;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <i class="fa-solid fa-toolbox" aria-hidden="true" style="font-size:16px;color:var(--accent);"></i>
-          <span style="font-size:16.5px;font-weight:800;color:var(--fg);">빠른 메뉴</span>
-        </div>
-        <button onclick="closeAiPanel()" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:13.2px;color:var(--muted);cursor:pointer;">✕</button>
+    <aside id="ai-panel" style="position:fixed;top:0;right:0;height:100vh;width:420px;max-width:94vw;z-index:400;transform:translateX(100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;">
+      <div class="term-panel-head">
+        <span><i class="fa-solid fa-toolbox" aria-hidden="true"></i> TOOLS · 빠른 메뉴</span>
+        <button class="oc-close-btn" onclick="closeAiPanel()" aria-label="도구 메뉴 닫기">✕</button>
       </div>
-
       <nav class="oc-nav right-tool-nav" aria-label="대시보드 및 분석·연동 메뉴">
         ${rightNavItems}
       </nav>
-
-
     </aside>`;
 
   const mount = document.getElementById('header-mount');
   if (mount) mount.innerHTML = html;
+  window.__termNavGroups = navGroups;
+  startTerminalClock();
+  startTickerTape();
 }
+
+/* ── Terminal: 기능키 · 명령줄 · 티커 ───────────────────────────────────── */
+const TERMINAL_FKEYS = [
+  { key: '1', code: 'DASH', label: '대시보드', href: '/index.html' },
+  { key: '2', code: 'STK',  label: '주식',     href: '/trade/stock.html' },
+  { key: '3', code: 'CRY',  label: '코인',     href: '/trade/order.html' },
+  { key: '4', code: 'ALT',  label: '대체자산', href: '/trade/alternatives.html' },
+  { key: '5', code: 'HOLD', label: '보유자산', href: '/trade/hold.html' },
+  { key: '6', code: 'HIST', label: '거래이력', href: '/trade/history.html' },
+  { key: '7', code: 'QNT',  label: '퀀트',     href: '/quant.html' },
+  { key: '8', code: 'HTS',  label: 'HTS',      href: '/hts.html' },
+  { key: '9', code: 'AI',   label: 'AI 분석',  href: '/ai-analysis.html' },
+];
+const TERMINAL_SHORTCUTS = [
+  { code: 'SRCH', label: '지식 검색', href: '/knowledge-search.html', icon: 'fa-magnifying-glass' },
+  { code: 'DSET', label: '데이터셋',  href: '/knowledge-dataset.html', icon: 'fa-book-open' },
+];
+
+// 명령줄 별칭 → 화면. 기능키와 같은 코드를 쓰고, 학습·도구 화면 코드를 더한다.
+const TERMINAL_COMMANDS = [
+  ...TERMINAL_FKEYS.map(f => ({ codes: [f.code], label: f.label, href: f.href })),
+  { codes: ['MON', 'HOME'], label: '대시보드', href: '/index.html' },
+  { codes: ['EQ', 'STOCK'], label: '주식 (예: STK 005930)', href: '/trade/stock.html' },
+  { codes: ['COIN', 'CRYPTO'], label: '코인 (예: BTC, KRW-ETH)', href: '/trade/order.html' },
+  { codes: ['PORT', 'PRT'], label: '보유자산', href: '/trade/hold.html' },
+  { codes: ['AVG'], label: '물타기 계산기', href: '/trade/avg-down.html' },
+  { codes: ['QUANT'], label: '퀀트 랩', href: '/quant.html' },
+  { codes: ['OHLCV'], label: 'OHLCV DB', href: '/ohlcv-db.html' },
+  { codes: ['SRCH', 'KNOW'], label: '지식 검색', href: '/knowledge-search.html' },
+  { codes: ['DSET'], label: '지식 데이터셋', href: '/knowledge-dataset.html' },
+  { codes: ['SHEET'], label: 'AI Sheet', href: '/ai-sheet.html' },
+  { codes: ['ANL'], label: '투자 분석 학습', href: '/analysis.html' },
+  { codes: ['API', 'OPENAPI'], label: '플랫폼 Open API', href: '/openapi.html' },
+  { codes: ['KIS'], label: 'KIS 모의투자 실습', href: '/learning/kis-regist.html' },
+  { codes: ['KB'], label: 'KB증권 Open API 실습', href: '/learning/kb-securities.html' },
+  { codes: ['ALP', 'ALPACA'], label: 'Alpaca 실전연습', href: '/learning/alpaca-api.html' },
+  { codes: ['BNB', 'BINANCE'], label: 'Binance 실전연습', href: '/learning/binance-api.html' },
+  { codes: ['KBT', 'KORBIT'], label: 'Korbit 실전연습', href: '/learning/korbit-api.html' },
+  { codes: ['PINE', 'TV'], label: 'TradingView Pine', href: '/learning/tradingview-pine.html' },
+  { codes: ['USAGE'], label: 'API 사용이력', href: '/api-usage-history.html' },
+  { codes: ['ERR'], label: '에러분석', href: '/error-analysis.html' },
+  { codes: ['KEYS'], label: '플랫폼 API 키', href: '/member/api-keys.html' },
+  { codes: ['LOGIN'], label: '로그인', href: '/member/login.html' },
+  { codes: ['CVD'], label: '색각이상 팔레트 전환(상승 파랑)', action: 'cvd' },
+  { codes: ['HELP', '?'], label: '명령 목록', action: 'help' },
+];
+
+function currentTerminalPath() {
+  return location.pathname.replace(/\/$/, '') || '/index.html';
+}
+
+function renderFkey(f) {
+  const target = f.href.split('?')[0];
+  const path = currentTerminalPath();
+  const active = path === target || (path === '/' && target === '/index.html');
+  const badge = f.key ? `<kbd>${f.key}</kbd>` : `<i class="fa-solid ${f.icon}" aria-hidden="true"></i>`;
+  const title = f.key ? ` title="Alt+${f.key}"` : '';
+  return `<a class="term-fkey${f.key ? '' : ' term-fkey--ai'}${active ? ' active' : ''}" href="${f.href}"${title}${active ? ' aria-current="page"' : ''}>${badge}${f.code}<span>${f.label}</span></a>`;
+}
+
+function terminalScreenCode() {
+  const path = currentTerminalPath();
+  const hit = [...TERMINAL_FKEYS, ...TERMINAL_SHORTCUTS].find(f => f.href.split('?')[0] === path);
+  if (hit) return hit.code;
+  const file = path.split('/').pop().replace(/\.html$/, '');
+  return (file || 'DASH').toUpperCase().slice(0, 14);
+}
+
+function toggleCvdPalette() {
+  const root = document.documentElement;
+  const on = !root.dataset.cvd;
+  if (on) root.dataset.cvd = '1'; else delete root.dataset.cvd;
+  try { localStorage.setItem('term.cvd', on ? '1' : '0'); } catch (_) {}
+  document.dispatchEvent(new CustomEvent('term:palette'));
+  return on;
+}
+
+function renderTerminalHelp(filter = '') {
+  const box = document.getElementById('term-cmd-help');
+  if (!box) return;
+  const q = filter.trim().toUpperCase();
+  const rows = TERMINAL_COMMANDS.filter(c => !q || c.codes.some(code => code.startsWith(q)) || c.label.toUpperCase().includes(q));
+  box.innerHTML = rows.length
+    ? rows.map(c => `<div data-cmd="${c.codes[0]}"><b>${c.codes.join(' · ')}</b><span>${c.label}</span></div>`).join('')
+    : '<div><b>—</b><span>일치하는 명령이 없습니다. 6자리 종목코드나 코인 심볼도 입력할 수 있습니다.</span></div>';
+  box.classList.add('open');
+}
+
+function closeTerminalHelp() {
+  document.getElementById('term-cmd-help')?.classList.remove('open');
+}
+
+// Bloomberg의 "<코드> <GO>"처럼 짧은 명령으로 화면을 이동한다.
+function runTerminalCommand(raw) {
+  const text = String(raw || '').trim();
+  if (!text) { renderTerminalHelp(); return; }
+  const tokens = text.toUpperCase().split(/\s+/);
+  const first = tokens[0];
+  const command = TERMINAL_COMMANDS.find(c => c.codes.includes(first));
+
+  const stockCode = text.match(/\b\d{6}\b/)?.[0];
+  if (stockCode) { location.href = `/trade/stock.html?symbol=${stockCode}`; return; }
+
+  const marketArg = tokens.find(t => /^KRW-[A-Z0-9]{2,10}$/.test(t));
+  if (marketArg) { location.href = `/trade/order.html?market=${marketArg}`; return; }
+
+  if (command) {
+    if (command.action === 'help') { renderTerminalHelp(); return; }
+    if (command.action === 'cvd') {
+      const on = toggleCvdPalette();
+      const input = document.getElementById('term-cmd-input');
+      if (input) { input.value = ''; input.placeholder = on ? 'CVD 팔레트 켜짐 — 상승 파랑 / 하락 빨강' : 'CVD 팔레트 꺼짐 — 상승 초록 / 하락 빨강'; }
+      return;
+    }
+    const coinArg = tokens[1] && /^[A-Z0-9]{2,10}$/.test(tokens[1]) ? tokens[1] : '';
+    if (command.href === '/trade/order.html' && coinArg) { location.href = `/trade/order.html?market=KRW-${coinArg}`; return; }
+    location.href = command.href;
+    return;
+  }
+
+  // 한글 등 자유 입력은 메뉴 이름에서 먼저 찾는다.
+  const groups = window.__termNavGroups || [];
+  const items = groups.flatMap(g => g.type === 'single' ? [g] : g.items);
+  const needle = text.toLowerCase();
+  const menuHit = items.find(item => item.label.toLowerCase().includes(needle));
+  if (menuHit) { location.href = menuHit.href; return; }
+
+  if (/^[A-Z0-9]{2,10}$/.test(first)) { location.href = `/trade/order.html?market=KRW-${first}`; return; }
+  location.href = `/trade/stock.html?q=${encodeURIComponent(text)}`;
+}
+
+function startTerminalClock() {
+  const el = document.getElementById('term-clock');
+  if (!el) return;
+  const fmt = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const tick = () => { el.textContent = `${fmt.format(new Date())} KST`; };
+  tick();
+  clearInterval(window.__termClockTimer);
+  window.__termClockTimer = setInterval(tick, 1000);
+}
+
+const TAPE_COINS = ['KRW-BTC', 'KRW-ETH', 'KRW-XRP', 'KRW-SOL', 'KRW-DOGE'];
+const tapeState = { index: [], stocks: [], coins: [] };
+
+function tapeItem({ code, price, rate, digits = 0 }) {
+  const n = Number(rate);
+  const cls = !Number.isFinite(n) || n === 0 ? 'flat' : n > 0 ? 'up' : 'down';
+  const arrow = cls === 'up' ? '▲' : cls === 'down' ? '▼' : '■';
+  const px = Number(price).toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const pct = Number.isFinite(n) ? `${n > 0 ? '+' : ''}${n.toFixed(2)}%` : '-';
+  return `<span class="term-tape-item"><b>${code}</b><span class="px">${px}</span><span class="${cls}">${arrow} ${pct}</span></span>`;
+}
+
+function renderTickerTape() {
+  const track = document.getElementById('term-tape-track');
+  if (!track) return;
+  const items = [...tapeState.index, ...tapeState.coins, ...tapeState.stocks];
+  if (!items.length) return;
+  const html = items.map(tapeItem).join('');
+  track.innerHTML = html + html;
+  track.style.setProperty('--tape-duration', `${Math.max(40, items.length * 5)}s`);
+}
+
+async function refreshTapeIndex() {
+  try {
+    const res = await apiFetch('/api/stocks/market');
+    if (!res.ok) return;
+    const data = await res.json();
+    tapeState.index = ['KOSPI', 'KOSDAQ'].filter(k => data?.[k]).map(k => ({ code: k, price: data[k].price, rate: data[k].changeRate, digits: 2 }));
+    renderTickerTape();
+  } catch (_) {}
+}
+
+async function refreshTapeStocks() {
+  try {
+    const res = await apiFetch('/api/stocks/prices');
+    if (!res.ok) return;
+    const data = await res.json();
+    tapeState.stocks = Object.values(data?.prices ?? {}).slice(0, 12)
+      .map(p => ({ code: p.name, price: p.price, rate: p.changeRate }));
+    renderTickerTape();
+  } catch (_) {}
+}
+
+async function refreshTapeCoins() {
+  try {
+    const res = await fetch(`/upbit-api/ticker?markets=${TAPE_COINS.join(',')}`);
+    if (!res.ok) return;
+    const rows = await res.json();
+    tapeState.coins = (Array.isArray(rows) ? rows : []).map(r => ({
+      code: r.market.replace('KRW-', ''), price: r.trade_price, rate: r.signed_change_rate * 100,
+      digits: r.trade_price < 100 ? 2 : 0,
+    }));
+    renderTickerTape();
+  } catch (_) {}
+}
+
+function startTickerTape() {
+  if (!document.getElementById('term-tape') || window.__termTapeStarted) return;
+  window.__termTapeStarted = true;
+  refreshTapeIndex(); refreshTapeCoins(); refreshTapeStocks();
+  setInterval(refreshTapeIndex, 60_000);
+  setInterval(refreshTapeCoins, 10_000);
+  setInterval(refreshTapeStocks, 30_000);
+}
+
+// 명령줄 포커스(/)·기능키(Alt+1~9)·명령 도움말 키보드 동작.
+document.addEventListener('keydown', event => {
+  const tag = event.target?.tagName;
+  const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target?.isContentEditable;
+  if (event.key === '/' && !typing && !event.ctrlKey && !event.metaKey) {
+    const input = document.getElementById('term-cmd-input');
+    if (input) { event.preventDefault(); input.focus(); input.select(); }
+    return;
+  }
+  if (event.altKey && !event.ctrlKey && !event.metaKey && /^[1-9]$/.test(event.key)) {
+    const f = TERMINAL_FKEYS.find(item => item.key === event.key);
+    if (f && document.getElementById('site-header')) { event.preventDefault(); location.href = f.href; }
+  }
+});
+document.addEventListener('input', event => {
+  if (event.target?.id === 'term-cmd-input') {
+    const value = event.target.value;
+    if (value.trim()) renderTerminalHelp(value.split(/\s+/)[0]); else closeTerminalHelp();
+  }
+});
+document.addEventListener('click', event => {
+  const row = event.target.closest?.('#term-cmd-help [data-cmd]');
+  if (row) { runTerminalCommand(row.dataset.cmd); return; }
+  if (!event.target.closest?.('.term-cmd')) closeTerminalHelp();
+});
 
 /* ── Offcanvas ───────────────────────────────────────────────────────────── */
 function openOffcanvas() {
@@ -318,7 +624,7 @@ function closeOffcanvas() {
   document.getElementById('oc-panel')?.classList.remove('open');
   document.body.style.overflow = '';
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeOffcanvas(); closeAiPanel(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeOffcanvas(); closeAiPanel(); closeTerminalHelp(); } });
 
 function toggleOcGroup(idx) {
   document.querySelectorAll('#oc-panel .oc-group').forEach((el, i) => {
@@ -468,13 +774,13 @@ async function runAiAnalysis() {
     const listEl = document.getElementById('rag-context-list');
     if (listEl) {
       listEl.innerHTML = ragDocs.map((doc, i) => `
-        <div style="border-left:3px solid #6366F1;padding:.45rem .7rem;margin-bottom:.5rem;background:white;border-radius:0 6px 6px 0;">
+        <div style="border-left:3px solid var(--info);padding:.45rem .7rem;margin-bottom:.5rem;background:var(--surface-2);border-radius:0 2px 2px 0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:.2rem;">
-            <span style="font-size:10px;font-weight:700;background:#EEF2FF;color:#4F46E5;padding:1px 6px;border-radius:99px;">${_catLabel(doc.category)}</span>
-            <span style="font-size:11px;font-weight:700;color:#1F2937;">${doc.title}</span>
-            <span style="font-size:10px;color:#9CA3AF;margin-left:auto;">유사도 ${(doc.score * 100).toFixed(0)}%</span>
+            <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:2px;">${_catLabel(doc.category)}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--fg);">${doc.title}</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:auto;">유사도 ${(doc.score * 100).toFixed(0)}%</span>
           </div>
-          <p style="font-size:11px;color:#6B7280;margin:0;line-height:1.5;">${doc.text.substring(0,120)}...</p>
+          <p style="font-size:11px;color:var(--fg-2);margin:0;line-height:1.5;">${doc.text.substring(0,120)}...</p>
         </div>`).join('');
     }
   }
@@ -514,7 +820,7 @@ async function runAiAnalysis() {
       box.innerHTML = markdownToHtml(data.analysis ?? '분석 결과가 없습니다.');
     }
   } catch (err) {
-    box.innerHTML = `<p style="color:#F87171;font-size:13px;">오류: ${err.message}</p>`;
+    box.innerHTML = `<p style="color:var(--down);font-size:13px;">오류: ${err.message}</p>`;
   } finally {
     btn.disabled    = false;
     btn.textContent = '✨ 다시 분석';
@@ -545,16 +851,16 @@ async function runQdrantSearch() {
       return;
     }
     res.innerHTML = hits.map(h => `
-      <div style="border:1px solid #E0E7FF;border-radius:10px;padding:.8rem .95rem;margin-bottom:.6rem;background:white;box-shadow:0 1px 4px rgba(99,102,241,.06);">
+      <div style="border:1px solid var(--border);border-left:3px solid var(--info);border-radius:2px;padding:.7rem .9rem;margin-bottom:.5rem;background:var(--surface);">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:.4rem;">
-          <span style="font-size:10px;font-weight:700;background:#EEF2FF;color:#4F46E5;padding:1px 7px;border-radius:99px;">${_catLabel(h.category)}</span>
-          <span style="font-size:12.5px;font-weight:800;color:#1F2937;flex:1;">${h.title}</span>
-          <div style="font-size:10px;font-weight:700;color:white;background:${_scoreColor(h.score)};border-radius:99px;padding:1px 7px;">${(h.score*100).toFixed(0)}%</div>
+          <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:2px;">${_catLabel(h.category)}</span>
+          <span style="font-size:12.5px;font-weight:800;color:var(--fg);flex:1;">${h.title}</span>
+          <div style="font-size:10px;font-weight:800;color:#000;background:${_scoreColor(h.score)};border-radius:2px;padding:1px 7px;font-family:var(--font-mono);">${(h.score*100).toFixed(0)}%</div>
         </div>
-        <p style="font-size:12px;color:#4B5563;margin:0;line-height:1.65;">${h.text}</p>
+        <p style="font-size:12px;color:var(--fg-2);margin:0;line-height:1.65;">${h.text}</p>
       </div>`).join('');
   } catch (err) {
-    if (res) res.innerHTML = `<p style="color:#F87171;font-size:13px;">오류: ${err.message}</p>`;
+    if (res) res.innerHTML = `<p style="color:var(--down);font-size:13px;">오류: ${err.message}</p>`;
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '검색'; }
   }
@@ -576,7 +882,7 @@ async function loadDataset() {
         <div style="grid-column:1/-1;"><span style="color:var(--muted);">임베딩 모델</span><br><code style="font-size:11px;color:var(--fg-2);">${data.model}</code></div>
       </div>`;
   } catch (e) {
-    if (statsEl) statsEl.innerHTML = `<span style="color:#F87171;font-size:12px;">통계 불러오기 실패</span>`;
+    if (statsEl) statsEl.innerHTML = `<span style="color:var(--down);font-size:12px;">통계 불러오기 실패</span>`;
   }
 
   // 문서 목록
@@ -586,13 +892,13 @@ async function loadDataset() {
     const docs = data.documents ?? [];
     if (listEl) listEl.innerHTML = docs.length
       ? docs.map(d => `
-        <div style="display:flex;align-items:baseline;gap:6px;padding:.35rem .5rem;border-radius:6px;margin-bottom:.2rem;background:white;border:1px solid #F3F4F6;">
-          <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent-dark);padding:2px 6px;border-radius:99px;white-space:nowrap;">${_catLabel(d.category)}</span>
+        <div style="display:flex;align-items:baseline;gap:6px;padding:.35rem .5rem;border-radius:2px;margin-bottom:.2rem;background:var(--surface);border:1px solid var(--border);">
+          <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent-dark);padding:2px 6px;border-radius:2px;white-space:nowrap;">${_catLabel(d.category)}</span>
           <span style="font-size:13px;font-weight:600;color:var(--fg);flex:1;">${d.title}</span>
         </div>`).join('')
       : '<p style="color:var(--muted);font-size:12px;text-align:center;">문서가 없습니다.</p>';
   } catch (e) {
-    if (listEl) listEl.innerHTML = `<span style="color:#F87171;font-size:12px;">목록 불러오기 실패</span>`;
+    if (listEl) listEl.innerHTML = `<span style="color:var(--down);font-size:12px;">목록 불러오기 실패</span>`;
   }
 }
 
@@ -604,7 +910,7 @@ async function addQdrantDoc() {
   const msg      = document.getElementById('add-doc-msg');
 
   if (!text) {
-    if (msg) { msg.style.display='block'; msg.style.color='#F87171'; msg.textContent='내용을 입력하세요.'; }
+    if (msg) { msg.style.display='block'; msg.style.color='var(--down)'; msg.textContent='내용을 입력하세요.'; }
     return;
   }
   if (btn) { btn.disabled = true; btn.textContent = '추가 중...'; }
@@ -618,15 +924,15 @@ async function addQdrantDoc() {
     });
     const data = await r.json();
     if (r.ok) {
-      if (msg) { msg.style.display='block'; msg.style.color='#059669'; msg.textContent=`✓ 추가 완료 (ID: ${data.id?.substring(0,8)}...)`; }
+      if (msg) { msg.style.display='block'; msg.style.color='var(--up)'; msg.textContent=`✓ 추가 완료 (ID: ${data.id?.substring(0,8)}...)`; }
       document.getElementById('new-doc-title').value = '';
       document.getElementById('new-doc-text').value  = '';
       setTimeout(() => loadDataset(), 600);
     } else {
-      if (msg) { msg.style.display='block'; msg.style.color='#F87171'; msg.textContent=data.error ?? '추가 실패'; }
+      if (msg) { msg.style.display='block'; msg.style.color='var(--down)'; msg.textContent=data.error ?? '추가 실패'; }
     }
   } catch (err) {
-    if (msg) { msg.style.display='block'; msg.style.color='#F87171'; msg.textContent='오류: ' + err.message; }
+    if (msg) { msg.style.display='block'; msg.style.color='var(--down)'; msg.textContent='오류: ' + err.message; }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Qdrant에 추가'; }
   }
@@ -645,9 +951,9 @@ function _catLabel(cat) {
   }[cat] ?? cat;
 }
 function _scoreColor(s) {
-  if (s >= 0.75) return '#059669';
-  if (s >= 0.55) return '#D97706';
-  return '#6B7280';
+  if (s >= 0.75) return 'var(--up)';
+  if (s >= 0.55) return 'var(--warn)';
+  return 'var(--muted)';
 }
 
 /* ── KRX 보도자료 뉴스 ───────────────────────────────────────────────────── */
@@ -678,20 +984,20 @@ async function loadKrxNews() {
       const dateStr = _krxFmtDate(n.date);
       return `
         <a href="${href}" target="_blank" rel="noopener noreferrer"
-          style="display:block;padding:.45rem 1rem;border-bottom:1px solid #E0E7FF;text-decoration:none;transition:background .12s;"
-          onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='transparent'">
-          <div style="font-size:12px;font-weight:600;color:#1E1B4B;line-height:1.45;margin-bottom:3px;">${n.title}</div>
+          style="display:block;padding:.45rem 1rem;border-bottom:1px solid var(--border);text-decoration:none;"
+          onmouseover="this.style.background='var(--surface-3)'" onmouseout="this.style.background='transparent'">
+          <div style="font-size:12px;font-weight:600;color:var(--fg);line-height:1.45;margin-bottom:3px;">${n.title}</div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:10px;color:#6366F1;background:#EEF2FF;border-radius:99px;padding:0 5px;">PDF</span>
-            <span style="font-size:10.5px;color:#9CA3AF;">${dateStr}</span>
-            <span style="font-size:10px;color:#C4B5FD;margin-left:auto;">조회 ${n.view_cnt}</span>
+            <span style="font-size:10px;color:var(--info);background:var(--info-bg);border-radius:2px;padding:0 5px;">PDF</span>
+            <span style="font-size:10.5px;color:var(--muted);font-family:var(--font-mono);">${dateStr}</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:auto;">조회 ${n.view_cnt}</span>
           </div>
         </a>`;
     }).join('');
 
     _krxNewsLoaded = true;
   } catch (err) {
-    listEl.innerHTML = `<p style="color:#F87171;text-align:center;font-size:12px;margin-top:1rem;">오류: ${err.message}</p>`;
+    listEl.innerHTML = `<p style="color:var(--down);text-align:center;font-size:12px;margin-top:1rem;">오류: ${err.message}</p>`;
   } finally {
     if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = '↻ 새로고침'; }
   }
@@ -705,24 +1011,44 @@ function _krxFmtDate(d) {
 
 function markdownToHtml(md) {
   return md
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:800;color:#A78BFA;margin:1rem 0 .4rem;">$1</h3>')
-    .replace(/^## (.+)$/gm,  '<h2 style="font-size:15px;font-weight:800;color:#818CF8;margin:1.2rem 0 .5rem;">$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:800;color:var(--info);margin:1rem 0 .4rem;">$1</h3>')
+    .replace(/^## (.+)$/gm,  '<h2 style="font-size:15px;font-weight:800;color:var(--accent);margin:1.2rem 0 .5rem;">$1</h2>')
     .replace(/^# (.+)$/gm,   '<h1 style="font-size:16px;font-weight:900;color:var(--fg);margin:1.4rem 0 .6rem;">$1</h1>')
     .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--fg);font-weight:700;">$1</strong>')
-    .replace(/\*(.+?)\*/g,     '<em style="color:#C4B5FD;">$1</em>')
+    .replace(/\*(.+?)\*/g,     '<em style="color:var(--warn);">$1</em>')
     .replace(/^- (.+)$/gm,    '<li style="margin:.25rem 0;padding-left:.5rem;">• $1</li>')
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>');
 }
 
 /* ── Page init ───────────────────────────────────────────────────────────── */
-function ensureSiteFooter() {
-  // 화면별로 누락되지 않도록 공통 푸터를 한 번만 생성한다.
-  if (document.body.querySelector(':scope > footer')) return;
-  const footer = document.createElement('footer');
-  footer.id = 'site-footer';
-  footer.innerHTML = '<div>Noah Trading Desk · 모의투자·OpenAPI 실습 <span aria-hidden="true">·</span> 모든 거래 기능은 학습·테스트 용도입니다.</div>';
-  document.body.appendChild(footer);
+function ensureSiteFooter(user) {
+  // 화면별로 누락되지 않도록 공통 상태 바를 한 번만 만든다. 트레이딩 화면처럼
+  // #site-footer가 body 바로 아래가 아니어도 기존 요소를 재사용한다.
+  let footer = document.getElementById('site-footer');
+  if (!footer) {
+    if (document.body.querySelector(':scope > footer')) return;
+    footer = document.createElement('footer');
+    footer.id = 'site-footer';
+    document.body.appendChild(footer);
+  }
+  footer.classList.add('term-status');
+  footer.innerHTML = `
+    <div class="term-status-row">
+      <span><i class="term-dot" id="term-conn-dot" aria-hidden="true"></i><b id="term-conn-text">연결됨</b></span>
+      <span>MODE <b>PAPER</b></span>
+      <span>SCREEN <b>${terminalScreenCode()}</b></span>
+      <span class="term-status-hide-sm">USER <b>${user?.loggedIn ? user.username : 'GUEST'}</b></span>
+      <span class="term-status-hide-sm">모든 거래 기능은 학습·테스트 용도입니다.</span>
+      <span class="term-status-brand">NOAH TRADING DESK</span>
+    </div>`;
+  setTerminalConnection(user?.__apiReachable !== false);
+}
+
+function setTerminalConnection(ok) {
+  document.getElementById('term-conn-dot')?.classList.toggle('off', !ok);
+  const text = document.getElementById('term-conn-text');
+  if (text) text.textContent = ok ? '연결됨' : '서버 응답 없음';
 }
 
 function mountApiTestGuide() {
@@ -842,7 +1168,7 @@ async function initPage({ requireAuth = false } = {}) {
   renderHeader(user);
   mountDatasetComposerModal();
   mountApiTestGuide();
-  ensureSiteFooter();
+  ensureSiteFooter(user);
   const hasMain = document.body.querySelector(':scope > main');
   const hasFooter = document.body.querySelector(':scope > footer');
   if (hasMain && hasFooter && !document.body.classList.contains('alternatives-layout')) {
