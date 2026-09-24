@@ -55,6 +55,17 @@
 | 시드 멱등성 | `init`이 세 번 실행된 뒤 회원 수 | 52명(샘플 30 + 봇 20 + 스모크 계정 2), 중복 없음 |
 | 직접 실행 | 백엔드 컨테이너에서 `python app.py` | 테이블·시드·스케줄러 후 개발 서버 기동, `/health` 200 |
 
+### GitHub Actions 첫 실행
+
+- 실행: [run 35999023265](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/runs/35999023265), 커밋 `3188004`, ubuntu-latest, Python 3.11.16. 세 작업 모두 성공했다.
+- 워크플로 파일은 작업 환경의 GitHub 권한에 `workflow` 범위가 없어 `.github/workflows/`에 푸시할 수 없었다. 그래서 임시 경로에 올렸고, Noah가 자기 계정으로 옮겼다(`3188004`, 내용 변경 없음).
+
+| 작업 | 로그에서 확인한 결과 |
+|---|---|
+| Lint, unit tests, JS syntax, dependency audit | ruff `All checks passed!`, format `6 files already formatted`, pytest `54 passed, 4 deselected`, `node --check` 통과, pip-audit `No known vulnerabilities found, 51 ignored` |
+| Integration tests (MariaDB 11.4, PostgreSQL 16) | 스키마 적재 후 `4 passed, 54 deselected`(통합 테스트가 건너뛰지 않고 실행됨) |
+| Compose config and image builds | Compose 검증 3종, 두 이미지 빌드, DB 없이 `/health` 200 확인(`ok`) |
+
 체결가 285,500원은 같은 시점 `/api/stocks/quote` 응답의 현재가와 같았다. 그 응답에는 전일 종가 276,500원과 거래량 20,864,376이 있었고 `simulated` 키는 없었다. 시뮬레이션 분기(`stock_market.py`)라면 거래량 0과 `simulated: true`가 붙고, 가격도 기준가 74,000원 근처여야 한다. 따라서 실제 시세 경로였다. 다만 yfinance와 Naver 중 어느 소스였는지는 확인하지 않았다.
 
 ## Phase 3를 위한 실측(현재 백테스트 동작 기록)
@@ -80,7 +91,6 @@
 
 ## 검증하지 못한 것
 
-- GitHub Actions 실제 실행: 푸시한 뒤 PR에서 확인한다.
 - ARM64(Mac Docker) 빌드와 lock 설치
 - 브라우저 화면 재점검: 이번 변경에는 프런트엔드 수정이 없다.
 - KIS·KB·Alpaca 연동, AI 분석, LEAN, Qdrant 검색
