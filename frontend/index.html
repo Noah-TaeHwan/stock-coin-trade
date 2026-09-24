@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EDUMGT 모의투자</title>
-  <link rel="icon" href="/img/favicon.png">
+  <title>Stock &amp; Coin Trading Desk — Noah | 모의투자·OpenAPI 실습</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <style>
     @font-face { font-family:'Pretendard'; font-weight:400; font-display:swap; src:url('/fonts/Pretendard-Regular.woff2') format('woff2'); }
     @font-face { font-family:'Pretendard'; font-weight:500; font-display:swap; src:url('/fonts/Pretendard-Medium.woff2') format('woff2'); }
@@ -98,8 +98,8 @@
 </main>
 <footer id="site-footer">
   <div class="w-full px-4 py-3 flex items-center justify-between">
-    <span class="brand-logo-text" style="font-size:13px;letter-spacing:1.5px;">EDUMGT</span>
-      <p style="font-size:12px;color:var(--muted);">(주)에듀엠지티 &nbsp;|&nbsp; <a href="https://www.edumgt.co.kr" target="_blank" style="color:var(--accent-dark);text-decoration:none;font-weight:600;">www.edumgt.co.kr</a> &nbsp;|&nbsp; © 2025</p>
+    <span class="brand-logo-text" style="font-size:13px;letter-spacing:1.5px;">Noah Trading Desk</span>
+      <p style="font-size:12px;color:var(--muted);">모의투자·OpenAPI 실습</p>
   </div>
 </footer>
 <script src="/js/config.js"></script>
@@ -134,7 +134,7 @@
     const top10Codes = markets.map(m => m.market);
     const ws = new WebSocket(upbitWebSocketUrl());
     ws.onopen = () => ws.send(JSON.stringify([
-      { ticket: 'edumgt-index' },
+      { ticket: 'portfolio-index' },
       { type: 'ticker', codes: top10Codes },
     ]));
     ws.onmessage = async (e) => {

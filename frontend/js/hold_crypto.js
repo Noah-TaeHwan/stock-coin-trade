@@ -318,7 +318,7 @@ function initWebSocket(marketArrayList, memberAsset, totalBuyKrw) {
 
   socket.onopen = () => {
     socket.send(JSON.stringify([
-      { ticket: 'edumgt-hold' },
+      { ticket: 'portfolio-hold' },
       { type: 'ticker', codes: marketArrayList },
     ]));
   };

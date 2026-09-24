@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OHLCV DB — 모의투자</title>
-  <link rel="icon" href="/img/favicon.png">
+  <title>OHLCV DB — 모의투자 — Noah Trading Desk</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <style>
     @font-face { font-family:'Pretendard'; font-weight:400; font-display:swap; src:url('/fonts/Pretendard-Regular.woff2') format('woff2'); }
     @font-face { font-family:'Pretendard'; font-weight:500; font-display:swap; src:url('/fonts/Pretendard-Medium.woff2') format('woff2'); }
@@ -117,8 +117,8 @@
             <article>
               <b>4</b>
               <h3>백업 (2시간마다)</h3>
-              <p>실행 중인 <code>pg-stock</code> 컨테이너를 <code>docker commit</code>으로 스냅샷 떠서 Docker Hub로 push합니다. 트랜잭션 정합 백업이 아닌 crash-consistent 백업이라는 한계를 README에 명시해 두었습니다.</p>
-              <code>backup_pg_to_dockerhub.sh → edumgt/pg-stock-backup</code>
+              <p>원본 수업에서는 <code>pg-stock</code> 컨테이너를 <code>docker commit</code>으로 스냅샷 만들어 Docker Hub에 올렸습니다. 트랜잭션 정합 백업이 아닌 crash-consistent 백업이며, 이 포트폴리오의 배포 대상은 아닙니다.</p>
+              <code>backup_pg_to_dockerhub.sh</code>
             </article>
           </div>
         </div>

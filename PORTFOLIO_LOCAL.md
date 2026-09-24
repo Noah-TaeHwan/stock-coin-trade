@@ -1,6 +1,6 @@
 # 포트폴리오 로컬 실행
 
-원본은 강사 저장소 [`edumgt/stock-coin-trade`](https://github.com/edumgt/stock-coin-trade)이며, 이 작업공간은 `d5a105f0256ac4ddfa0a0223cc736498c7891c92`에서 시작했다. `compose.portfolio.yml`과 이 문서는 로컬 실행을 격리하기 위한 작업이다. 원본 앱의 기존 화면·거래·KIS 연동을 새 개인 구현으로 표시하지 않는다.
+이 저장소는 강사 원본을 기반으로 한 GitHub 포크이며, 이 작업공간은 원본 기준 커밋 `d5a105f0256ac4ddfa0a0223cc736498c7891c92`에서 시작했다. `compose.portfolio.yml`과 이 문서는 Noah의 로컬 실행 격리 작업이다. 원본 앱의 기존 화면·거래·KIS 연동은 새 개인 구현으로 표시하지 않는다.
 
 ## 준비와 실행
 
@@ -65,4 +65,4 @@ docker compose --env-file .env.portfolio -p stock-portfolio-local -f docker-comp
 
 `down`은 컨테이너와 네트워크만 내리고 MariaDB·PostgreSQL 볼륨을 보존한다. 데이터 보존이 필요하므로 `down -v`는 사용하지 않는다. 로컬 접속만 허용하도록 프런트엔드 포트는 `127.0.0.1`에 바인딩한다.
 
-2026-09-23 로컬 빌드·실행, 브라우저 가입·로그인·모의 매수, API 모의 매수·매도, 두 DB와 백엔드 재시작 후 데이터 보존을 확인했다. [실행 증거와 남은 문제](docs/evidence/README.md)를 참고한다. AWS 배포는 수행하지 않았다. 강사 원본의 운영 배포 워크플로는 원본 저장소에서만 실행되도록 제한되어 이 포크의 main 머지로 실행되지 않는다.
+2026-09-23 로컬 빌드·실행, 브라우저 가입·로그인·모의 매수, API 모의 매수·매도, 두 DB와 백엔드 재시작 후 데이터 보존을 확인했다. [실행 증거와 남은 문제](docs/evidence/README.md)를 참고한다. AWS 배포는 수행하지 않았다. 이 포크에서는 원본의 자동 운영 배포 워크플로를 제거했다.

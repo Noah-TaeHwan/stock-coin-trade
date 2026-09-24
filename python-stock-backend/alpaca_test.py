@@ -251,7 +251,7 @@ def run_paper_order_flow_test() -> dict[str, Any]:
         if not isinstance(ask, (int, float)) or ask <= 2:
             raise BrokerApiError("안전 가격을 확인할 수 없어 주문을 보내지 않았습니다. AAPL 매도호가가 $2보다 큰 경우에만 테스트합니다.")
 
-        client_order_id = f"edumgt-paper-{int(time.time() * 1000)}"
+        client_order_id = f"portfolio-paper-{int(time.time() * 1000)}"
         order = _request(
             "POST",
             f"{ALPACA_PAPER_BASE}/orders",

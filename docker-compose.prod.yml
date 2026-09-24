@@ -3,7 +3,7 @@
 #      docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build --remove-orphans
 services:
   frontend:
-    image: ${ECR_REGISTRY:-086015456585.dkr.ecr.ap-northeast-2.amazonaws.com}/stock-coin-trade-frontend:${IMAGE_TAG:-latest}
+    image: ${ECR_REGISTRY:?Set ECR_REGISTRY to your ECR registry}/stock-coin-trade-frontend:${IMAGE_TAG:?Set IMAGE_TAG to a pushed ECR image tag}
 
   python-backend:
-    image: ${ECR_REGISTRY:-086015456585.dkr.ecr.ap-northeast-2.amazonaws.com}/stock-coin-trade-python-backend:${IMAGE_TAG:-latest}
+    image: ${ECR_REGISTRY:?Set ECR_REGISTRY to your ECR registry}/stock-coin-trade-python-backend:${IMAGE_TAG:?Set IMAGE_TAG to a pushed ECR image tag}
