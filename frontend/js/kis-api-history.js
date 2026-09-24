@@ -4,7 +4,7 @@ const kh = id => document.getElementById(id);
 const khDate = value => value ? new Date(value).toLocaleString('ko-KR', { hour12:false }) : '-';
 
 function resultBadge(value) {
-  const color = value ? '#15803D' : '#E11D48';
+  const color = value ? 'var(--up)' : 'var(--down)';
   return `<b style="color:${color}">${value ? '성공' : '실패'}</b>`;
 }
 

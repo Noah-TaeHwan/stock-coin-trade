@@ -11,7 +11,7 @@ function createUsageGrid() {
       { headerName:'작업', field:'operation', minWidth:150, flex:1, filter:true },
       { headerName:'HTTP', field:'method', width:82 },
       { headerName:'상태', field:'status', width:82, type:'rightAligned' },
-      { headerName:'결과', field:'success', width:92, cellRenderer:p => `<b style="color:${p.value ? '#15803D' : '#E11D48'}">${p.value ? '성공' : '실패'}</b>` },
+      { headerName:'결과', field:'success', width:92, cellRenderer:p => `<b style="color:${p.value ? 'var(--up)' : 'var(--down)'}">${p.value ? '성공' : '실패'}</b>` },
       { headerName:'소요시간', field:'durationMs', minWidth:100, type:'rightAligned', valueFormatter:p => p.value == null ? '-' : `${p.value.toLocaleString('ko-KR')} ms` },
       { headerName:'API 경로', field:'path', minWidth:270, flex:1.4, tooltipField:'path' },
       { headerName:'요약', field:'summary', minWidth:210, flex:1.2, tooltipField:'summary' },

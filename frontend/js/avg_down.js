@@ -53,7 +53,7 @@ function recalc() {
     if (Number.isFinite(avgChangeRate)) {
       const sign  = avgChangeRate > 0 ? '+' : '';
       changeEl.textContent = `${sign}${avgChangeRate.toFixed(2)}%`;
-      changeEl.style.color = avgChangeRate < 0 ? '#2563EB' : avgChangeRate > 0 ? '#E11D48' : 'var(--muted)';
+      changeEl.style.color = avgChangeRate < 0 ? 'var(--down)' : avgChangeRate > 0 ? 'var(--up)' : 'var(--muted)';
     } else {
       changeEl.textContent = '-';
       changeEl.style.color = 'var(--fg)';
@@ -72,20 +72,20 @@ function recalcReverse(holdQty, holdAvg, buyPrice) {
     return;
   }
   if (![holdQty, holdAvg, buyPrice].every(Number.isFinite) || holdQty <= 0 || buyPrice <= 0) {
-    box.innerHTML = '<p style="color:#E11D48;font-size:13px;">보유 수량 · 보유 평균가 · 추가 매수가를 먼저 입력하세요.</p>';
+    box.innerHTML = '<p style="color:var(--down);font-size:13px;">보유 수량 · 보유 평균가 · 추가 매수가를 먼저 입력하세요.</p>';
     return;
   }
 
   const denom = targetAvg - buyPrice;
   if (denom === 0) {
-    box.innerHTML = '<p style="color:#E11D48;font-size:13px;">목표 평균가가 추가 매수가와 같아 계산할 수 없습니다.</p>';
+    box.innerHTML = '<p style="color:var(--down);font-size:13px;">목표 평균가가 추가 매수가와 같아 계산할 수 없습니다.</p>';
     return;
   }
 
   const requiredQty = holdQty * (holdAvg - targetAvg) / denom;
 
   if (requiredQty <= 0) {
-    box.innerHTML = '<p style="color:#E11D48;font-size:13px;">입력하신 추가 매수가로는 해당 목표 평균가에 도달할 수 없습니다. 목표 평균가가 보유 평균가와 추가 매수가 사이의 값인지 확인하세요.</p>';
+    box.innerHTML = '<p style="color:var(--down);font-size:13px;">입력하신 추가 매수가로는 해당 목표 평균가에 도달할 수 없습니다. 목표 평균가가 보유 평균가와 추가 매수가 사이의 값인지 확인하세요.</p>';
     return;
   }
 
