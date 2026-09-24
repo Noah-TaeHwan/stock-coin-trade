@@ -17,207 +17,231 @@
     .trading-root {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr);
       height: 100dvh;
       overflow: hidden;
     }
-    .trading-body {
-      min-height: 0;
-      overflow: hidden;
-      display: grid;
-      grid-template-columns: minmax(0,1fr) 340px;
-      gap: 0;
-    }
-    @media (max-width: 1024px) {
-      .trading-body { grid-template-columns: 1fr; }
-      .market-col   { display: none; }
-    }
-    .left-col {
-      overflow-y: auto;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      padding: 10px;
-    }
-    .market-col {
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      border-left:1px solid var(--border);
-    }
-    .market-col-scroll {
-      flex: 1;
-      overflow-y: auto;
-    }
 
-    #site-footer {
-      margin-top: 0;
+    /* 워크스페이스: KRW 마켓 | 시세·차트·도크 | 주문·호가 */
+    .cry-ws { min-height:0; display:grid; grid-template-columns:284px minmax(0, 1fr) 320px; gap:4px; padding:4px; }
+    .cry-col { min-height:0; min-width:0; display:grid; gap:4px; }
+    .cry-left   { grid-template-rows: minmax(0, 1fr); }
+    .cry-center { grid-template-rows: auto minmax(240px, 1fr) minmax(170px, 34%); }
+    .cry-right  { grid-template-rows: auto minmax(0, 1fr); }
+
+    .cry-sec { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:6px 10px; background:var(--surface); border:1px solid var(--border); }
+    .cry-sec-id { display:flex; align-items:baseline; gap:8px; }
+    #crypto_korean_name { margin:0; color:var(--fg); font-size:17px; font-weight:900; }
+    #crypto_symbol_name { color:var(--accent); font-family:var(--font-mono); font-size:12px; font-weight:800; }
+    .cry-sec-px { display:flex; align-items:baseline; gap:10px; font-family:var(--font-mono); }
+    #crypto_live_price { font-size:20px; font-weight:700; }
+    #crypto_live_rate { font-size:13px; font-weight:700; }
+    .cry-sec-stats { margin-left:auto; display:flex; gap:14px; font-family:var(--font-mono); font-size:12px; }
+    .cry-sec-stats span { color:var(--muted); }
+    .cry-sec-stats b { margin-left:4px; color:var(--fg); font-weight:700; }
+
+    .cry-chart-bar { gap:6px; flex-wrap:wrap; min-height:34px; padding:3px 8px; text-transform:none; letter-spacing:0; }
+    .cry-dom { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; padding:4px 10px; border-bottom:1px solid var(--border); background:var(--surface); font-family:var(--font-mono); }
+    #selectedExchangeLabel { color:var(--muted); font-size:11px; font-weight:800; }
+    #selectedExchangePrice { font-size:15px; font-weight:700; }
+    #domestic_price_updated_at { color:var(--muted); font-size:10.5px; }
+    #domesticInlineBar { display:flex; gap:6px; flex-wrap:wrap; }
+    .dom-inline-item span:first-child { color:var(--muted); font-family:var(--font-sans); font-size:11px; }
+    .dom-inline-item span:last-child { margin-left:4px; color:var(--fg); font-size:12px; font-weight:700; }
+    #coinChart { flex:1 1 auto; min-height:0; }
+
+    .cry-list tbody tr { cursor:pointer; }
+    .cry-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
+    .cry-watch { background:none; border:none; cursor:pointer; font-size:12px; color:var(--muted); padding:0; }
+
+    .ticket-tabs { display:grid; grid-template-columns:1fr 1fr; }
+    .ticket-tab { padding:6px; border:0; border-bottom:2px solid var(--border); color:var(--muted); background:var(--surface-2); font-family:var(--font-mono); font-size:12px; font-weight:900; cursor:pointer; }
+    .ticket-tab[data-side="buy"].active  { color:var(--up); border-bottom-color:var(--up); background:var(--surface); }
+    .ticket-tab[data-side="sell"].active { color:var(--down); border-bottom-color:var(--down); background:var(--surface); }
+    .ticket-pane { display:none; padding:8px; gap:6px; }
+    .ticket-pane.active { display:grid; }
+    .ticket-pane .lbl { color:var(--muted); font-size:11px; font-weight:700; }
+    .ticket-error { display:none; color:var(--down); font-size:11.5px; }
+
+    .cry-dock-pane { display:none; }
+    .cry-dock-pane.active { display:block; }
+
+    @media (max-width: 1280px) {
+      .cry-ws { grid-template-columns: minmax(0, 1fr) 300px; }
+      .cry-left { grid-column: 1 / -1; grid-row: 2; grid-template-rows: 320px; }
+      html, body { overflow: auto; height: auto; }
+      .trading-root { height: auto; min-height: 100dvh; overflow: visible; }
+      .cry-center { grid-template-rows: auto 420px 280px; }
+      .cry-right { grid-template-rows: auto 420px; }
+    }
+    @media (max-width: 900px) {
+      .cry-ws { grid-template-columns: minmax(0, 1fr); }
+      .cry-center { order: 1; } .cry-right { order: 2; } .cry-left { order: 3; }
+      .cry-left { grid-row: auto; }
+      .cry-center { grid-template-rows: auto 360px 280px; }
+      .cry-right { grid-template-rows: auto 380px; }
+      .cry-sec-stats { margin-left:0; }
     }
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','sans-serif']}}}}</script>
-  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
+  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
 <div class="trading-root">
   <div id="header-mount"></div>
 
-  <div class="trading-body">
-    <!-- ── 왼쪽 컬럼 ── -->
-    <div class="left-col">
+  <div class="cry-ws">
+    <!-- ── 왼쪽: 원화 마켓 ── -->
+    <div class="cry-col cry-left">
+      <section class="term-panel" aria-labelledby="krwTitle">
+        <div class="term-panel__bar"><span class="term-code">KRW</span><span id="krwTitle">원화 마켓</span><span class="term-sub">업비트 실시간</span><span class="term-right"><span class="live-dot"></span><span class="term-link" title="선택 코인과 연결됨"></span></span></div>
+        <div class="term-panel__body">
+          <table class="term-table cry-list">
+            <thead><tr><th>코인</th><th>현재가</th><th>등락률</th><th style="text-align:center;">★</th></tr></thead>
+            <tbody id="marketListBody"><tr><td class="empty" colspan="4">로딩 중...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
 
-      <!-- 종목명 + 현재가 요약 -->
-      <div style="display:flex;align-items:baseline;gap:10px;padding:4px 2px 8px;">
-        <h2 id="crypto_korean_name" style="font-size:20px;font-weight:900;color:var(--fg);">-</h2>
-        <span id="crypto_symbol_name" style="font-size:13px;font-weight:600;color:var(--accent-dark);">-</span>
-        <span id="crypto_live_price" style="font-size:18px;font-weight:900;color:var(--fg);margin-left:4px;">-</span>
-        <span id="crypto_live_rate"  style="font-size:13px;font-weight:700;">-</span>
-        <span class="live-dot" style="margin-left:4px;" title="실시간 연결됨"></span>
-      </div>
+    <!-- ── 가운데: 코인 헤더 + 차트 + 도크 ── -->
+    <div class="cry-col cry-center">
+      <header class="cry-sec" aria-label="선택 코인 시세">
+        <div class="cry-sec-id">
+          <span style="padding:1px 5px;color:var(--accent-ink);background:var(--accent);font-family:var(--font-mono);font-size:10.5px;font-weight:900;">CRY</span>
+          <h1 id="crypto_korean_name">-</h1>
+          <span id="crypto_symbol_name">-</span>
+        </div>
+        <div class="cry-sec-px">
+          <span id="crypto_live_price">-</span>
+          <span id="crypto_live_rate">-</span>
+          <span class="live-dot" title="실시간 연결됨"></span>
+        </div>
+        <div class="cry-sec-stats">
+          <span>고가<b id="crypto_high">-</b></span>
+          <span>저가<b id="crypto_low">-</b></span>
+          <span>거래대금 24H<b id="crypto_vol24">-</b></span>
+        </div>
+      </header>
 
-      <!-- LW Charts + 거래소 탭 통합 카드 -->
-      <div class="glass-card" style="padding:0;overflow:hidden;">
-
-        <!-- ① 거래소 탭 + 기간 버튼 -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px;">
-          <div id="exchangeTabs" style="display:flex;gap:4px;">
+      <section class="term-panel" aria-label="가격 차트">
+        <div class="term-panel__bar cry-chart-bar">
+          <span class="term-code">GP</span>
+          <span id="exchangeTabs" style="display:flex;gap:3px;">
             <button data-exchange="UPBIT"   class="exchange-tab active">업비트</button>
             <button data-exchange="BITHUMB" class="exchange-tab">빗썸</button>
             <button data-exchange="COINONE" class="exchange-tab">코인원</button>
             <button data-exchange="KORBIT"  class="exchange-tab">코빗</button>
+          </span>
+          <span class="term-right" id="coinPeriodBtns">
+            <button data-period="minutes/1"  class="period-btn">1m</button>
+            <button data-period="minutes/60" class="period-btn">1H</button>
+            <button data-period="days"       class="period-btn active">1D</button>
+            <button data-period="weeks"      class="period-btn">1W</button>
+          </span>
+        </div>
+        <div class="cry-dom">
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span id="selectedExchangeLabel">업비트</span>
+            <span id="selectedExchangePrice">-</span>
+            <span id="domestic_price_updated_at">-</span>
           </div>
-          <div id="coinPeriodBtns" style="display:flex;gap:4px;">
-            <button data-period="minutes/1"  class="period-btn">1분</button>
-            <button data-period="minutes/60" class="period-btn">1시간</button>
-            <button data-period="days"       class="period-btn active">일</button>
-            <button data-period="weeks"      class="period-btn">주</button>
+          <div id="domesticInlineBar">
+            <span class="dom-inline-item" data-exchange="UPBIT"><span>업비트</span><span id="domestic-price-UPBIT">-</span></span>
+            <span class="dom-inline-item" data-exchange="BITHUMB"><span>빗썸</span><span id="domestic-price-BITHUMB">-</span></span>
+            <span class="dom-inline-item" data-exchange="COINONE"><span>코인원</span><span id="domestic-price-COINONE">-</span></span>
+            <span class="dom-inline-item" data-exchange="KORBIT"><span>코빗</span><span id="domestic-price-KORBIT">-</span></span>
           </div>
         </div>
+        <div id="coinChart"></div>
+        <!-- 숨겨진 hidden IDs (기존 코드 호환용) -->
+        <span id="domestic_price_symbol" style="display:none;">BTC</span>
+      </section>
 
-        <!-- ② 선택 거래소 현재가 + 전체 비교 바 -->
-        <div style="padding:6px 14px 6px;border-bottom:1px solid var(--border);background:var(--surface-2);">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-            <!-- 선택 거래소 현재가 (크게) -->
-            <div style="display:flex;align-items:baseline;gap:8px;">
-              <span id="selectedExchangeLabel" style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">업비트</span>
-              <span id="selectedExchangePrice" style="font-size:20px;font-weight:900;color:var(--accent-dark);">-</span>
-              <span id="domestic_price_updated_at" style="font-size:10px;color:var(--muted);">-</span>
-            </div>
-            <!-- 4거래소 인라인 비교 -->
-            <div id="domesticInlineBar" style="display:flex;gap:14px;flex-wrap:wrap;">
-              <span class="dom-inline-item" data-exchange="UPBIT">
-                <span style="font-size:10px;color:var(--muted);">업비트</span>
-                <span id="domestic-price-UPBIT" style="font-size:12px;font-weight:700;color:var(--fg);margin-left:4px;">-</span>
-              </span>
-              <span class="dom-inline-item" data-exchange="BITHUMB">
-                <span style="font-size:10px;color:var(--muted);">빗썸</span>
-                <span id="domestic-price-BITHUMB" style="font-size:12px;font-weight:700;color:var(--fg);margin-left:4px;">-</span>
-              </span>
-              <span class="dom-inline-item" data-exchange="COINONE">
-                <span style="font-size:10px;color:var(--muted);">코인원</span>
-                <span id="domestic-price-COINONE" style="font-size:12px;font-weight:700;color:var(--fg);margin-left:4px;">-</span>
-              </span>
-              <span class="dom-inline-item" data-exchange="KORBIT">
-                <span style="font-size:10px;color:var(--muted);">코빗</span>
-                <span id="domestic-price-KORBIT" style="font-size:12px;font-weight:700;color:var(--fg);margin-left:4px;">-</span>
-              </span>
-            </div>
+      <section class="term-panel" aria-label="보유·체결">
+        <div class="term-dock-tabs" role="tablist" aria-label="코인 계좌 정보">
+          <button type="button" class="term-dock-tab active" data-dock="holdings" role="tab" aria-selected="true">보유 코인</button>
+          <button type="button" class="term-dock-tab" data-dock="history" role="tab" aria-selected="false">체결 내역</button>
+        </div>
+        <div class="term-panel__body">
+          <div class="cry-dock-pane active" id="dock-holdings">
+            <table class="term-table">
+              <thead><tr><th>코인</th><th>보유수량</th><th>매수평균가</th><th>현재가</th><th>평가금액</th><th>평가손익</th><th>수익률</th></tr></thead>
+              <tbody id="coinHoldingsBody"><tr><td class="empty" colspan="7">로딩 중...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="cry-dock-pane" id="dock-history">
+            <table class="term-table">
+              <thead><tr><th>시간</th><th>코인</th><th>구분</th><th>체결가</th><th>수량</th><th>거래금액</th></tr></thead>
+              <tbody id="coinHistoryBody"><tr><td class="empty" colspan="6">로딩 중...</td></tr></tbody>
+            </table>
           </div>
         </div>
+      </section>
+    </div>
 
-        <!-- ③ 캔들 차트 -->
-        <div id="coinChart" style="height:340px;"></div>
-      </div>
-
-      <!-- 숨겨진 hidden IDs (기존 코드 호환용) -->
-      <span id="domestic_price_symbol" style="display:none;">BTC</span>
-
-      <!-- 매수 / 매도 폼 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+    <!-- ── 오른쪽: 주문 티켓 + 호가 ── -->
+    <div class="cry-col cry-right">
+      <section class="term-panel" aria-labelledby="ticketTitle">
+        <div class="term-panel__bar"><span class="term-code">OT</span><span id="ticketTitle">주문 티켓</span><span class="term-sub">시장가 · 모의</span><span class="term-right"><span class="term-link" title="선택 코인과 연결됨"></span></span></div>
+        <div class="ticket-tabs" role="tablist" aria-label="주문 방향">
+          <button type="button" class="ticket-tab active" data-side="buy" role="tab" aria-selected="true">BUY 매수</button>
+          <button type="button" class="ticket-tab" data-side="sell" role="tab" aria-selected="false">SELL 매도</button>
+        </div>
         <!-- 매수 -->
-        <div class="glass-card" style="padding:14px;">
-          <h3 style="font-size:14px;font-weight:900;color:var(--fg);margin-bottom:10px;">
-            <span id="buy_symbol_name" style="color:#F87171;">BTC</span> 매수
-          </h3>
-          <div class="asset-bar" style="display:flex;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-size:12px;color:var(--muted);">매수 가능</span>
-            <span id="buyAssetDisplay" style="font-size:13px;font-weight:700;color:var(--fg);">
-              <span id="holdAsset">0</span> <span style="font-size:11px;color:var(--muted);">KRW</span>
-            </span>
+        <div class="ticket-pane active" id="ticket-buy">
+          <div class="asset-bar" style="display:flex;justify-content:space-between;">
+            <span class="lbl"><span id="buy_symbol_name" style="color:var(--up);">BTC</span> 매수 가능</span>
+            <span id="buyAssetDisplay" class="num" style="font-size:12.5px;font-weight:700;color:var(--fg);"><span id="holdAsset">0</span> <span style="font-size:11px;color:var(--muted);">KRW</span></span>
           </div>
-          <input type="text" id="buyKrw" class="dark-input" placeholder="주문 금액 (KRW)" style="font-size:13px;padding:.45rem .75rem;margin-bottom:6px;">
-          <div id="buyError" style="color:#F87171;font-size:12px;display:none;margin-bottom:4px;"></div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;" id="buyQuantityBtnGroup">
+          <label class="lbl" for="buyKrw">주문 금액 (KRW)</label>
+          <input type="text" id="buyKrw" class="dark-input" placeholder="0" inputmode="numeric">
+          <div id="buyError" class="ticket-error"></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;" id="buyQuantityBtnGroup">
             <button type="button" class="btn-pct-buy">10%</button>
             <button type="button" class="btn-pct-buy">25%</button>
             <button type="button" class="btn-pct-buy">50%</button>
             <button type="button" class="btn-pct-buy">100%</button>
           </div>
-          <button id="buySubmitBtn" class="btn-buy" type="button" onclick="submitBuy()" style="font-size:14px;padding:.5rem;">매수</button>
+          <button id="buySubmitBtn" class="btn-buy" type="button" onclick="submitBuy()">BUY 매수</button>
         </div>
-
         <!-- 매도 -->
-        <div class="glass-card" style="padding:14px;">
-          <h3 style="font-size:14px;font-weight:900;color:var(--fg);margin-bottom:10px;">
-            <span id="sell_symbol_name" style="color:#60A5FA;">BTC</span> 매도
-          </h3>
-          <div class="asset-bar" style="display:flex;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-size:12px;color:var(--muted);">매도 가능</span>
-            <span style="font-size:13px;font-weight:700;color:var(--fg);">
-              <span id="holdCryptoCount">-</span>
-              <span id="holdCryptoSymbol" style="font-size:11px;color:var(--muted);">-</span>
-            </span>
+        <div class="ticket-pane" id="ticket-sell">
+          <div class="asset-bar" style="display:flex;justify-content:space-between;">
+            <span class="lbl"><span id="sell_symbol_name" style="color:var(--down);">BTC</span> 매도 가능</span>
+            <span class="num" style="font-size:12.5px;font-weight:700;color:var(--fg);"><span id="holdCryptoCount">-</span> <span id="holdCryptoSymbol" style="font-size:11px;color:var(--muted);">-</span></span>
           </div>
-          <input type="text" id="sellCount" class="dark-input" placeholder="주문 수량" style="font-size:13px;padding:.45rem .75rem;margin-bottom:6px;">
-          <div id="sellError" style="color:#F87171;font-size:12px;display:none;margin-bottom:4px;"></div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;" id="sellQuantityBtnGroup">
+          <label class="lbl" for="sellCount">주문 수량</label>
+          <input type="text" id="sellCount" class="dark-input" placeholder="0" inputmode="decimal">
+          <div id="sellError" class="ticket-error"></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;" id="sellQuantityBtnGroup">
             <button type="button" class="btn-pct-sell">10%</button>
             <button type="button" class="btn-pct-sell">25%</button>
             <button type="button" class="btn-pct-sell">50%</button>
             <button type="button" class="btn-pct-sell">100%</button>
           </div>
-          <button id="sellSubmitBtn" class="btn-sell" type="button" onclick="submitSell()" style="font-size:14px;padding:.5rem;">매도</button>
+          <button id="sellSubmitBtn" class="btn-sell" type="button" onclick="submitSell()">SELL 매도</button>
         </div>
-      </div>
+      </section>
 
-    </div><!-- /left-col -->
-
-    <!-- ── 오른쪽 마켓 리스트 ── -->
-    <div class="market-col">
-      <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;">
-        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">원화 마켓</span>
-        <span class="badge badge-gold" style="margin-left:auto;">KRW</span>
-        <span class="live-dot"></span>
-      </div>
-      <div class="market-col-scroll">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="position:sticky;top:0;z-index:10;background:var(--surface);">
-              <th style="padding:6px 10px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">종목</th>
-              <th style="padding:6px 10px;text-align:right;color:var(--muted);font-size:10px;font-weight:700;">현재가</th>
-              <th style="padding:6px 10px;text-align:right;color:var(--muted);font-size:10px;font-weight:700;">등락</th>
-              <th style="padding:6px 6px;text-align:center;color:var(--muted);font-size:10px;">관심</th>
-            </tr>
-          </thead>
-          <tbody id="marketListBody">
-            <tr><td colspan="4" style="padding:16px;text-align:center;color:var(--muted);">로딩 중...</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <section class="term-panel" aria-labelledby="coinBookTitle">
+        <div class="term-panel__bar"><span class="term-code">DOM</span><span id="coinBookTitle">호가</span><span class="term-sub">업비트 · 2초</span><span class="term-right"><span class="term-link" title="선택 코인과 연결됨"></span></span></div>
+        <div class="term-panel__body">
+          <table class="term-ladder" aria-label="매도 호가"><tbody id="coinAskBody"></tbody></table>
+          <div class="term-ladder-mid"><span>LAST</span><strong id="coinBookLast">-</strong><span>SPREAD <b id="coinBookSpread" style="color:var(--fg-2);">-</b></span></div>
+          <table class="term-ladder" aria-label="매수 호가"><tbody id="coinBidBody"></tbody></table>
+        </div>
+      </section>
     </div>
-  </div><!-- /trading-body -->
+  </div>
 
-  <footer id="site-footer">
-    <div class="w-full px-4 py-2 flex items-center justify-between">
-      <span class="brand-logo-text" style="font-size:12px;letter-spacing:1.5px;">Noah Trading Desk</span>
-      <p style="font-size:11px;color:var(--muted);">모의투자·OpenAPI 실습</p>
-    </div>
-  </footer>
+  <footer id="site-footer"></footer>
 </div><!-- /trading-root -->
 
 <script src="/js/config.js"></script>
-<script src="/js/common.js?v=20260920-chart"></script>
-<script src="/js/order.js"></script>
+<script src="/js/common.js?v=20260924-terminal"></script>
+<script src="/js/order.js?v=20260924-terminal"></script>
 </body>
 </html>
