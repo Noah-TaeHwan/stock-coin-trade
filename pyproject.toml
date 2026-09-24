@@ -1,0 +1,37 @@
+# Tooling for the Noah Trading Desk portfolio fork.
+# The instructor's Flask app lives in python-stock-backend/ as flat modules;
+# new portfolio packages go under src/ (see docs/adr/0001-app-factory.md).
+
+[project]
+name = "noah-trading-desk"
+version = "0.1.0"
+description = "Portfolio fork of an education paper-trading platform (see README.md)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+# The default python_files is ["test_*.py", "*_test.py"]; the second pattern
+# would collect python-stock-backend/alpaca_test.py, whose test_* functions
+# call the live Alpaca API.
+python_files = ["test_*.py"]
+testpaths = ["tests", "scripts"]
+pythonpath = ["python-stock-backend", "src"]
+addopts = ["-ra", "--strict-markers", "--import-mode=importlib"]
+markers = [
+    "integration: needs real MariaDB and PostgreSQL (CI service containers)",
+    "network: calls external APIs; never run in CI",
+    "llm: calls a paid LLM API; manual runs only",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = ["mcp", ".venv"]
+# Flat modules in python-stock-backend/ are first-party for import sorting.
+src = ["python-stock-backend", "src"]
+
+[tool.ruff.lint]
+# Instructor modules are only held to syntax errors and pyflakes. New code in
+# src/ and tests/ gets a stricter set through a nested ruff.toml that extends
+# this file (tests/ruff.toml).
+select = ["E9", "F"]

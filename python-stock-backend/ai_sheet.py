@@ -13,7 +13,7 @@ import shutil
 import socket
 import subprocess
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 from html.parser import HTMLParser
 from urllib.parse import urlparse
 

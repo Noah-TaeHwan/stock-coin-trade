@@ -4,13 +4,15 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+from settings import DEV_DB_PASSWORD
+
 
 def _build_url() -> str:
     host = os.environ.get("DB_HOST", "mariadb")
     port = os.environ.get("DB_PORT", "3306")
     name = os.environ.get("DB_NAME", "mockinv")
     user = os.environ.get("DB_USER", "mockinv")
-    password = os.environ.get("DB_PASSWORD", "12345678!!")
+    password = os.environ.get("DB_PASSWORD", DEV_DB_PASSWORD)
     return f"mysql+pymysql://{user}:{password}@{host}:{port}/{name}?charset=utf8mb4"
 
 

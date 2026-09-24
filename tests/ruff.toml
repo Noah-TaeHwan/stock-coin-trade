@@ -1,0 +1,10 @@
+# Stricter lint for the portfolio's own test code (extends /pyproject.toml).
+extend = "../pyproject.toml"
+
+[lint]
+extend-select = ["E", "W", "I", "B", "UP", "SIM"]
+
+[lint.per-file-ignores]
+# Lab tests moved from python-stock-backend/ in Phase 0: keep the instructor's
+# style and only hold them to the root rules.
+"labs/*" = ["E501", "I", "B", "UP", "SIM"]
