@@ -490,8 +490,9 @@ function renderCoinHoldings() {
   tbody.innerHTML = lastCoinHoldings.map(h => {
     const price = livePrices[h.marketCode];
     const evalKrw = price ? price * h.holdCount : null;
-    const pnl = evalKrw != null ? evalKrw - h.buyTotalKrw : null;
-    const rate = pnl != null && h.buyTotalKrw ? pnl / h.buyTotalKrw * 100 : null;
+    // 원 단위·소수 둘째 자리로 먼저 반올림해 -0, -0.00%가 보이지 않게 한다.
+    const pnl = evalKrw != null ? Math.round(evalKrw - h.buyTotalKrw) || 0 : null;
+    const rate = pnl != null && h.buyTotalKrw ? Math.round(pnl / h.buyTotalKrw * 10000) / 100 || 0 : null;
     const color = priceColor(pnl ?? 0);
     return `<tr onclick="selectCoin('${h.marketCode}')" style="cursor:pointer;">
       <td class="txt"><strong>${h.koreanName}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${h.marketCodeOnlySymbol}</span></td>
@@ -499,7 +500,7 @@ function renderCoinHoldings() {
       <td style="color:var(--fg-2);">${fmtCoin(h.buyAverage)}</td>
       <td>${price ? fmtCoin(price) : '-'}</td>
       <td>${evalKrw != null ? Math.round(evalKrw).toLocaleString('ko-KR') : '-'}</td>
-      <td style="color:${color};">${pnl != null ? `${pnl > 0 ? '+' : ''}${Math.round(pnl).toLocaleString('ko-KR')}` : '-'}</td>
+      <td style="color:${color};">${pnl != null ? `${pnl > 0 ? '+' : ''}${pnl.toLocaleString('ko-KR')}` : '-'}</td>
       <td style="color:${color};">${rate != null ? `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%` : '-'}</td>
     </tr>`;
   }).join('');
