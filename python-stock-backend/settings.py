@@ -42,6 +42,12 @@ def load_env_file() -> None:
     load_dotenv(REPO_ROOT / ".env", override=False)
 
 
+def profile_from_env(environ: Mapping[str, str] | None = None) -> str:
+    """APP_PROFILE 값(소문자). 검증은 Settings.from_env가 한다."""
+    env = os.environ if environ is None else environ
+    return env.get("APP_PROFILE", "local").strip().lower()
+
+
 class SettingsError(RuntimeError):
     """Raised when the environment cannot be used for the selected profile."""
 
@@ -59,7 +65,7 @@ class Settings:
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> Settings:
         env = os.environ if environ is None else environ
-        profile = env.get("APP_PROFILE", "local").strip().lower()
+        profile = profile_from_env(env)
         if profile not in PROFILES:
             raise SettingsError(f"APP_PROFILE must be one of {', '.join(PROFILES)}; got {profile!r}.")
 

@@ -1,7 +1,7 @@
 import time
 
 from models import StockOrder, StockPosition
-from stock_market import current_price, get_chart_cached, get_stock_info
+from stock_market import current_price, get_chart_cached, get_stock_info, order_quote
 from volatility import annualized_volatility
 
 INITIAL_CASH = 100_000_000  # matches the seed deposit granted at registration (members.py)
@@ -11,9 +11,13 @@ SELL = "SELL"
 
 
 def _get_position(db, member_id: int, symbol: str) -> StockPosition | None:
+    # 잠금 읽기로 최신 커밋 값을 읽는다. REPEATABLE READ에서 일반 읽기는 트랜잭션의
+    # 첫 읽기 시점 스냅샷을 보므로, 먼저 커밋된 다른 주문의 결과를 놓칠 수 있다.
     return (
         db.query(StockPosition)
         .filter(StockPosition.member_id == member_id, StockPosition.symbol == symbol)
+        .with_for_update()
+        .populate_existing()
         .first()
     )
 
@@ -85,11 +89,25 @@ def get_order_history(db, member_id: int, limit: int = 50) -> list[dict]:
     ]
 
 
-def execute_order(db, member, symbol: str, side: str, quantity: int, source: str = "WEB") -> dict:
+def allows_simulated_price(profile: str) -> bool:
+    """공개(public) 프로필에서는 시뮬레이션 가격으로 체결하지 않는다."""
+    return profile != "public"
+
+
+def execute_order(
+    db,
+    member,
+    symbol: str,
+    side: str,
+    quantity: int,
+    source: str = "WEB",
+    allow_simulated_price: bool = True,
+) -> dict:
     """Execute a market BUY/SELL for `member` against their shared cash balance
-    (member.asset). Raises ValueError with a user-facing message on failure."""
-    # 같은 회원이 여러 탭에서 동시에 주문해도 잔액 검증과 차감이 분리되지 않게 행을 잠근다.
-    db.refresh(member, with_for_update=True)
+    (member.asset). Raises ValueError with a user-facing message on failure.
+
+    allow_simulated_price=False refuses to fill at the offline simulated price
+    that stock_market falls back to when every quote source fails."""
     symbol = (symbol or "").upper()
     side = (side or "").upper()
     if side not in (BUY, SELL):
@@ -100,11 +118,18 @@ def execute_order(db, member, symbol: str, side: str, quantity: int, source: str
     if not isinstance(quantity, int) or quantity <= 0:
         raise ValueError("quantity는 1 이상의 정수여야 합니다.")
 
+    # 시세 조회는 네트워크를 타므로 행 잠금을 잡기 전에 한다.
     try:
-        price = current_price(symbol)
+        price, simulated = order_quote(symbol)
     except Exception as exc:
         raise ValueError("실시간 시세를 확인할 수 없어 주문할 수 없습니다. 잠시 후 다시 시도해주세요.") from exc
+    if simulated and not allow_simulated_price:
+        raise ValueError("실시간 시세를 확인할 수 없어 주문할 수 없습니다. 잠시 후 다시 시도해주세요.")
     amount = price * quantity
+
+    # 같은 회원의 주문은 회원 행 잠금으로 차례로 처리한다. 잔액과 포지션은 모두
+    # 잠금 읽기로 가져와 먼저 커밋된 주문의 결과를 반영한다.
+    db.refresh(member, with_for_update=True)
     position = _get_position(db, member.member_id, symbol)
 
     if side == BUY:
@@ -143,4 +168,12 @@ def execute_order(db, member, symbol: str, side: str, quantity: int, source: str
         source=source,
     ))
 
-    return {"status": "ok", "symbol": symbol, "side": side, "quantity": quantity, "price": price, "amount": amount}
+    return {
+        "status": "ok",
+        "symbol": symbol,
+        "side": side,
+        "quantity": quantity,
+        "price": price,
+        "amount": amount,
+        "simulated": simulated,
+    }

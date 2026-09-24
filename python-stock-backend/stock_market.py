@@ -459,14 +459,20 @@ def get_index_cached(index_sym: str) -> dict:
     return data
 
 
-def current_price(symbol: str) -> int:
+def order_quote(symbol: str) -> tuple[int, bool]:
+    """주문에 쓸 가격과, 그 가격이 오프라인 시뮬레이션 값인지 여부."""
     symbol = (symbol or "").upper()
     try:
-        return get_quote_cached(symbol)["price"]
+        data = get_quote_cached(symbol)
+        return data["price"], bool(data.get("simulated"))
     except Exception:
         if symbol in STOCKS:
-            return _simulated_price(symbol)
+            return _simulated_price(symbol), True
         raise
+
+
+def current_price(symbol: str) -> int:
+    return order_quote(symbol)[0]
 
 
 def cached_price(symbol: str) -> int | None:

@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timezone
 from functools import wraps
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 
 import stock_trading
 from db import session_scope
@@ -109,7 +109,10 @@ def place_order():
     with session_scope() as db:
         member = db.get(Member, g.member_id)
         try:
-            result = stock_trading.execute_order(db, member, symbol, side, quantity, source="OPENAPI")
+            result = stock_trading.execute_order(
+                db, member, symbol, side, quantity, source="OPENAPI",
+                allow_simulated_price=stock_trading.allows_simulated_price(current_app.config["APP_PROFILE"]),
+            )
         except ValueError as e:
             return jsonify({"error": "INVALID_REQUEST", "message": str(e)}), 400
         return jsonify(result)

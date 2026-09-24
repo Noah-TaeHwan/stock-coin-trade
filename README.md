@@ -8,9 +8,10 @@
 
 Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령줄·기능키·티커, 패널형 주식·코인 워크스페이스), 포트폴리오 브랜딩, 격리된 로컬 Compose 실행, 브로커·클라우드 키와 Docker socket 전달 제한, DB 준비 상태 대기, KIS MCP의 모의투자 키 입력 경계 보강, 자동 운영 배포 경로 제거와 배포 값의 명시적 설정 요구, 로컬 실행·검증 기록입니다. 개인 배포는 아직 수행하지 않았습니다.
 
-포트폴리오 개발 계획의 기반 단계에서는 다음을 더했습니다.
+포트폴리오 개발 계획에 따라 다음을 더했습니다.
 - pytest·ruff 설정, 해시로 고정한 의존성 lock, GitHub Actions CI(단위·MariaDB/PostgreSQL 통합·의존성 감사·이미지 빌드)
 - import 부작용을 없앤 `create_app()` 팩토리, `APP_PROFILE`별 기동 검사, 테이블·시드를 맡는 일회성 `init` 서비스, 주기 작업을 맡는 `worker` 서비스
+- 같은 회원의 동시 주식 주문이 옛 포지션을 읽어 초과 매도·이중 입금·500이 나던 문제 수정(MariaDB 재현 테스트), public 프로필에서 시뮬레이션 가격 체결 거부
 
 HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
 
@@ -20,6 +21,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [터미널형 UI 전환 검증](docs/evidence/terminal-ui-2026-09-24.md)
 - [기반 작업(테스트·CI·앱 팩토리) 검증](docs/evidence/foundation-2026-09-24.md)
 - [코인 차익·김프 화면 검증](docs/evidence/arbitrage-2026-09-24.md)
+- [주식 주문 정합성(동시 주문·시뮬레이션 가격) 검증](docs/evidence/order-integrity-2026-09-24.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.

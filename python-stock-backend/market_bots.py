@@ -24,6 +24,7 @@ from crypto import execute_crypto_buy, execute_crypto_sell
 from db import session_scope
 from demo_seed import CRYPTO_MARKETS
 from models import AlternativePosition, HoldCrypto, Member, StockPosition, UpbitMarket
+from settings import profile_from_env
 from stock_market import STOCKS, current_price
 
 LOGGER = logging.getLogger(__name__)
@@ -64,12 +65,19 @@ def ensure_bot_accounts() -> int:
         return 0
 
 
+def _allow_simulated_price() -> bool:
+    return stock_trading.allows_simulated_price(profile_from_env())
+
+
 def _trade_stock(db, member: Member) -> str | None:
     positions = db.query(StockPosition).filter(StockPosition.member_id == member.member_id).all()
     if positions and random.random() < 0.45:
         pos = random.choice(positions)
         quantity = random.randint(1, pos.quantity)
-        stock_trading.execute_order(db, member, pos.symbol, stock_trading.SELL, quantity, source="BOT")
+        stock_trading.execute_order(
+            db, member, pos.symbol, stock_trading.SELL, quantity, source="BOT",
+            allow_simulated_price=_allow_simulated_price(),
+        )
         return f"주식 매도 {pos.symbol} {quantity}주"
 
     symbol = random.choice(list(STOCKS))
@@ -79,7 +87,10 @@ def _trade_stock(db, member: Member) -> str | None:
     quantity = int(member.asset * random.uniform(MIN_BUDGET_RATE, MAX_BUDGET_RATE) // price)
     if quantity < 1:
         return None
-    stock_trading.execute_order(db, member, symbol, stock_trading.BUY, quantity, source="BOT")
+    stock_trading.execute_order(
+        db, member, symbol, stock_trading.BUY, quantity, source="BOT",
+        allow_simulated_price=_allow_simulated_price(),
+    )
     return f"주식 매수 {symbol} {quantity}주"
 
 
@@ -146,15 +157,25 @@ def run_bot_trading_round() -> None:
     """스케줄러가 10분마다 호출: 무작위로 고른 봇들이 각각 매수 또는 매도를 한 건씩 시도한다."""
     try:
         with session_scope() as db:
-            bots = db.query(Member).filter(Member.email.like(f"%{BOT_EMAIL_DOMAIN}")).all()
-            if not bots:
-                return
-            chosen = random.sample(bots, k=min(BOTS_PER_ROUND, len(bots)))
-            log_lines = []
-            for member in chosen:
-                outcome = _random_action_for_bot(db, member)
-                if outcome:
-                    log_lines.append(f"{member.username}: {outcome}")
+            bot_ids = [row[0] for row in db.query(Member.member_id)
+                       .filter(Member.email.like(f"%{BOT_EMAIL_DOMAIN}")).all()]
+        if not bot_ids:
+            return
+        chosen = random.sample(bot_ids, k=min(BOTS_PER_ROUND, len(bot_ids)))
+        log_lines = []
+        # 봇마다 트랜잭션을 따로 둔다. 한 트랜잭션에서 여러 봇을 처리하면 앞 봇의
+        # 행 잠금이 라운드 끝까지 유지되고, 한 봇의 DB 오류가 다른 봇 거래까지 되돌린다.
+        for member_id in chosen:
+            try:
+                with session_scope() as db:
+                    member = db.get(Member, member_id)
+                    if member is None:
+                        continue
+                    outcome = _random_action_for_bot(db, member)
+                    if outcome:
+                        log_lines.append(f"{member.username}: {outcome}")
+            except Exception:
+                LOGGER.exception("Bot trade transaction failed for member %s", member_id)
         if log_lines:
             LOGGER.info("Bot trading round: %s", "; ".join(log_lines))
     except Exception:
