@@ -19,6 +19,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [브랜딩 후 로컬 화면·모의거래 검증](docs/evidence/portfolio-brand-2026-09-23.md)
 - [터미널형 UI 전환 검증](docs/evidence/terminal-ui-2026-09-24.md)
 - [기반 작업(테스트·CI·앱 팩토리) 검증](docs/evidence/foundation-2026-09-24.md)
+- [코인 차익·김프 화면 검증](docs/evidence/arbitrage-2026-09-24.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
@@ -30,6 +31,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - 터미널형 다크 UI: 명령줄(`005930`, `BTC`, `HOLD`, `HELP` 등 입력 후 Enter), 기능키(`Alt+1~9`), 지수·코인·대표 종목 티커, 상승 초록·하락 빨강 의미 색과 색각이상 팔레트(`CVD`)
 - 회원가입·로그인 기반 모의 주식·코인 거래와 보유자산·거래이력 조회
 - KRX 주식 시세·차트·검색, 코인 시세·국내 거래소 가격 비교
+- 코인 차익·김프(`/arbitrage.html`, 명령줄 `ARB`·`ARB ETH`): 원화 거래소 4곳과 OKX·Binance의 가격 차이, 김프(USDT·환율 기준), 캔들로 복원한 김프 추이, 호가 VWAP으로 계산한 거래소 쌍별 순손익(수수료·출금비 차감), 전송 시간·수수료 참고표, 빗썸 입출금 상태. 공개 시세만 쓰고 주문·출금 기능은 없음
 - 대체자산(선물·옵션·금속·부동산 지분) 모의 주문
 - AI Sheet: 공개 웹페이지 표 가져오기, 섹터별 상위 20개 종목의 최근 24개월 월별 종가 시트(yyyy-mm × 종목명) 생성
   - 퀀트분석: M-2까지의 월별 종가로 scikit-learn LinearRegression을 학습해 M-1을 예측하고 실제 값과 비교(종목명과 함께 고정 표시)
@@ -97,6 +99,7 @@ Docker Engine과 [Docker Compose v2.24.4 이상](https://docs.docker.com/referen
 | <http://localhost:3333/alpaca-test.html> | Alpaca Paper API 테스트 |
 | <http://localhost:3333/openapi.html> | 외부 연동 Open API 명세 |
 | <http://localhost:3333/quant.html> | PostgreSQL 퀀트 랩 |
+| <http://localhost:3333/arbitrage.html> | 코인 차익·김프 (공개 시세, 로그인 불필요) |
 
 Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에서는 API 호출을 같은 origin으로 처리합니다.
 
@@ -171,6 +174,7 @@ postgresql+psycopg://<QUANT_DB_USER>:<QUANT_DB_PASSWORD>@postgres:5432/<QUANT_DB
 | 주식 모의 주문 | `GET /api/stocks/account`, `/positions`, `POST /api/stocks/orders/buy`, `/sell` | 로그인 필요 |
 | 코인 | `GET /api/crypto/rankings`, `/market-list`, `/{code}`, `/{code}/domestic-prices` | 불필요 |
 | 코인 모의 주문 | `GET /api/trade/hold`, `POST /api/trade/order/buy`, `/sell` | 로그인 필요 |
+| 코인 차익·김프 | `GET /api/arb/snapshot`, `/{symbol}/matrix?sizeKrw=`, `/{symbol}/history?interval=1H\|1D`, `/network` | 불필요 |
 | 대체자산 | `GET /api/alternatives/markets`, `/positions`, `POST /api/alternatives/orders` | 로그인 필요 |
 | AI | `POST /api/ai/analyze`, `POST /api/ai-sheet/crawl` | 기능별 설정 필요 |
 
@@ -466,6 +470,7 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 │   ├── bootstrap.py / worker.py       # 테이블·시드 단계, 주기 작업 프로세스
 │   ├── members.py / stocks.py          # 회원·주식 모의거래
 │   ├── crypto.py / alternatives.py     # 코인·대체자산
+│   ├── arbitrage.py                    # 코인 차익·김프 (공개 시세 계산)
 │   ├── openapi.py / api_keys.py        # 외부 연동 API와 키 관리
 │   ├── broker_test*.py                 # KIS·KB 조회, KIS Testbed 주문 흐름
 │   ├── alpaca_test*.py                 # Alpaca Paper 조회·주문 흐름

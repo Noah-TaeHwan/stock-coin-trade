@@ -19,6 +19,7 @@
 - [members.py](python-stock-backend/members.py): 회원가입·로그인·세션
 - [stocks.py](python-stock-backend/stocks.py), [stock_trading.py](python-stock-backend/stock_trading.py), [stock_market.py](python-stock-backend/stock_market.py): 국내 주식 모의 주문·시세·차트
 - [crypto.py](python-stock-backend/crypto.py): 코인 시세·모의 주문
+- [arbitrage.py](python-stock-backend/arbitrage.py): 코인 차익·김프 API(거래소별 가격 차이, 호가 기반 순손익, 캔들 기반 김프 추이, 전송·수수료 참고표)
 - [alternatives.py](python-stock-backend/alternatives.py): 대체자산(선물·옵션·금속·부동산 지분) 모의 주문
 - [openapi.py](python-stock-backend/openapi.py), [api_keys.py](python-stock-backend/api_keys.py): 외부 연동용 Open API(`/openapi/v1/*`)와 API 키 발급·인증
 - [broker_test.py](python-stock-backend/broker_test.py), [broker_test_api.py](python-stock-backend/broker_test_api.py), [kis_quote_test.py](python-stock-backend/kis_quote_test.py), [kb_token_test.py](python-stock-backend/kb_token_test.py): KIS·KB증권 읽기 전용 연결 테스트
@@ -37,6 +38,7 @@
 - [alpaca-test.html](frontend/alpaca-test.html): Alpaca Paper 연결 테스트 UI
 - [openapi.html](frontend/openapi.html): 외부 연동 Open API 명세
 - [quant.html](frontend/quant.html): PostgreSQL 퀀트 랩
+- [arbitrage.html](frontend/arbitrage.html): 코인 차익·김프 (명령줄 `ARB`)
 - [member/](frontend/member/): 로그인·회원가입·플랫폼 API 키 발급
 - [js/common.js](frontend/js/common.js): 모든 페이지가 공유하는 터미널 헤더(명령줄·기능키·티커)·상태 바·offcanvas 메뉴·차트 다크 옵션 헬퍼
 - [css/style.css](frontend/css/style.css): 터미널 다크 디자인 토큰(`--bg`, `--accent`, `--up`/`--down` 등)과 공통 패널 컴포넌트

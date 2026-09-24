@@ -31,6 +31,7 @@ from alpaca_test_aws_api import aws_alpaca_test_bp  # noqa: E402
 from alternatives import alternative_bp  # noqa: E402
 from api_keys import api_key_bp  # noqa: E402
 from api_usage import api_usage_bp, record_api_usage  # noqa: E402
+from arbitrage import arb_bp  # noqa: E402
 from broker_test_api import broker_test_bp  # noqa: E402
 from broker_test_aws_api import aws_broker_test_bp  # noqa: E402
 from crypto import market_bp, trade_bp  # noqa: E402
@@ -59,7 +60,7 @@ BLUEPRINTS = (
     member_bp, market_bp, trade_bp, crypto_exchange_test_bp, admin_bp, ai_bp, ai_sheet_bp,
     alpaca_test_bp, aws_alpaca_test_bp, stock_bp, api_key_bp, broker_test_bp, kis_explorer_bp,
     kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp, open_api_bp, ohlcv_db_bp,
-    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp,
+    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp,
 )
 
 _API_USAGE_PREFIXES = (
