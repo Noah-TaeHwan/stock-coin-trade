@@ -28,6 +28,9 @@ MIN_PUBLIC_SECRET_KEY_LENGTH = 32
 # Placeholders shipped in .env.example. Copying that file unchanged must not
 # yield a public deployment signed with a key anyone can read in the repo.
 EXAMPLE_PLACEHOLDERS = frozenset({"change-me", "change-me-to-a-long-random-value"})
+# 원본 교실 설정의 관리자 주소. public에서는 명시적으로 다른 주소를 요구한다.
+DEFAULT_ADMIN_EMAIL = "admin@admin.com"
+MEMORY_RATELIMIT_STORAGE = "memory://"
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -57,6 +60,12 @@ class Settings:
     profile: str
     secret_key: str
     session_cookie_secure: bool
+    admin_email: str = DEFAULT_ADMIN_EMAIL
+    # local은 교실 실습(한 IP 뒤의 여러 학생)을 막지 않도록 기본으로 끈다.
+    ratelimit_enabled: bool = False
+    ratelimit_storage_uri: str = MEMORY_RATELIMIT_STORAGE
+    # 앞단 리버스 프록시 수. X-Forwarded-For를 이 수만큼만 믿는다(Werkzeug ProxyFix).
+    trusted_proxy_count: int = 0
 
     @property
     def is_public(self) -> bool:
@@ -70,6 +79,17 @@ class Settings:
             raise SettingsError(f"APP_PROFILE must be one of {', '.join(PROFILES)}; got {profile!r}.")
 
         secret_key = env.get("SECRET_KEY", "").strip()
+        admin_email = env.get("ADMIN_EMAIL", "").strip().lower()
+        ratelimit_storage_uri = env.get("RATELIMIT_STORAGE_URI", "").strip() or MEMORY_RATELIMIT_STORAGE
+        ratelimit_default = "true" if profile == "public" else "false"
+        # Compose passes unset variables as empty strings; treat those as unset.
+        ratelimit_enabled = (env.get("RATELIMIT_ENABLED") or ratelimit_default).strip().lower() == "true"
+        try:
+            trusted_proxy_count = int(env.get("TRUSTED_PROXY_COUNT") or "0")
+        except ValueError:
+            raise SettingsError("TRUSTED_PROXY_COUNT must be an integer.") from None
+        if trusted_proxy_count < 0:
+            raise SettingsError("TRUSTED_PROXY_COUNT must not be negative.")
         if profile == "public":
             problems = []
             if (
@@ -83,6 +103,12 @@ class Settings:
             db_password = env.get("DB_PASSWORD", "")
             if not db_password or db_password in {DEV_DB_PASSWORD, *EXAMPLE_PLACEHOLDERS}:
                 problems.append("DB_PASSWORD must be set to a non-default value")
+            if not admin_email or admin_email == DEFAULT_ADMIN_EMAIL or "@" not in admin_email:
+                problems.append(f"ADMIN_EMAIL must be set to an address other than {DEFAULT_ADMIN_EMAIL}")
+            if not ratelimit_enabled:
+                problems.append("RATELIMIT_ENABLED must stay on")
+            if ratelimit_storage_uri.startswith(MEMORY_RATELIMIT_STORAGE):
+                problems.append("RATELIMIT_STORAGE_URI must point at shared storage such as redis://")
             if problems:
                 raise SettingsError("public profile refused to start: " + "; ".join(problems) + ".")
 
@@ -90,6 +116,10 @@ class Settings:
             profile=profile,
             secret_key=secret_key or DEV_SECRET_KEY,
             session_cookie_secure=env.get("SESSION_COOKIE_SECURE", "false").strip().lower() == "true",
+            admin_email=admin_email or DEFAULT_ADMIN_EMAIL,
+            ratelimit_enabled=ratelimit_enabled,
+            ratelimit_storage_uri=ratelimit_storage_uri,
+            trusted_proxy_count=trusted_proxy_count,
         )
 
     def flask_config(self) -> dict[str, object]:
@@ -100,4 +130,7 @@ class Settings:
             "SESSION_COOKIE_HTTPONLY": True,
             "SESSION_COOKIE_SAMESITE": "Lax",
             "SESSION_COOKIE_SECURE": self.session_cookie_secure,
+            "ADMIN_EMAIL": self.admin_email,
+            "RATELIMIT_ENABLED": self.ratelimit_enabled,
+            "RATELIMIT_STORAGE_URI": self.ratelimit_storage_uri,
         }

@@ -21,6 +21,7 @@ import requests
 from flask import Blueprint, jsonify, request
 
 import stock_market
+from errors import error_response
 
 MONTH_LABEL_RE = re.compile(r"^\d{4}-\d{2}$")
 
@@ -147,7 +148,7 @@ def crawl_to_sheet():
                             "columns": columns, "rows": rows,
                             "notice": "공개 페이지에서 추출한 결과입니다. 숫자와 원문은 저장 전 확인하세요."})
     except requests.RequestException as exc:
-        return jsonify({"message": f"페이지를 가져오지 못했습니다: {exc}"}), 502
+        return error_response("페이지를 가져오지 못했습니다.", exc, 502, key="message")
 
 
 def _month_labels(months: int) -> list[str]:
@@ -372,7 +373,7 @@ def lean_backtest():
         except subprocess.TimeoutExpired:
             return jsonify({"message": f"LEAN 백테스트가 {LEAN_TIMEOUT_SECONDS}초 안에 끝나지 않았습니다."}), 504
         except Exception as exc:
-            return jsonify({"message": f"LEAN 백테스트 실행에 실패했습니다: {exc}"}), 502
+            return error_response("LEAN 백테스트 실행에 실패했습니다.", exc, 502, key="message")
 
     keys = ["Start Equity", "End Equity", "Net Profit", "Compounding Annual Return",
             "Sharpe Ratio", "Drawdown", "Total Orders"]

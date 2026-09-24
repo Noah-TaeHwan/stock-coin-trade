@@ -34,6 +34,11 @@ x-backend-environment: &backend-environment
   KIS_REAL_ACCOUNT_NO: ${KIS_REAL_ACCOUNT_NO:-}
   KIS_REAL_OWNER_EMAIL: ${KIS_REAL_OWNER_EMAIL:-}
   ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@admin.com}
+  # 레이트 리밋: 비우면 local은 꺼짐, public은 켜짐. public은 공유 저장소(redis://)가 필요하다.
+  RATELIMIT_ENABLED: ${RATELIMIT_ENABLED:-}
+  RATELIMIT_STORAGE_URI: ${RATELIMIT_STORAGE_URI:-}
+  # 백엔드 앞의 프록시(frontend nginx) 수. 실제 클라이언트 IP 복원에 쓴다.
+  TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-1}
   SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
   KB_APP_KEY: ${KB_APP_KEY:-}
   KB_APP_SECRET: ${KB_APP_SECRET:-}

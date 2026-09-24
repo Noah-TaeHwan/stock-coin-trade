@@ -6,11 +6,12 @@ import re
 from flask import Blueprint, jsonify, request, session
 from sqlalchemy import text
 
+from authz import is_admin_member
 from db import engine, session_scope
-from models import Member, SystemErrorLog
+from extensions import limiter
+from models import SystemErrorLog
 
 error_analysis_bp = Blueprint("error_analysis", __name__, url_prefix="/api/error-analysis")
-ADMIN_EMAIL = "admin@admin.com"
 MAX_MESSAGE = 2000
 MAX_STACK = 12000
 MAX_META = 5000
@@ -99,12 +100,7 @@ def ensure_error_analysis_table():
 
 
 def _is_admin():
-    member_id = session.get("member_id")
-    if not member_id:
-        return False
-    with session_scope() as db:
-        member = db.get(Member, member_id)
-        return bool(member and member.email == ADMIN_EMAIL)
+    return is_admin_member(session.get("member_id"))
 
 
 def _forbidden():
@@ -112,6 +108,7 @@ def _forbidden():
 
 
 @error_analysis_bp.post("/client")
+@limiter.limit("30 per minute")
 def collect_client_error():
     payload = request.get_json(silent=True) or {}
     message = str(payload.get("message", "")).strip()

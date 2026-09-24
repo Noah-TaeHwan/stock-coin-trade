@@ -7,6 +7,7 @@ from decimal import Decimal
 from flask import Blueprint, jsonify, request
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
+from errors import error_response
 
 
 quant_bp = Blueprint("quant", __name__, url_prefix="/api/quant")
@@ -231,8 +232,10 @@ def signals():
         with _db().connect() as conn:
             rows = _rows(conn.execute(sql, {"symbol": symbol, "fast": fast - 1, "slow": slow - 1, "limit": limit}))
         return jsonify({"rows": list(reversed(rows)), "fast": fast, "slow": slow})
-    except (ValueError, SQLAlchemyError) as exc:
-        return jsonify({"message": f"시그널 조회 실패: {exc}"}), 400
+    except ValueError as exc:
+        return error_response("시그널 조회 실패: 요청 값을 확인하세요.", exc, 400, key="message")
+    except SQLAlchemyError as exc:
+        return error_response("시그널 조회 실패: 데이터베이스 오류", exc, 503, key="message")
 
 
 @quant_bp.post("/backtests")
@@ -310,8 +313,10 @@ def run_backtest():
                         "totalReturn": round(total_return, 4), "sharpeRatio": round(sharpe, 4) if sharpe is not None else None,
                         "maxDrawdown": round(max_drawdown, 4), "annualReturn": round(annual_return, 4),
                         "message": "백테스트 결과와 거래 로그를 PostgreSQL에 저장했습니다."}), 201
-    except (ValueError, SQLAlchemyError) as exc:
-        return jsonify({"message": f"백테스트 실행 실패: {exc}"}), 400
+    except ValueError as exc:
+        return error_response("백테스트 실행 실패: 요청 값을 확인하세요.", exc, 400, key="message")
+    except SQLAlchemyError as exc:
+        return error_response("백테스트 실행 실패: 데이터베이스 오류", exc, 503, key="message")
 
 
 @quant_bp.get("/results")
@@ -375,5 +380,7 @@ def factor_analysis():
                                         "exposures": [{"name": name, "label": labels[name], "loading": round(value, 4)} for name, value in multi["loadings"].items()]},
                         "source": "learning_sample",
                         "notice": "팩터 수익률은 교육용 샘플입니다. 실제 운용에는 검증된 시장·팩터 데이터로 교체해야 합니다."})
-    except (ValueError, SQLAlchemyError) as exc:
-        return jsonify({"message": f"팩터 분석 실패: {exc}"}), 400
+    except ValueError as exc:
+        return error_response("팩터 분석 실패: 요청 값을 확인하세요.", exc, 400, key="message")
+    except SQLAlchemyError as exc:
+        return error_response("팩터 분석 실패: 데이터베이스 오류", exc, 503, key="message")

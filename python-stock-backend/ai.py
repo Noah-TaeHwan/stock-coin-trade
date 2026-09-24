@@ -2,9 +2,15 @@ import json
 import os
 
 import requests
-from flask import Blueprint, Response, request, stream_with_context
+from flask import Blueprint, Response, jsonify, request, session, stream_with_context
+
+from errors import log_exception
+from extensions import limiter
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
+
+# 시세 요약 문맥 상한. 요청마다 유료 API 토큰이 들므로 크기를 제한한다.
+MAX_CONTEXT_CHARS = 8000
 
 SYSTEM_PROMPT = (
     "당신은 한국 금융 시장 전문가입니다. 제공된 실시간 시세 데이터를 분석하여 한국어로 명확하고 실용적인 투자 조언을 제공합니다. "
@@ -26,9 +32,12 @@ def _build_prompt(type_: str, context: str) -> str:
 
 
 @ai_bp.post("/analyze")
+@limiter.limit("10 per minute")
 def analyze():
+    if not session.get("member_id"):
+        return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
     body = request.get_json(silent=True) or {}
-    context = body.get("context") or "시세 데이터 없음"
+    context = str(body.get("context") or "시세 데이터 없음")[:MAX_CONTEXT_CHARS]
     type_ = body.get("type") or "general"
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 
@@ -73,6 +82,7 @@ def analyze():
                     if text:
                         yield text
         except Exception as e:
-            yield f"\n\n⚠️ AI 분석 중 오류가 발생했습니다: {e}"
+            rid = log_exception("AI analyze stream", e)
+            yield f"\n\n⚠️ AI 분석 중 오류가 발생했습니다. (요청 ID: {rid})"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream")

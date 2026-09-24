@@ -14,9 +14,8 @@ alternatives의 execute_alternative_order를 실제 사용자와 완전히 동�
 import logging
 import random
 
-import bcrypt
-
 import stock_trading
+from accounts import BOT_EMAIL_DOMAIN, UNUSABLE_PASSWORD
 from alternatives import CATALOG as ALT_CATALOG
 from alternatives import _quote as alt_quote
 from alternatives import execute_alternative_order
@@ -30,8 +29,6 @@ from stock_market import STOCKS, current_price
 LOGGER = logging.getLogger(__name__)
 
 BOT_COUNT = 20
-BOT_EMAIL_DOMAIN = "@system-bot.local"
-BOT_PASSWORD = "system-bot-account"  # 로그인용이 아니라 계정 생성 요건을 맞추기 위한 값
 BOT_INITIAL_ASSET = 100_000_000
 BOTS_PER_ROUND = 6  # 라운드마다 무작위로 골라 거래를 시도하는 봇 수
 MIN_BUDGET_RATE, MAX_BUDGET_RATE = 0.01, 0.04  # 보유 현금 대비 1회 주문 비중
@@ -46,16 +43,20 @@ def _bot_email(index: int) -> str:
 
 
 def ensure_bot_accounts() -> int:
-    """system01~system20 봇 계정을 만든다. 이미 있으면 그대로 둔다."""
+    """system01~system20 봇 계정을 만든다. 이미 있으면 그대로 두고, 예전에 알려진
+    비밀번호로 만든 계정은 로그인할 수 없는 값으로 바꾼다."""
     try:
         with session_scope() as db:
-            password_hash = bcrypt.hashpw(BOT_PASSWORD.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
             added = 0
             for index in range(1, BOT_COUNT + 1):
                 email = _bot_email(index)
-                if db.query(Member).filter(Member.email == email).first():
+                existing = db.query(Member).filter(Member.email == email).first()
+                if existing:
+                    if existing.password != UNUSABLE_PASSWORD:
+                        existing.password = UNUSABLE_PASSWORD
                     continue
-                db.add(Member(username=bot_username(index), email=email, password=password_hash, asset=BOT_INITIAL_ASSET))
+                db.add(Member(username=bot_username(index), email=email, password=UNUSABLE_PASSWORD,
+                              asset=BOT_INITIAL_ASSET))
                 added += 1
         if added:
             LOGGER.info("Created %s market-bot accounts (system01-system%02d).", added, BOT_COUNT)

@@ -86,7 +86,7 @@ async function handleLogin(e) {
 
     const data = await res.json();
     const el = document.getElementById('globalError');
-    el.textContent = data.error ?? '로그인에 실패했습니다.';
+    el.textContent = data.message ?? data.error ?? '로그인에 실패했습니다.';
     el.style.display = 'block';
   } catch {
     const el = document.getElementById('globalError');

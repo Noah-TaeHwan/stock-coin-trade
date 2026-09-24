@@ -21,6 +21,7 @@ import click  # noqa: E402
 import requests as _req  # noqa: E402
 from flask import Blueprint, Flask, g, got_request_exception, jsonify, request, session  # noqa: E402
 from flask_cors import CORS  # noqa: E402
+from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: E402
 
 import bootstrap  # noqa: E402
 from admin import admin_bp  # noqa: E402
@@ -37,6 +38,8 @@ from broker_test_aws_api import aws_broker_test_bp  # noqa: E402
 from crypto import market_bp, trade_bp  # noqa: E402
 from crypto_exchange_test_api import crypto_exchange_test_bp  # noqa: E402
 from error_analysis import error_analysis_bp, record_error  # noqa: E402
+from errors import error_response, request_id  # noqa: E402
+from extensions import limiter  # noqa: E402
 from kis_api_explorer import kis_explorer_bp  # noqa: E402
 from kis_chart_api import kis_chart_bp  # noqa: E402
 from kis_practice import kis_practice_bp  # noqa: E402
@@ -45,6 +48,7 @@ from members import member_bp  # noqa: E402
 from ohlcv_db import ohlcv_db_bp  # noqa: E402
 from openapi import open_api_bp  # noqa: E402
 from quant import quant_bp  # noqa: E402
+from security import cross_site_request_rejected  # noqa: E402
 from settings import Settings  # noqa: E402
 from stock_market import (  # noqa: E402
     BASE_PRICES, get_chart_cached, get_dashboard_stock_quotes, get_index_cached, get_market_cap_rankings,
@@ -74,6 +78,11 @@ def create_app(settings: Settings | None = None) -> Flask:
     settings = settings or Settings.from_env()
     app = Flask(__name__)
     app.config.update(settings.flask_config())
+    if settings.trusted_proxy_count:
+        # request.remote_addr(레이트 리밋 키)를 nginx 뒤의 실제 클라이언트 IP로 복원한다.
+        # 프록시 수와 정확히 같아야 한다(더 크면 클라이언트가 IP를 위조할 수 있다).
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=settings.trusted_proxy_count)
+    limiter.init_app(app)
 
     CORS(
         app,
@@ -89,11 +98,15 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.register_blueprint(core_bp)
 
     got_request_exception.connect(_capture_unhandled_exception, app, weak=False)
+    app.before_request(_reject_cross_site_requests)
     app.before_request(_start_api_usage_timer)
     app.after_request(_record_failed_response)
+    app.after_request(_add_request_id_header)
+    app.register_error_handler(429, _rate_limited)
 
     app.cli.add_command(init_db_command)
     app.cli.add_command(seed_demo_command)
+    app.cli.add_command(create_admin_command)
     return app
 
 
@@ -111,6 +124,39 @@ def seed_demo_command() -> None:
     click.echo("seed-demo: done")
 
 
+@click.command("create-admin")
+@click.option("--email", envvar="ADMIN_EMAIL", required=True, help="Defaults to the ADMIN_EMAIL setting.")
+@click.password_option(help="At least 12 characters. Prompted when omitted.")
+def create_admin_command(email: str, password: str) -> None:
+    """Create the admin account (or reset its password). Registration refuses this address in public."""
+    try:
+        outcome = bootstrap.create_admin(email, password)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"create-admin: {outcome} {email.strip().lower()}")
+
+
+def _reject_cross_site_requests():
+    from flask import current_app
+
+    if cross_site_request_rejected(current_app.config["APP_PROFILE"]):
+        return jsonify({"error": "CSRF_REJECTED", "message": "다른 사이트에서 보낸 요청은 처리하지 않습니다."}), 403
+    return None
+
+
+def _rate_limited(error):
+    return jsonify({
+        "error": "RATE_LIMITED",
+        "message": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+        "limit": str(getattr(error, "description", "")),
+    }), 429
+
+
+def _add_request_id_header(response):
+    response.headers["X-Request-ID"] = request_id()
+    return response
+
+
 def _capture_unhandled_exception(sender, exception, **extra):
     """Keep the exception until after_request persists its diagnostic details."""
     g.unhandled_error = exception
@@ -125,7 +171,9 @@ def _record_failed_response(response):
     """Capture handled API failures too, not only Flask exceptions."""
     if getattr(g, "api_usage_started_at", None) is not None:
         record_api_usage(response, g.api_usage_started_at)
-    if response.status_code >= 400 and not request.path.startswith("/api/error-analysis/"):
+    # 429는 기록하지 않는다. 제한에 걸린 요청마다 행을 쓰면 제한이 DB 쓰기를 막지 못한다.
+    if (response.status_code >= 400 and response.status_code != 429
+            and not request.path.startswith("/api/error-analysis/")):
         try:
             body = response.get_json(silent=True) or {}
             exc = getattr(g, "unhandled_error", None)
@@ -135,7 +183,9 @@ def _record_failed_response(response):
                 status=response.status_code, method=request.method, path=request.full_path.rstrip("?"),
                 error_type=type(exc).__name__ if exc else "HTTPError",
                 message=message, stack_trace="".join(traceback.format_exception(exc)) if exc else None,
-                request_meta={"endpoint": request.endpoint, "remoteAddr": request.remote_addr}, member_id=session.get("member_id"),
+                request_meta={"endpoint": request.endpoint, "remoteAddr": request.remote_addr,
+                              "requestId": request_id()},
+                member_id=session.get("member_id"),
             )
         except Exception:
             pass
@@ -156,7 +206,7 @@ def stock_list():
         market = request.args.get("market", "")
         return jsonify({"stocks": list_krx_stocks(limit, market), "source": "KRX"})
     except Exception as exc:
-        return jsonify({"message": f"KRX 종목 목록을 가져오지 못했습니다: {exc}"}), 503
+        return error_response("KRX 종목 목록을 가져오지 못했습니다.", exc, 503, key="message")
 
 
 @core_bp.get("/api/stocks/search")
@@ -166,7 +216,7 @@ def stock_search():
         limit = max(1, min(int(request.args.get("limit", 20)), 50))
         return jsonify({"stocks": search_krx_stocks(query, limit), "source": "KRX"})
     except Exception as exc:
-        return jsonify({"message": f"KRX 종목 검색을 사용할 수 없습니다: {exc}"}), 503
+        return error_response("KRX 종목 검색을 사용할 수 없습니다.", exc, 503, key="message")
 
 
 # ── Market indices ───────────────────────────────────────────────────────────
@@ -279,7 +329,7 @@ def ai_qdrant_search():
         import qdrant_service as qs
         return jsonify({"results": qs.search(query, limit)})
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스 검색을 사용할 수 없습니다.", exc, 503)
 
 
 @core_bp.get("/api/stocks/ai/qdrant/stats")
@@ -288,7 +338,7 @@ def ai_qdrant_stats():
         import qdrant_service as qs
         return jsonify(qs.stats())
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스 상태를 확인할 수 없습니다.", exc, 503)
 
 
 @core_bp.get("/api/stocks/ai/qdrant/list")
@@ -298,7 +348,7 @@ def ai_qdrant_list():
         limit = max(1, min(int(request.args.get("limit", 30)), 100))
         return jsonify({"documents": qs.list_docs(limit)})
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스 문서 목록을 가져올 수 없습니다.", exc, 503)
 
 
 @core_bp.post("/api/stocks/ai/qdrant/add")
@@ -316,7 +366,7 @@ def ai_qdrant_add():
         doc_id = qs.add_doc(text, title, category)
         return jsonify({"id": doc_id, "status": "added"})
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스에 문서를 추가할 수 없습니다.", exc, 503)
 
 
 # ── KRX 보도자료 뉴스 ────────────────────────────────────────────────────────
@@ -366,7 +416,7 @@ def krx_news():
         }, timeout=10)
         items = resp.json().get("output", [])
     except Exception as e:
-        return jsonify({"error": str(e), "news": []}), 503
+        return error_response("KRX 보도자료를 가져올 수 없습니다.", e, 503, news=[])
 
     news = []
     for a in items:

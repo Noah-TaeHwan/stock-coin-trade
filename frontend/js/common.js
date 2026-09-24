@@ -804,6 +804,8 @@ async function runAiAnalysis() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ context: augmented, type }),
     });
+    if (res.status === 401) throw new Error('로그인 후 사용할 수 있습니다.');
+    if (res.status === 429) throw new Error('요청이 많습니다. 잠시 후 다시 시도해주세요.');
     if (!res.ok) throw new Error('분석 서비스 오류');
 
     const reader  = res.body?.getReader();
