@@ -27,7 +27,7 @@ async function loadAltHistory() {
     const res = await apiFetch('/api/alternatives/orders/history');
     const rows = res.ok ? (await res.json()).history || [] : [];
     tbody.innerHTML = rows.length ? rows.map(row => {
-      const isBuy = row.type === 'BUY'; const color = isBuy ? '#E11D48' : '#2563EB';
+      const isBuy = row.type === 'BUY'; const color = isBuy ? 'var(--up)' : 'var(--down)';
       const dt = new Date(row.ts).toLocaleString('ko-KR', { hour12: false });
       return `<tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--muted);font-size:13px;white-space:nowrap;">${dt}</td>
@@ -54,11 +54,11 @@ function renderOrderBook(price) {
   const askRows = Array.from({ length: 5 }, (_, i) => ({ price: price + tick * (i + 1), qty: qty(price + tick * (i + 1), 13) }));
   const bidRows = Array.from({ length: 5 }, (_, i) => ({ price: Math.max(1, price - tick * (5 - i)), qty: qty(price - tick * (5 - i), 31) }));
 
-  askBody.innerHTML = askRows.map(r => `<tr style="background:rgba(37,99,235,0.04);">
-    <td style="padding:7px 12px;text-align:right;color:#60A5FA;font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
+  askBody.innerHTML = askRows.map(r => `<tr style="background:var(--down-bg);">
+    <td style="padding:7px 12px;text-align:right;color:var(--down);font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
     <td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:14px;">${Number(r.qty).toLocaleString('ko-KR')}</td></tr>`).join('');
-  bidBody.innerHTML = bidRows.map(r => `<tr style="background:rgba(225,29,72,0.04);">
-    <td style="padding:7px 12px;text-align:right;color:#F87171;font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
+  bidBody.innerHTML = bidRows.map(r => `<tr style="background:var(--up-bg);">
+    <td style="padding:7px 12px;text-align:right;color:var(--up);font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
     <td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:14px;">${Number(r.qty).toLocaleString('ko-KR')}</td></tr>`).join('');
 
   document.getElementById('altObCurrentPrice').textContent = Number(price).toLocaleString('ko-KR');
@@ -74,7 +74,7 @@ function setOrderQuantityByPercent(side, percent) {
     : Math.floor((position?.quantity ?? 0) * (percent / 100));
   const el = document.getElementById('orderMessage');
   if (quantity < 1) {
-    el.style.color = '#E11D48';
+    el.style.color = 'var(--down)';
     el.textContent = side === 'buy' ? '보유 현금으로 매수 가능한 수량이 없습니다.' : '매도 가능한 보유 수량이 없습니다.';
     return;
   }
@@ -102,7 +102,7 @@ function renderMarkets() {
   const rows = markets.filter(item => category === '전체' || item.category === category);
   document.getElementById('marketListTitle').textContent = category === '전체' ? '전체 거래 가능 상품' : `${category} 거래 가능 상품`;
   document.getElementById('marketListGuide').textContent = '상품을 선택하면 오른쪽 주문창이 연동됩니다.';
-  document.getElementById('marketBody').innerHTML = rows.map(item => `<tr class="market-row ${selected?.symbol === item.symbol ? 'selected' : ''}" data-symbol="${item.symbol}"><td><div class="font-bold" style="color:var(--fg);">${item.name}</div><div class="mt-1 text-xs" style="color:var(--muted);">${item.description}${item.actualMultiplier ? ' · 실제 기준은 주문창에서 확인' : ''}</div></td><td class="text-right font-bold" style="color:var(--fg);">${won(item.price)}</td><td class="text-right font-bold" style="color:${item.changeRate >= 0 ? '#E11D48' : '#2563EB'};">${item.changeRate >= 0 ? '+' : ''}${item.changeRate}%</td><td class="text-right font-bold" style="color:var(--accent);">${won(item.tradeAmountPerUnit)}</td><td class="text-right text-xs" style="color:var(--muted);">${item.unit}<br>${item.marginRate === 100 ? '현금 100%' : '증거금 ' + item.marginRate + '%'}</td></tr>`).join('');
+  document.getElementById('marketBody').innerHTML = rows.map(item => `<tr class="market-row ${selected?.symbol === item.symbol ? 'selected' : ''}" data-symbol="${item.symbol}"><td><div class="font-bold" style="color:var(--fg);">${item.name}</div><div class="mt-1 text-xs" style="color:var(--muted);">${item.description}${item.actualMultiplier ? ' · 실제 기준은 주문창에서 확인' : ''}</div></td><td class="text-right font-bold" style="color:var(--fg);">${won(item.price)}</td><td class="text-right font-bold" style="color:${item.changeRate >= 0 ? 'var(--up)' : 'var(--down)'};">${item.changeRate >= 0 ? '+' : ''}${item.changeRate}%</td><td class="text-right font-bold" style="color:var(--accent);">${won(item.tradeAmountPerUnit)}</td><td class="text-right text-xs" style="color:var(--muted);">${item.unit}<br>${item.marginRate === 100 ? '현금 100%' : '증거금 ' + item.marginRate + '%'}</td></tr>`).join('');
   document.querySelectorAll('[data-symbol]').forEach(row => row.onclick = () => selectMarket(row.dataset.symbol));
 }
 async function selectMarket(symbol) {
@@ -118,5 +118,5 @@ async function selectMarket(symbol) {
 function updateAmount() { const qty = Math.max(1, Number(document.getElementById('quantity').value || 1)); document.getElementById('orderAmount').textContent = selected ? won(selected.tradeAmountPerUnit * qty) : '-'; document.getElementById('orderNote').textContent = selected ? (selected.marginRate === 100 ? '현금 전액 기준' : `명목금액 ${won(selected.notionalPerUnit * qty)} · 증거금 ${selected.marginRate}% 적용`) : ''; }
 document.getElementById('quantity').addEventListener('input', updateAmount);
 document.getElementById('buyBtn').onclick = () => submitOrder('BUY'); document.getElementById('sellBtn').onclick = () => submitOrder('SELL');
-async function submitOrder(side) { if (!selected) return; const quantity = Math.max(1, Number(document.getElementById('quantity').value || 1)); const res = await apiFetch('/api/alternatives/orders', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol:selected.symbol, side, quantity}) }); const data = await res.json(); const el = document.getElementById('orderMessage'); el.style.color = res.ok ? '#059669' : '#E11D48'; el.textContent = res.ok ? `${side === 'BUY' ? '매수' : '매도'} 체결: ${selected.name} ${quantity} × ${selected.unit}` : (data.message || '주문에 실패했습니다.'); if (res.ok) await refresh(); }
-function renderPositions(positions) { lastPositions = positions; const tbody = document.getElementById('positionBody'); tbody.innerHTML = positions.length ? positions.map(pos => `<tr><td><div class="font-bold" style="color:var(--fg);">${pos.name}</div><div class="text-xs" style="color:var(--muted);">${pos.category}</div></td><td class="text-right">${Number(pos.quantity).toLocaleString()}${pos.unit}</td><td class="text-right font-bold" style="color:var(--accent);">${won(pos.evalAmount)}</td><td class="text-right font-bold" style="color:${pos.pnl >= 0 ? '#E11D48' : '#2563EB'};">${pos.pnl >= 0 ? '+' : ''}${won(pos.pnl)}</td></tr>`).join('') : '<tr><td colspan="4" class="px-4 py-6 text-center text-sm" style="color:var(--muted);">보유한 대체자산이 없습니다.</td></tr>'; }
+async function submitOrder(side) { if (!selected) return; const quantity = Math.max(1, Number(document.getElementById('quantity').value || 1)); const res = await apiFetch('/api/alternatives/orders', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol:selected.symbol, side, quantity}) }); const data = await res.json(); const el = document.getElementById('orderMessage'); el.style.color = res.ok ? 'var(--up)' : 'var(--down)'; el.textContent = res.ok ? `${side === 'BUY' ? '매수' : '매도'} 체결: ${selected.name} ${quantity} × ${selected.unit}` : (data.message || '주문에 실패했습니다.'); if (res.ok) await refresh(); }
+function renderPositions(positions) { lastPositions = positions; const tbody = document.getElementById('positionBody'); tbody.innerHTML = positions.length ? positions.map(pos => `<tr><td><div class="font-bold" style="color:var(--fg);">${pos.name}</div><div class="text-xs" style="color:var(--muted);">${pos.category}</div></td><td class="text-right">${Number(pos.quantity).toLocaleString()}${pos.unit}</td><td class="text-right font-bold" style="color:var(--accent);">${won(pos.evalAmount)}</td><td class="text-right font-bold" style="color:${pos.pnl >= 0 ? 'var(--up)' : 'var(--down)'};">${pos.pnl >= 0 ? '+' : ''}${won(pos.pnl)}</td></tr>`).join('') : '<tr><td colspan="4" class="px-4 py-6 text-center text-sm" style="color:var(--muted);">보유한 대체자산이 없습니다.</td></tr>'; }

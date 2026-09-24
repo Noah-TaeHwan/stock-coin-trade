@@ -4,7 +4,7 @@ const kh = id => document.getElementById(id);
 const khDate = value => value ? new Date(value).toLocaleString('ko-KR', { hour12:false }) : '-';
 
 function resultBadge(value) {
-  const color = value ? '#15803D' : '#E11D48';
+  const color = value ? 'var(--up)' : 'var(--down)';
   return `<b style="color:${color}">${value ? '성공' : '실패'}</b>`;
 }
 
@@ -27,7 +27,7 @@ function createGrid() {
     defaultColDef:{ sortable:true, filter:true, resizable:true, suppressHeaderMenuButton:true },
     pagination:true, paginationPageSize:25, paginationPageSizeSelector:[25,50,100],
     rowSelection:{ mode:'singleRow', enableClickSelection:true, checkboxes:false, headerCheckbox:false },
-    overlayNoRowsTemplate:'<span style="padding:16px;color:#64748B">아직 KIS API 호출 기록이 없습니다.</span>',
+    overlayNoRowsTemplate:'<span style="padding:16px;color:var(--muted)">아직 KIS API 호출 기록이 없습니다.</span>',
     onRowClicked:event => loadDetail(event.data.id),
   });
 }

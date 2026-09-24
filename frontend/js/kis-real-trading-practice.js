@@ -91,7 +91,7 @@
     el('quotePrice').textContent = won(quote.price);
     const rate = Number(quote.changeRate || 0);
     el('quoteChange').textContent = `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%`;
-    el('quoteChange').style.color = rate > 0 ? '#e11d48' : rate < 0 ? '#2563eb' : 'var(--muted)';
+    el('quoteChange').style.color = rate > 0 ? 'var(--up)' : rate < 0 ? 'var(--down)' : 'var(--muted)';
     updateEstimate();
   }
 
@@ -114,10 +114,10 @@
     el('totalAsset').textContent = won(account.totalAsset);
     const rate = Number(account.totalPnlRate || 0);
     el('pnlRate').textContent = `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%`;
-    el('pnlRate').style.color = rate > 0 ? '#e11d48' : rate < 0 ? '#2563eb' : 'var(--fg)';
+    el('pnlRate').style.color = rate > 0 ? 'var(--up)' : rate < 0 ? 'var(--down)' : 'var(--fg)';
     el('positionsBody').innerHTML = positions.positions?.length ? positions.positions.map(position => `<tr><td>${escapeHtml(position.name)}<br><small>${escapeHtml(position.symbol)}</small></td><td>${Number(position.quantity).toLocaleString()}주</td><td>${won(position.avgPrice)}</td><td>${won(position.evalAmount)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">보유종목이 없습니다.</td></tr>';
     const practiceHistory = history.history || [];
-    el('historyBody').innerHTML = practiceHistory.length ? practiceHistory.map(order => `<tr><td>${escapeHtml(order.name)}<br><small>${escapeHtml(order.symbol)}</small></td><td style="color:${order.type === 'BUY' ? '#e11d48' : '#2563eb'};font-weight:800">${order.type === 'BUY' ? '매수' : '매도'}</td><td>${Number(order.quantity).toLocaleString()}주</td><td>${won(order.price)}</td><td>${won(order.amount)}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">이 화면에서 체결한 내역이 없습니다.</td></tr>';
+    el('historyBody').innerHTML = practiceHistory.length ? practiceHistory.map(order => `<tr><td>${escapeHtml(order.name)}<br><small>${escapeHtml(order.symbol)}</small></td><td style="color:${order.type === 'BUY' ? 'var(--up)' : 'var(--down)'};font-weight:800">${order.type === 'BUY' ? '매수' : '매도'}</td><td>${Number(order.quantity).toLocaleString()}주</td><td>${won(order.price)}</td><td>${won(order.amount)}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">이 화면에서 체결한 내역이 없습니다.</td></tr>';
   }
 
   async function submitOrder() {

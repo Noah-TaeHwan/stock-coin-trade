@@ -5,12 +5,14 @@ let currentPeriod     = 'days';
 let selectedExchange  = 'UPBIT';
 let priceLinesMap     = {};   // exchange code → LW Charts priceLine
 
+// 거래소 구분 색은 상승·하락 의미색과 겹치지 않게 범주형 팔레트를 쓴다.
 const EXCHANGE_META = {
-  UPBIT:   { label: '업비트', color: '#2563EB', lineStyle: 0 },
-  BITHUMB: { label: '빗썸',   color: '#E11D48', lineStyle: 1 },
-  COINONE: { label: '코인원', color: '#059669', lineStyle: 1 },
-  KORBIT:  { label: '코빗',   color: '#D97706', lineStyle: 1 },
+  UPBIT:   { label: '업비트', color: '#4FC3F7', lineStyle: 0 },
+  BITHUMB: { label: '빗썸',   color: '#FF9F1A', lineStyle: 1 },
+  COINONE: { label: '코인원', color: '#B39DFF', lineStyle: 1 },
+  KORBIT:  { label: '코빗',   color: '#FFD60A', lineStyle: 1 },
 };
+const livePrices = {};   // market code → 최신 WebSocket 체결가
 
 const CRYPTO_WATCH_KEY = 'cryptoWatchlist';
 let cryptoWatchlist = new Set(JSON.parse(localStorage.getItem(CRYPTO_WATCH_KEY) || '[]'));
@@ -24,28 +26,21 @@ function initLwChart() {
   const container = document.getElementById('coinChart');
   if (!container || !window.LightweightCharts) return;
 
-  lwChart = LightweightCharts.createChart(container, {
-    layout:     { background: { color: '#FFFFFF' }, textColor: '#6B7280' },
-    grid:       { vertLines: { color: '#F3F4F6' }, horzLines: { color: '#F3F4F6' } },
-    crosshair:  { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: { borderColor: '#E5E7EB' },
-    timeScale:  { borderColor: '#E5E7EB', timeVisible: true, secondsVisible: false },
+  lwChart = LightweightCharts.createChart(container, termChartOptions({
+    timeScale:  { timeVisible: true, secondsVisible: false },
     handleScroll: true,
     handleScale:  true,
-  });
+  }));
 
-  lwCandle = lwChart.addCandlestickSeries({
-    upColor:   '#E11D48', downColor: '#2563EB',
-    borderUpColor: '#E11D48', borderDownColor: '#2563EB',
-    wickUpColor:   '#E11D48', wickDownColor:   '#2563EB',
-  });
+  lwCandle = lwChart.addCandlestickSeries(termCandleColors());
 
   lwVolume = lwChart.addHistogramSeries({
-    color:      'rgba(41,98,255,0.35)',
+    color:      termAlpha(termColors().info, 0.3),
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
-    scaleMargins: { top: 0.85, bottom: 0 },
   });
+  // v4에서는 거래량 축 여백을 가격 축 옵션으로 지정해야 캔들과 겹치지 않는다.
+  lwChart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
 
   new ResizeObserver(() => {
     if (lwChart && container) lwChart.resize(container.clientWidth, container.clientHeight);
@@ -81,9 +76,13 @@ async function loadCoinChart(marketCode, period) {
     const volumes = data.map(d => ({
       time:  Math.floor(new Date(d.candle_date_time_utc).getTime() / 1000),
       value: d.candle_acc_trade_volume,
-      color: d.trade_price >= d.opening_price ? 'rgba(248,113,113,0.35)' : 'rgba(96,165,250,0.35)',
+      color: termAlpha(d.trade_price >= d.opening_price ? termColors().up : termColors().down, 0.35),
     })).sort((a, b) => a.time - b.time);
 
+    // 코인마다 가격 단위가 달라 마지막 종가로 소수 자릿수를 정한다.
+    const last = candles[candles.length - 1]?.close ?? 0;
+    const precision = last >= 100 ? 0 : last >= 1 ? 2 : 4;
+    lwCandle.applyOptions({ priceFormat: { type: 'price', precision, minMove: 1 / 10 ** precision } });
     lwCandle.setData(candles);
     lwVolume.setData(volumes);
     lwChart.timeScale().fitContent();
@@ -104,16 +103,24 @@ document.getElementById('coinPeriodBtns')?.addEventListener('click', async (e) =
 (async () => {
   currentUser = await initPage();
 
+  initLwChart();
   const [marketRes] = await Promise.all([apiFetch('/api/crypto/market-list')]);
   if (!marketRes.ok) return;
   const { markets, marketCodes } = await marketRes.json();
 
+  // 명령줄(CRY BTC, KRW-ETH)에서 넘어온 코인이 원화 마켓에 있으면 그 코인으로 시작한다.
+  const requested = new URLSearchParams(location.search).get('market')?.trim().toUpperCase();
+  if (requested && markets.some(m => m.market === requested)) currentMarketCode = requested;
+
   renderMarketSidebar(markets);
-  initLwChart();
   initWebSocket(marketCodes);
-  await getCryptoInfo('KRW-BTC');
-  await loadCoinChart('KRW-BTC', currentPeriod);
+  await getCryptoInfo(currentMarketCode);
+  await loadCoinChart(currentMarketCode, currentPeriod);
   updateAssetDisplay();
+  startOrderbookPolling();
+  loadCoinAccount();
+  setInterval(loadCoinAccount, 15_000);
+  setInterval(renderCoinHoldings, 3_000);
 })();
 
 /* ── 마켓 사이드바 렌더 ──────────────────────────────────────────────────── */
@@ -121,13 +128,12 @@ function renderMarketSidebar(markets) {
   const tbody = document.getElementById('marketListBody');
   if (!tbody) return;
   tbody.innerHTML = markets.map(m => `
-    <tr onclick="selectCoin('${m.market}')" style="cursor:pointer;border-bottom:1px solid var(--border);">
-      <td style="padding:7px 10px;font-weight:600;color:var(--fg);">${m.koreanName}</td>
-      <td style="padding:7px 10px;text-align:right;font-weight:700;" id="${m.market}-trade_price">-</td>
-      <td style="padding:7px 10px;text-align:right;font-size:11px;" id="${m.market}-signed_change_rate">-</td>
-      <td style="padding:7px 5px;text-align:center;" onclick="event.stopPropagation()">
-        <button id="${m.market}-watch-btn" onclick="toggleCryptoWatch('${m.market}')"
-          style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);">☆</button>
+    <tr onclick="selectCoin('${m.market}')" data-market="${m.market}"${m.market === currentMarketCode ? ' class="is-selected"' : ''}>
+      <td class="txt">${m.koreanName}<small>${m.market.replace('KRW-', '')}</small></td>
+      <td id="${m.market}-trade_price">-</td>
+      <td id="${m.market}-signed_change_rate">-</td>
+      <td style="text-align:center;" onclick="event.stopPropagation()">
+        <button id="${m.market}-watch-btn" class="cry-watch" onclick="toggleCryptoWatch('${m.market}')" aria-label="${m.koreanName} 관심 표시">☆</button>
       </td>
     </tr>`).join('');
   renderCryptoWatchBtns();
@@ -135,8 +141,10 @@ function renderMarketSidebar(markets) {
 
 async function selectCoin(marketCode) {
   currentMarketCode = marketCode;
+  document.querySelectorAll('#marketListBody tr[data-market]').forEach(row => row.classList.toggle('is-selected', row.dataset.market === marketCode));
   await getCryptoInfo(marketCode);
   await loadCoinChart(marketCode, currentPeriod);
+  loadOrderbook();
 }
 
 /* ── 업비트 웹소켓 ───────────────────────────────────────────────────────── */
@@ -155,8 +163,9 @@ function initWebSocket(marketCodes) {
       const code  = r.code;
       const price = new Intl.NumberFormat('ko-KR').format(r.trade_price);
       let   rate  = (r.signed_change_rate * 100).toFixed(2);
-      const color = rate > 0 ? '#E11D48' : rate < 0 ? '#2563EB' : '#787B86';
+      const color = priceColor(rate);
       if (rate > 0) rate = '+' + rate;
+      livePrices[code] = r.trade_price;
 
       const tEl = document.getElementById(code + '-trade_price');
       const rEl = document.getElementById(code + '-signed_change_rate');
@@ -168,6 +177,9 @@ function initWebSocket(marketCodes) {
         const lr = document.getElementById('crypto_live_rate');
         if (lp) { lp.textContent = price; lp.style.color = color; }
         if (lr) { lr.textContent = rate + '%'; lr.style.color = color; }
+        setText('crypto_high', new Intl.NumberFormat('ko-KR').format(r.high_price));
+        setText('crypto_low', new Intl.NumberFormat('ko-KR').format(r.low_price));
+        setText('crypto_vol24', `${new Intl.NumberFormat('ko-KR').format(Math.round(r.acc_trade_price_24h / 1e8))}억`);
       }
 
       // acc_trade_price_24h는 ticker에서 생략 (표시 공간 절약)
@@ -337,6 +349,7 @@ async function submitBuy() {
     document.getElementById('holdAsset').textContent = new Intl.NumberFormat('ko-KR').format(data.asset);
     document.getElementById('buyKrw').value = '';
     await getCryptoInfo(currentMarketCode);
+    loadCoinAccount();
   } else {
     showOrderError('buyError', data.error ?? '매수 실패');
   }
@@ -356,6 +369,7 @@ async function submitSell() {
     document.getElementById('holdAsset').textContent = new Intl.NumberFormat('ko-KR').format(data.asset);
     document.getElementById('sellCount').value = '';
     await getCryptoInfo(currentMarketCode);
+    loadCoinAccount();
   } else {
     showOrderError('sellError', data.error ?? '매도 실패');
   }
@@ -377,7 +391,7 @@ function saveCryptoWatchlist() { localStorage.setItem(CRYPTO_WATCH_KEY, JSON.str
 function renderCryptoWatchBtns() {
   cryptoWatchlist.forEach(code => {
     const btn = document.getElementById(code + '-watch-btn');
-    if (btn) { btn.textContent = '⭐'; btn.style.color = '#FFCC00'; }
+    if (btn) { btn.textContent = '★'; btn.style.color = 'var(--warn)'; }
   });
 }
 function toggleCryptoWatch(code) {
@@ -387,9 +401,109 @@ function toggleCryptoWatch(code) {
     if (btn) { btn.textContent = '☆'; btn.style.color = 'var(--muted)'; }
   } else {
     cryptoWatchlist.add(code);
-    if (btn) { btn.textContent = '⭐'; btn.style.color = '#FFCC00'; }
+    if (btn) { btn.textContent = '★'; btn.style.color = 'var(--warn)'; }
   }
   saveCryptoWatchlist();
+}
+
+/* ── 주문 티켓 탭 (매수 / 매도) ──────────────────────────────────────────── */
+document.querySelectorAll('.ticket-tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.ticket-tab').forEach(t => {
+    t.classList.toggle('active', t === btn);
+    t.setAttribute('aria-selected', String(t === btn));
+  });
+  document.querySelectorAll('.ticket-pane').forEach(pane => pane.classList.toggle('active', pane.id === `ticket-${btn.dataset.side}`));
+}));
+
+/* ── 하단 도크 탭 (보유 / 체결) ──────────────────────────────────────────── */
+document.querySelectorAll('.term-dock-tab[data-dock]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.term-dock-tab[data-dock]').forEach(t => {
+    t.classList.toggle('active', t === btn);
+    t.setAttribute('aria-selected', String(t === btn));
+  });
+  document.querySelectorAll('.cry-dock-pane').forEach(pane => pane.classList.toggle('active', pane.id === `dock-${btn.dataset.dock}`));
+}));
+
+/* ── 업비트 호가 사다리 (2초 폴링) ───────────────────────────────────────── */
+const fmtCoin = n => Number(n).toLocaleString('ko-KR', { maximumFractionDigits: Number(n) >= 100 ? 0 : 4 });
+
+async function loadOrderbook() {
+  const code = currentMarketCode;
+  try {
+    const res = await fetch(`/upbit-api/orderbook?markets=${encodeURIComponent(code)}`);
+    if (!res.ok || code !== currentMarketCode) return;
+    const units = (await res.json())?.[0]?.orderbook_units?.slice(0, 8) ?? [];
+    if (!units.length) return;
+    const maxSize = Math.max(...units.flatMap(u => [u.ask_size, u.bid_size]));
+    const row = (price, size, side) => `<tr class="${side}">
+      <td style="text-align:left;color:var(--fg-2);"><span class="bar" style="width:${(size / maxSize * 100).toFixed(1)}%;"></span>${Number(size).toFixed(4)}</td>
+      <td class="px">${fmtCoin(price)}</td></tr>`;
+    document.getElementById('coinAskBody').innerHTML = [...units].reverse().map(u => row(u.ask_price, u.ask_size, 'ask')).join('');
+    document.getElementById('coinBidBody').innerHTML = units.map(u => row(u.bid_price, u.bid_size, 'bid')).join('');
+    const spread = units[0].ask_price - units[0].bid_price;
+    setText('coinBookLast', fmtCoin(livePrices[code] ?? units[0].bid_price));
+    setText('coinBookSpread', `${fmtCoin(spread)} (${(spread / units[0].bid_price * 100).toFixed(3)}%)`);
+  } catch {}
+}
+
+function startOrderbookPolling() {
+  loadOrderbook();
+  setInterval(loadOrderbook, 2_000);
+}
+
+/* ── 보유 코인 · 체결 내역 도크 ──────────────────────────────────────────── */
+let lastCoinHoldings = null;
+
+async function loadCoinAccount() {
+  if (!currentUser?.loggedIn) {
+    const guest = '<tr><td class="empty" colspan="7">로그인하면 보유 코인과 체결 내역을 볼 수 있습니다.</td></tr>';
+    document.getElementById('coinHoldingsBody').innerHTML = guest;
+    document.getElementById('coinHistoryBody').innerHTML = guest;
+    return;
+  }
+  try {
+    const res = await apiFetch('/api/trade/hold');
+    if (res.ok) { lastCoinHoldings = (await res.json()).holdCryptoList ?? []; renderCoinHoldings(); }
+  } catch {}
+  try {
+    const res = await apiFetch('/api/trade/order/history?limit=30');
+    if (!res.ok) return;
+    const history = (await res.json()).history ?? [];
+    document.getElementById('coinHistoryBody').innerHTML = history.length ? history.map(h => {
+      const isBuy = h.type === 'BUY';
+      return `<tr>
+        <td style="color:var(--muted);">${new Date(h.ts).toLocaleString('ko-KR', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+        <td class="txt"><strong>${h.koreanName}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${h.marketCode.replace('KRW-', '')}</span></td>
+        <td style="font-weight:800;color:${isBuy ? 'var(--up)' : 'var(--down)'};">${isBuy ? 'BUY 매수' : 'SELL 매도'}</td>
+        <td>${fmtCoin(h.price)}</td>
+        <td style="color:var(--fg-2);">${Number(h.quantity).toFixed(8)}</td>
+        <td>${Number(h.amount).toLocaleString('ko-KR')}</td>
+      </tr>`;
+    }).join('') : '<tr><td class="empty" colspan="6">체결 내역이 없습니다.</td></tr>';
+  } catch {}
+}
+
+function renderCoinHoldings() {
+  const tbody = document.getElementById('coinHoldingsBody');
+  if (!tbody || !lastCoinHoldings) return;
+  if (!lastCoinHoldings.length) { tbody.innerHTML = '<tr><td class="empty" colspan="7">보유 코인이 없습니다.</td></tr>'; return; }
+  tbody.innerHTML = lastCoinHoldings.map(h => {
+    const price = livePrices[h.marketCode];
+    const evalKrw = price ? price * h.holdCount : null;
+    // 원 단위·소수 둘째 자리로 먼저 반올림해 -0, -0.00%가 보이지 않게 한다.
+    const pnl = evalKrw != null ? Math.round(evalKrw - h.buyTotalKrw) || 0 : null;
+    const rate = pnl != null && h.buyTotalKrw ? Math.round(pnl / h.buyTotalKrw * 10000) / 100 || 0 : null;
+    const color = priceColor(pnl ?? 0);
+    return `<tr onclick="selectCoin('${h.marketCode}')" style="cursor:pointer;">
+      <td class="txt"><strong>${h.koreanName}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${h.marketCodeOnlySymbol}</span></td>
+      <td>${Number(h.holdCount).toFixed(8)}</td>
+      <td style="color:var(--fg-2);">${fmtCoin(h.buyAverage)}</td>
+      <td>${price ? fmtCoin(price) : '-'}</td>
+      <td>${evalKrw != null ? Math.round(evalKrw).toLocaleString('ko-KR') : '-'}</td>
+      <td style="color:${color};">${pnl != null ? `${pnl > 0 ? '+' : ''}${pnl.toLocaleString('ko-KR')}` : '-'}</td>
+      <td style="color:${color};">${rate != null ? `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%` : '-'}</td>
+    </tr>`;
+  }).join('');
 }
 
 /* ── 유틸 ────────────────────────────────────────────────────────────────── */

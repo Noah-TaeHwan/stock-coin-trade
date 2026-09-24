@@ -11,21 +11,18 @@
   let symbolName = '';
   let data = [];
   let chart; let candleSeries; let volumeSeries; const maSeries = {};
-  const MA = [[5, '#F59E0B'], [20, '#10B981'], [60, '#8B5CF6']];
+  const MA = [[5, '#FFD60A'], [20, '#4FC3F7'], [60, '#B39DFF']];
 
   // ── 차트 생성 ─────────────────────────────────────────────────────────
   function initChart() {
     const el = $('chart');
-    chart = LightweightCharts.createChart(el, {
-      layout: { background: { color: '#FFFFFF' }, textColor: '#6B7280', fontFamily: 'inherit' },
-      grid: { vertLines: { color: '#F1F5F9' }, horzLines: { color: '#F1F5F9' } },
-      rightPriceScale: { borderColor: '#E5E7EB', scaleMargins: { top: 0.08, bottom: 0.28 } },
-      timeScale: { borderColor: '#E5E7EB', timeVisible: true, secondsVisible: false, rightOffset: 4 },
-      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    chart = LightweightCharts.createChart(el, termChartOptions({
+      rightPriceScale: { scaleMargins: { top: 0.08, bottom: 0.28 } },
+      timeScale: { timeVisible: true, secondsVisible: false, rightOffset: 4 },
       localization: { locale: 'ko-KR', priceFormatter: (p) => Number(p).toLocaleString() },
       autoSize: true,
-    });
-    candleSeries = chart.addCandlestickSeries({ upColor: '#E11D48', downColor: '#2563EB', borderUpColor: '#E11D48', borderDownColor: '#2563EB', wickUpColor: '#E11D48', wickDownColor: '#2563EB', priceFormat: { type: 'price', precision: 0, minMove: 1 } });
+    }));
+    candleSeries = chart.addCandlestickSeries({ ...termCandleColors(), priceFormat: { type: 'price', precision: 0, minMove: 1 } });
     volumeSeries = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'volume' });
     chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
     MA.forEach(([n, color]) => { maSeries[n] = chart.addLineSeries({ color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }); });
@@ -41,7 +38,7 @@
   }
   function draw() {
     candleSeries.setData(data.map((c) => ({ time: timeKey(c), open: c.open, high: c.high, low: c.low, close: c.close })));
-    volumeSeries.setData(data.map((c) => ({ time: timeKey(c), value: c.volume || 0, color: c.close >= c.open ? 'rgba(225,29,72,.35)' : 'rgba(37,99,235,.35)' })));
+    volumeSeries.setData(data.map((c) => ({ time: timeKey(c), value: c.volume || 0, color: termAlpha(c.close >= c.open ? termColors().up : termColors().down, 0.35) })));
     const showMa = $('ma').checked && period !== '1m';
     MA.forEach(([n]) => maSeries[n].setData(showMa && data.length >= n ? movingAverage(n) : []));
     chart.timeScale().fitContent();

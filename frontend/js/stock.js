@@ -35,10 +35,10 @@ let lwCandle = null;
 let lwVolume = null;
 const movingAverageSeries = {};
 const movingAverageOptions = [
-  { period: 5,   color: '#F59E0B' },
-  { period: 20,  color: '#8B5CF6' },
-  { period: 60,  color: '#0891B2' },
-  { period: 120, color: '#EC4899' },
+  { period: 5,   color: '#FFD60A' },
+  { period: 20,  color: '#4FC3F7' },
+  { period: 60,  color: '#B39DFF' },
+  { period: 120, color: '#FF6FAE' },
 ];
 const movingAverageVisibility = Object.fromEntries(movingAverageOptions.map(({ period }) => [period, true]));
 
@@ -66,27 +66,20 @@ function initStockChart() {
   const container = document.getElementById('stockChart');
   if (!container || !window.LightweightCharts) return;
 
-  lwChart = LightweightCharts.createChart(container, {
-    layout:     { background: { color: '#FFFFFF' }, textColor: '#6B7280' },
-    grid:       { vertLines: { color: '#F3F4F6' }, horzLines: { color: '#F3F4F6' } },
-    crosshair:  { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: { borderColor: '#E5E7EB' },
-    timeScale:  { borderColor: '#E5E7EB', timeVisible: true, secondsVisible: false },
+  lwChart = LightweightCharts.createChart(container, termChartOptions({
+    timeScale:  { timeVisible: true, secondsVisible: false },
     handleScroll: true, handleScale: true,
-  });
+  }));
 
-  lwCandle = lwChart.addCandlestickSeries({
-    upColor: '#E11D48', downColor: '#2563EB',
-    borderUpColor: '#E11D48', borderDownColor: '#2563EB',
-    wickUpColor:   '#E11D48', wickDownColor:   '#2563EB',
-  });
+  lwCandle = lwChart.addCandlestickSeries({ ...termCandleColors(), priceFormat: { type: 'price', precision: 0, minMove: 1 } });
 
   lwVolume = lwChart.addHistogramSeries({
-    color: 'rgba(41,98,255,0.35)',
+    color: termAlpha(termColors().info, 0.3),
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
-    scaleMargins: { top: 0.85, bottom: 0 },
   });
+  // v4에서는 거래량 축 여백을 가격 축 옵션으로 지정해야 캔들과 겹치지 않는다.
+  lwChart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
 
   movingAverageOptions.forEach(({ period, color }) => {
     movingAverageSeries[period] = lwChart.addLineSeries({
@@ -120,12 +113,12 @@ function updatePortfolioMini(positions, cash) {
   if (total <= 0) { el.innerHTML = ''; return; }
 
   const cashPct = Math.round(cash / total * 100);
-  const colors = ['#2563EB', '#7C3AED', '#059669', '#EA580C', '#DB2777', '#0891B2', '#65A30D'];
+  const colors = TERM_PALETTE;
   const stockBars = positions.map((p, i) => {
     const pct = Math.round((p.evalAmount || 0) / total * 100);
     return `<div title="${p.name} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#CBD5E1;min-width:3px;"></div>`);
+  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
 
   const sectors = positions.reduce((acc, p) => {
     const sector = p.sector || '기타';
@@ -137,16 +130,16 @@ function updatePortfolioMini(positions, cash) {
     const pct = Math.round(amount / total * 100);
     return `<div title="${sector} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#CBD5E1;min-width:3px;"></div>`);
+  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
   const sectorLabels = sectorItems.map(([sector, amount], i) =>
-    `<span style="display:inline-flex;align-items:center;gap:3px;"><i style="width:6px;height:6px;border-radius:50%;background:${colors[i % colors.length]};display:inline-block;"></i>${sector} ${Math.round(amount / total * 100)}%</span>`
+    `<span style="display:inline-flex;align-items:center;gap:3px;"><i style="width:6px;height:6px;background:${colors[i % colors.length]};display:inline-block;"></i>${sector} ${Math.round(amount / total * 100)}%</span>`
   ).join(' · ');
 
-  el.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--muted);margin-top:6px;">종목별 비중</div>
-    <div style="display:flex;height:9px;border-radius:4px;overflow:hidden;gap:1px;margin-top:4px;">${stockBars.join('')}</div>
-    <div style="font-size:13px;font-weight:700;color:var(--muted);margin-top:10px;">섹터별 비중</div>
-    <div style="display:flex;height:9px;border-radius:4px;overflow:hidden;gap:1px;margin-top:4px;">${sectorBars.join('')}</div>
-    <div style="font-size:12px;line-height:1.6;color:var(--muted);margin-top:6px;">${sectorLabels || '보유 주식 없음'}${sectorLabels ? ` · 현금 ${cashPct}%` : ''}</div>`;
+  el.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:6px;">종목별 비중</div>
+    <div style="display:flex;height:7px;overflow:hidden;gap:1px;margin-top:3px;">${stockBars.join('')}</div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:6px;">섹터별 비중</div>
+    <div style="display:flex;height:7px;overflow:hidden;gap:1px;margin-top:3px;">${sectorBars.join('')}</div>
+    <div style="font-size:11px;line-height:1.6;color:var(--muted);margin-top:4px;">${sectorLabels || '보유 주식 없음'}${sectorLabels ? ` · 현금 ${cashPct}%` : ''}</div>`;
 }
 
 /* ── 포맷터 ──────────────────────────────────────────────────────────────── */
@@ -156,7 +149,7 @@ function fmtVol(v) {
   if (v >= 1e4) return (v / 1e4).toFixed(1) + '만주';
   return Number(v).toLocaleString('ko-KR') + '주';
 }
-function colorByVal(v) { return v > 0 ? '#E11D48' : v < 0 ? '#2563EB' : '#787B86'; }
+function colorByVal(v) { return priceColor(v); }
 
 function selectedPosition() {
   const symbol = document.getElementById('stockSymbol')?.value;
@@ -241,7 +234,7 @@ function updateAvgDownResult() {
   setText('avgDownCost', cost ? fmtKrw(cost) : '-');
   setText('avgDownNewAvg', qty > 0 ? fmtKrw(newAvg) : '-');
   setEl('avgDownDiff', qty > 0 ? `${avgDiff > 0 ? '+' : ''}${fmtKrw(avgDiff)}` : '-', colorByVal(avgDiff));
-  setEl('avgDownCashLeft', qty > 0 ? fmtKrw(lastCash - cost) : fmtKrw(lastCash), isAffordable ? undefined : '#E11D48');
+  setEl('avgDownCashLeft', qty > 0 ? fmtKrw(lastCash - cost) : fmtKrw(lastCash), isAffordable ? undefined : 'var(--down)');
 
   const notice = document.getElementById('avgDownNotice');
   if (!notice) return;
@@ -250,7 +243,7 @@ function updateAvgDownResult() {
     notice.style.color = 'var(--muted)';
   } else if (!isAffordable) {
     notice.textContent = `추가 매수금액이 보유 현금보다 ${fmtKrw(cost - lastCash)} 큽니다.`;
-    notice.style.color = '#E11D48';
+    notice.style.color = 'var(--down)';
   } else {
     const breakEvenGap = Math.max(0, newAvg - currentStockPrice);
     notice.textContent = `현재가가 새 평균단가까지 ${fmtKrw(breakEvenGap)} (${((breakEvenGap / currentStockPrice) * 100).toFixed(2)}%) 오르면 손익분기점입니다.`;
@@ -285,7 +278,7 @@ async function requestJson(url, options = {}) {
 
 function showMsg(msg, isErr = false) {
   const el = document.getElementById('stockMessage');
-  if (el) { el.textContent = msg; el.style.color = isErr ? '#E11D48' : '#2E7D32'; }
+  if (el) { el.textContent = msg; el.style.color = isErr ? 'var(--down)' : 'var(--up)'; }
 }
 
 /* ── Watchlist ───────────────────────────────────────────────────────────── */
@@ -295,14 +288,14 @@ function updateWatchBtn(sym) {
   if (!btn) return;
   const has = watchlist.has(sym);
   btn.textContent = has ? '⭐' : '☆';
-  btn.style.color = has ? '#FFCC00' : 'rgba(255,255,255,0.4)';
+  btn.style.color = has ? 'var(--warn)' : 'var(--muted)';
 }
 document.getElementById('watchlistBtn')?.addEventListener('click', () => {
   const sym = document.getElementById('stockSymbol')?.value;
   if (!sym) return;
   watchlist.has(sym) ? watchlist.delete(sym) : watchlist.add(sym);
   saveWatchlist(); updateWatchBtn(sym);
-  if (currentMarketFilter === 'WATCH') rebuildSelectOptions();
+  renderStockWatchList();
 });
 
 /* ── 마켓 리스트 (실시간 5초 polling) ───────────────────────────────────── */
@@ -319,24 +312,44 @@ function renderStockMarketList() {
   const tbody = document.getElementById('stockMarketListBody');
   if (!tbody) return;
 
+  renderStockWatchList();
+  const selectedSymbol = document.getElementById('stockSymbol')?.value;
   if (!lastPositions.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="padding:16px 12px;text-align:center;color:var(--muted);">보유 중인 종목이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td class="empty" colspan="3">보유 중인 종목이 없습니다.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = lastPositions.map(position => {
-    const price = Number(position.currentPrice ?? liveStockPrices[position.symbol]?.price ?? 0);
     const pnl = Number(position.pnl ?? 0);
     const color = colorByVal(pnl);
-    return `<tr onclick="selectStockFromList('${position.symbol}')"
-              style="cursor:pointer;border-bottom:1px solid var(--border);">
-      <td style="padding:6px 10px;">
-        <div style="font-weight:700;color:var(--fg);font-size:12px;">${position.name}</div>
-        <div style="font-size:10px;color:var(--muted);">${position.symbol} · ${position.sector || '기타'}</div>
-      </td>
-      <td style="padding:6px 10px;text-align:right;font-weight:700;color:var(--fg);font-size:12px;">${price ? fmtKrw(price) : '-'}</td>
-      <td style="padding:6px 10px;text-align:right;font-size:11px;color:var(--fg);">${Number(position.quantity).toLocaleString('ko-KR')}주</td>
-      <td style="padding:6px 5px;text-align:right;font-size:11px;font-weight:800;color:${color};">${pnl >= 0 ? '+' : ''}${fmtKrw(pnl)}</td>
+    return `<tr onclick="selectStockFromList('${position.symbol}')"${position.symbol === selectedSymbol ? ' class="is-selected"' : ''}>
+      <td class="txt">${position.name}<small>${position.symbol}</small></td>
+      <td>${Number(position.quantity).toLocaleString('ko-KR')}</td>
+      <td style="color:${color};">${pnl >= 0 ? '+' : ''}${Number(pnl).toLocaleString('ko-KR')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// TWS 관심목록처럼 선택 종목과 연결된 목록. 전체는 종목 목록, 관심은 ☆ 표시 종목이다.
+function renderStockWatchList() {
+  const tbody = document.getElementById('stockWatchListBody');
+  if (!tbody) return;
+  const selectedSymbol = document.getElementById('stockSymbol')?.value;
+  const rows = currentMarketFilter === 'WATCH'
+    ? allStocks.filter(stock => watchlist.has(stock.symbol))
+    : allStocks;
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td class="empty" colspan="3">${currentMarketFilter === 'WATCH' ? '☆로 관심종목을 추가하세요.' : '종목 정보 없음'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(stock => {
+    const live = liveStockPrices[stock.symbol] ?? {};
+    const rate = Number(live.changeRate ?? 0);
+    const color = colorByVal(rate);
+    return `<tr onclick="selectStockFromList('${stock.symbol}')"${stock.symbol === selectedSymbol ? ' class="is-selected"' : ''}>
+      <td class="txt">${escapeHtml(stock.name)}<small>${stock.symbol}${watchlist.has(stock.symbol) ? ' ★' : ''}</small></td>
+      <td style="color:${color};">${live.price ? Number(live.price).toLocaleString('ko-KR') : '-'}</td>
+      <td style="color:${color};">${live.price ? `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%` : '-'}</td>
     </tr>`;
   }).join('');
 }
@@ -346,7 +359,6 @@ function toggleStockWatch(sym) {
   saveWatchlist();
   renderStockMarketList();
   updateWatchBtn(sym);
-  if (currentMarketFilter === 'WATCH') rebuildSelectOptions();
 }
 
 async function selectStockFromList(sym) {
@@ -470,6 +482,7 @@ async function selectStock(symbol) {
   updateStockPickerSelected(symbol);
   closeStockPicker();
   updateWatchBtn(symbol);
+  renderStockMarketList();
   await Promise.all([loadQuote(symbol), loadChart(symbol, currentPeriod)]);
 }
 
@@ -508,14 +521,24 @@ function rebuildSelectOptions() {
   updateStockPickerSelected(sel.value);
 }
 
-/* ── 마켓 탭 ─────────────────────────────────────────────────────────────── */
-document.getElementById('marketTabs')?.addEventListener('click', e => {
-  const btn = e.target.closest('.market-tab');
-  if (!btn) return;
-  currentMarketFilter = btn.dataset.market;
-  document.querySelectorAll('.market-tab').forEach(t => t.classList.toggle('active', t === btn));
-  rebuildSelectOptions();
-});
+/* ── 종목 모니터 탭 (전체 / 관심) ───────────────────────────────────────── */
+document.querySelectorAll('.wl-tab').forEach(btn => btn.addEventListener('click', () => {
+  currentMarketFilter = btn.dataset.wl;
+  document.querySelectorAll('.wl-tab').forEach(t => {
+    t.classList.toggle('active', t === btn);
+    t.setAttribute('aria-selected', String(t === btn));
+  });
+  renderStockWatchList();
+}));
+
+/* ── 하단 도크 탭 (포지션 / 체결 / 시세·계좌) ────────────────────────────── */
+document.querySelectorAll('.term-dock-tab[data-dock]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.term-dock-tab[data-dock]').forEach(t => {
+    t.classList.toggle('active', t === btn);
+    t.setAttribute('aria-selected', String(t === btn));
+  });
+  document.querySelectorAll('.stk-dock-pane').forEach(pane => pane.classList.toggle('active', pane.id === `dock-${btn.dataset.dock}`));
+}));
 
 /* ── 차트 로드 ───────────────────────────────────────────────────────────── */
 async function loadChart(symbol, period) {
@@ -526,7 +549,7 @@ async function loadChart(symbol, period) {
       .sort((a, b) => a.time - b.time);
     const volumes = (data.data ?? []).map(d => ({
       time: Math.floor(d.x / 1000), value: d.v,
-      color: d.c >= d.o ? 'rgba(248,113,113,0.35)' : 'rgba(96,165,250,0.35)',
+      color: termAlpha(d.c >= d.o ? termColors().up : termColors().down, 0.35),
     })).sort((a, b) => a.time - b.time);
     lwCandle.setData(candles);
     lwVolume.setData(volumes);
@@ -552,6 +575,7 @@ async function loadQuote(symbol) {
     currentStockPrice = Number(data.price ?? 0);
 
     setText('chartStockName',  data.name ?? '-');
+    setText('secCode',         `${symbol} ${data.market === 'KOSDAQ' ? 'KQ' : 'KS'} EQUITY`);
     setEl('quotePrice',        fmtKrw(data.price ?? 0), color);
     setEl('quoteChange',       (Number(data.change ?? 0) >= 0 ? '+' : '') + fmtKrw(data.change ?? 0), color);
     setEl('quoteChangeRate',   (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%', color);
@@ -581,7 +605,7 @@ async function loadMarket() {
       setText(p + 'Price', Number(val.price).toLocaleString('ko-KR', { minimumFractionDigits: 2 }));
       const rate  = Number(val.changeRate);
       const color = colorByVal(rate);
-      setEl(p + 'Change', `${rate >= 0 ? '▲' : '▼'} ${Math.abs(rate).toFixed(2)}%`, color);
+      setEl(p + 'Change', `${rate > 0 ? '▲' : rate < 0 ? '▼' : '■'} ${Math.abs(rate).toFixed(2)}%`, color);
     }
   } catch {}
 }
@@ -605,7 +629,7 @@ async function loadPositions() {
   if (!tbody) return;
 
   if (!lastPositions.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:10px;text-align:center;color:var(--muted);">포지션 없음</td></tr>`;
+    tbody.innerHTML = `<tr><td class="empty" colspan="6">포지션 없음</td></tr>`;
     renderStockMarketList();
     updatePortfolioMini([], lastCash);
     updateOrderSummary();
@@ -614,13 +638,13 @@ async function loadPositions() {
   tbody.innerHTML = lastPositions.map(pos => {
     const pnl   = Number(pos.pnl ?? 0);
     const color = colorByVal(pnl);
-    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-      <td style="padding:9px 12px;font-weight:700;color:var(--fg);font-size:15px;">${pos.name}<br><span style="font-size:12px;color:var(--accent-dark);">${pos.symbol}</span></td>
-      <td style="padding:9px 12px;font-size:13px;color:var(--muted);white-space:nowrap;">${pos.sector || '기타'}</td>
-      <td style="padding:9px 12px;text-align:right;font-size:15px;color:var(--fg);">${pos.quantity}</td>
-      <td style="padding:9px 12px;text-align:right;font-size:15px;color:rgba(255,255,255,0.7);">${fmtKrw(pos.avgPrice)}</td>
-      <td style="padding:9px 12px;text-align:right;font-size:15px;color:var(--accent-dark);">${fmtKrw(pos.evalAmount)}</td>
-      <td style="padding:9px 12px;text-align:right;font-size:16px;font-weight:800;color:${color};">${pnl >= 0 ? '+' : ''}${fmtKrw(pnl)}</td>
+    return `<tr onclick="selectStockFromList('${pos.symbol}')" style="cursor:pointer;">
+      <td class="txt"><strong>${pos.name}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${pos.symbol}</span></td>
+      <td class="txt" style="color:var(--muted);">${pos.sector || '기타'}</td>
+      <td>${Number(pos.quantity).toLocaleString('ko-KR')}</td>
+      <td style="color:var(--fg-2);">${fmtKrw(pos.avgPrice)}</td>
+      <td>${fmtKrw(pos.evalAmount)}</td>
+      <td style="font-weight:700;color:${color};">${pnl >= 0 ? '+' : ''}${fmtKrw(pnl)}</td>
     </tr>`;
   }).join('');
   renderStockMarketList();
@@ -637,19 +661,19 @@ async function loadHistory() {
     if (!tbody) return;
     const hist = (data.history ?? []).slice(0, 30);
     if (!hist.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="padding:10px;text-align:center;color:var(--muted);">거래 내역 없음</td></tr>`;
+      tbody.innerHTML = `<tr><td class="empty" colspan="5">거래 내역 없음</td></tr>`;
       return;
     }
     tbody.innerHTML = hist.map(h => {
       const isBuy = h.type === 'BUY';
-      const color = isBuy ? '#E11D48' : '#2563EB';
+      const color = isBuy ? 'var(--up)' : 'var(--down)';
       const dt    = new Date(h.ts).toLocaleTimeString('ko-KR', { hour12: false });
-      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-        <td style="padding:8px 12px;color:var(--muted);font-size:13px;">${dt}</td>
-        <td style="padding:8px 12px;font-weight:700;color:var(--fg);font-size:15px;">${h.name}<br><span style="font-size:12px;color:var(--accent-dark);">${h.symbol}</span></td>
-        <td style="padding:8px 12px;text-align:center;font-weight:800;font-size:15px;color:${color};">${isBuy ? '매수' : '매도'}</td>
-        <td style="padding:8px 12px;text-align:right;color:rgba(255,255,255,0.7);font-size:15px;">${Number(h.quantity).toLocaleString('ko-KR')}주</td>
-        <td style="padding:8px 12px;text-align:right;color:var(--accent-dark);font-weight:700;font-size:15px;">${fmtKrw(h.amount)}</td>
+      return `<tr>
+        <td style="color:var(--muted);">${dt}</td>
+        <td class="txt"><strong>${h.name}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${h.symbol}</span></td>
+        <td style="font-weight:800;color:${color};">${isBuy ? 'BUY 매수' : 'SELL 매도'}</td>
+        <td style="color:var(--fg-2);">${Number(h.quantity).toLocaleString('ko-KR')}주</td>
+        <td>${fmtKrw(h.amount)}</td>
       </tr>`;
     }).join('');
   } catch {}
@@ -673,12 +697,13 @@ function renderOrderBook(price) {
   const askRows = Array.from({ length: 5 }, (_, i) => ({ price: price + tick * (i + 1), qty: qty(price + tick * (i + 1), 13) }));
   const bidRows = Array.from({ length: 5 }, (_, i) => ({ price: price - tick * (5 - i), qty: qty(price - tick * (5 - i), 31) }));
 
-  askBody.innerHTML = askRows.map(r => `<tr style="background:rgba(37,99,235,0.04);">
-    <td style="padding:7px 12px;text-align:right;color:#60A5FA;font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
-    <td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:14px;">${Number(r.qty).toLocaleString('ko-KR')}</td></tr>`).join('');
-  bidBody.innerHTML = bidRows.map(r => `<tr style="background:rgba(225,29,72,0.04);">
-    <td style="padding:7px 12px;text-align:right;color:#F87171;font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
-    <td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:14px;">${Number(r.qty).toLocaleString('ko-KR')}</td></tr>`).join('');
+  // 사다리는 위에서부터 매도 호가(높은 가격) → 현재가 → 매수 호가(낮은 가격) 순이다.
+  const maxQty = Math.max(...askRows.map(r => r.qty), ...bidRows.map(r => r.qty));
+  const ladderRow = (r, side) => `<tr class="${side}">
+    <td style="text-align:left;color:var(--fg-2);"><span class="bar" style="width:${(r.qty / maxQty * 100).toFixed(1)}%;"></span>${Number(r.qty).toLocaleString('ko-KR')}</td>
+    <td class="px">${Number(r.price).toLocaleString('ko-KR')}</td></tr>`;
+  askBody.innerHTML = [...askRows].reverse().map(r => ladderRow(r, 'ask')).join('');
+  bidBody.innerHTML = [...bidRows].reverse().map(r => ladderRow(r, 'bid')).join('');
 
   setText('obCurrentPrice', Number(price).toLocaleString('ko-KR'));
   const spread = tick * 2;
@@ -689,7 +714,7 @@ function updateBreakEven(positions, sym) {
   const el = document.getElementById('quoteBreakEven');
   if (!el) return;
   const pos = positions?.find(p => p.symbol === sym);
-  if (pos) { el.textContent = `${Number(pos.avgPrice).toLocaleString('ko-KR')}원`; el.style.color = '#FFCC00'; }
+  if (pos) { el.textContent = `${Number(pos.avgPrice).toLocaleString('ko-KR')}원`; el.style.color = 'var(--warn)'; }
   else      { el.textContent = '-'; el.style.color = 'var(--muted)'; }
 }
 
@@ -836,31 +861,8 @@ function setEl(id, val, color) {
   if (color) el.style.color = color;
 }
 
-function relocateStockPanels() {
-  const overview = document.getElementById('positionsOverview');
-  const marketColumn = document.querySelector('.market-col');
-  const quotePanel = document.getElementById('quotePanel');
-  const accountPanel = document.getElementById('accountPanel');
-  const orderPanel = document.getElementById('orderPanel');
-
-  if (overview && quotePanel && accountPanel) overview.append(quotePanel, accountPanel);
-  if (marketColumn && orderPanel) marketColumn.prepend(orderPanel);
-  document.getElementById('stockSummaryPanels')?.remove();
-}
-
-function initUsageGuide() {
-  const message = document.getElementById('usageGuideMessage');
-  if (!message) return;
-  document.addEventListener('pointerover', event => {
-    const guideTarget = event.target.closest('[data-guide]');
-    if (guideTarget?.dataset.guide) message.textContent = guideTarget.dataset.guide;
-  });
-}
-
 /* ── 부트 ────────────────────────────────────────────────────────────────── */
 (async () => {
-  relocateStockPanels();
-  initUsageGuide();
   await initPage();
   initStockChart();
 
@@ -870,6 +872,13 @@ function initUsageGuide() {
   const sym = document.getElementById('stockSymbol')?.value;
   await Promise.all([loadMarket(), loadQuote(sym), loadAccount(), loadPositions()]);
   await Promise.all([loadChart(sym, currentPeriod), loadHistory(), loadBatchPrices()]);
+
+  // 명령줄에서 종목명으로 넘어온 경우(?q=) 검색 결과를 바로 연다.
+  const query = new URLSearchParams(window.location.search).get('q')?.trim();
+  if (query && stockPickerInput) {
+    stockPickerInput.value = query;
+    await submitStockPickerSearch();
+  }
 
   // 실시간 갱신
   setInterval(() => loadBatchPrices(),  5_000);

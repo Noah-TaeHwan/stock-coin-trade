@@ -6,7 +6,7 @@
   <title>Pine 전략 거래 — 모의투자 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
+  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
 
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','sans-serif']}}}}</script>
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -15,17 +15,17 @@
     .pine-card { border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:var(--shadow-sm); }
     .pine-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
     .pine-select { min-width:190px; padding:8px 10px; border:1px solid var(--border); border-radius:7px; color:var(--fg); background:var(--surface-2); font:inherit; font-size:13px; }
-    .period { padding:5px 9px; border:1px solid var(--border); border-radius:6px; background:#fff; color:var(--fg-2); font-size:12px; font-weight:700; cursor:pointer; }
-    .period.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .period { padding:5px 9px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--fg-2); font-size:12px; font-weight:700; cursor:pointer; }
+    .period.active { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
     #pineChart { height:min(52vh,530px); min-height:330px; }
     .editor-grid { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:14px; margin-top:14px; }
     .editor-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid var(--border); }
     #pineScript { display:block; width:100%; min-height:315px; resize:vertical; padding:15px; border:0; outline:0; background:#131722; color:#D1D4DC; font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2; }
     .signal { padding:13px; border-radius:9px; background:var(--surface-2); }
     .signal-value { margin-top:4px; font-size:20px; font-weight:900; color:var(--fg); }
-    .primary { padding:9px 12px; border:0; border-radius:7px; background:var(--accent); color:#fff; font:700 13px inherit; cursor:pointer; }
+    .primary { padding:9px 12px; border:0; border-radius:7px; background:var(--accent); color:var(--accent-ink); font:700 13px inherit; cursor:pointer; }
     .primary:hover { background:var(--accent-dark); }.primary:disabled { opacity:.5; cursor:not-allowed; }
-    .secondary { padding:8px 10px; border:1px solid var(--border); border-radius:7px; background:#fff; color:var(--fg-2); font:700 12px inherit; cursor:pointer; }
+    .secondary { padding:8px 10px; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--fg-2); font:700 12px inherit; cursor:pointer; }
     .notice { margin:0; padding:11px 14px; color:var(--muted); font-size:12px; line-height:1.65; }
     .log { max-height:165px; overflow:auto; margin:10px 0 0; padding:10px; border-radius:7px; background:var(--surface-2); color:var(--muted); font:11px/1.6 ui-monospace,monospace; white-space:pre-wrap; }
     .pine-footer { border-top:1px solid var(--border); background:var(--surface); }
@@ -72,7 +72,7 @@
     <div class="pine-footer-inner"><span class="brand-logo-text" style="font-size:13px;">Noah Trading Desk</span><span style="font-size:11px;color:var(--muted);">Pine 전략 거래는 학습용 모의투자 기능입니다.</span></div>
   </footer>
   <script src="/js/config.js"></script>
-  <script src="/js/common.js?v=20260920-chart"></script>
-  <script src="/js/pine.js?v=20260808-1"></script>
+  <script src="/js/common.js?v=20260924-terminal"></script>
+  <script src="/js/pine.js?v=20260924-terminal"></script>
 </body>
 </html>

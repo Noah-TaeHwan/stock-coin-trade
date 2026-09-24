@@ -26,17 +26,17 @@ async function loadKeys() {
         <td class="px-4 py-3" style="font-size:12px;color:var(--muted);">${fmtDate(k.lastUsedAt)}</td>
         <td class="px-4 py-3 text-center">
           ${k.isActive
-            ? '<span class="badge" style="background:rgba(5,150,105,0.12);color:#059669;font-size:11px;">활성</span>'
-            : '<span class="badge" style="background:rgba(156,163,175,0.15);color:#9CA3AF;font-size:11px;">폐기됨</span>'}
+            ? '<span class="badge" style="background:var(--up-bg);color:var(--up);font-size:11px;">활성</span>'
+            : '<span class="badge" style="background:rgba(156,163,175,0.15);color:var(--muted);font-size:11px;">폐기됨</span>'}
         </td>
         <td class="px-4 py-3 text-center">
           ${k.isActive
-            ? `<button onclick="revokeKey(${k.id})" style="background:rgba(225,29,72,0.08);color:#E11D48;border:1px solid rgba(225,29,72,0.2);border-radius:6px;padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
+            ? `<button onclick="revokeKey(${k.id})" style="background:var(--down-bg);color:var(--down);border:1px solid rgba(225,29,72,0.2);border-radius:6px;padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
             : '-'}
         </td>
       </tr>`).join('');
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center" style="color:#F87171;">불러오기 실패: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center" style="color:var(--down);">불러오기 실패: ${err.message}</td></tr>`;
   }
 }
 

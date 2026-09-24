@@ -35,7 +35,8 @@
 - [openapi.html](frontend/openapi.html): 외부 연동 Open API 명세
 - [quant.html](frontend/quant.html): PostgreSQL 퀀트 랩
 - [member/](frontend/member/): 로그인·회원가입·플랫폼 API 키 발급
-- [js/common.js](frontend/js/common.js): 모든 페이지가 공유하는 offcanvas 메뉴
+- [js/common.js](frontend/js/common.js): 모든 페이지가 공유하는 터미널 헤더(명령줄·기능키·티커)·상태 바·offcanvas 메뉴·차트 다크 옵션 헬퍼
+- [css/style.css](frontend/css/style.css): 터미널 다크 디자인 토큰(`--bg`, `--accent`, `--up`/`--down` 등)과 공통 패널 컴포넌트
 
 ## 데이터베이스
 
