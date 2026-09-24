@@ -2,7 +2,7 @@
 """curriculum/*.md 를 각 증권사 학습(실전연습) HTML 페이지에 삽입한다.
 
     python3 scripts/embed_curriculum.py          # 삽입/갱신
-    python3 scripts/embed_curriculum.py --check  # 변경 없이 대상만 출력
+    python3 scripts/embed_curriculum.py --check  # 파일을 바꾸지 않고, 다시 생성할 내용이 있으면 종료 코드 1
 
 - 외부 패키지 없이 이 저장소의 markdown 부분집합(제목, 표, 목록, 코드 블록,
   인용, 인라인 코드/굵게/링크)만 변환한다.
@@ -37,36 +37,37 @@ END = "<!-- curriculum:end -->"
 STYLE_ID = "curriculum-embed-style"
 
 CSS = """<style id="curriculum-embed-style">
-.cur-card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}
-.cur-kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}
-.cur-title{margin:0 0 6px;font-size:23px;font-weight:900;color:var(--fg)}
-.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:14px;line-height:1.75}
-.cur-sec{margin-top:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
-.cur-sec>summary{cursor:pointer;list-style:none;padding:13px 16px;font-size:16px;font-weight:900;color:var(--fg)}
+.cur-card{margin-top:0;padding:14px 0 18px;border:0;border-top:1px solid var(--border);border-radius:0;background:none}
+.cur-kicker{font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--accent)}
+.cur-title{margin:3px 0 6px;font-size:17px;font-weight:800;color:var(--fg)}
+.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-sec{margin-top:6px;border:1px solid var(--border);border-radius:0;background:var(--surface)}
+.cur-sec>summary{cursor:pointer;list-style:none;padding:6px 10px;font-size:14px;font-weight:800;color:var(--fg)}
 .cur-sec>summary::-webkit-details-marker{display:none}
 .cur-sec>summary::before{content:"▸";display:inline-block;width:16px;color:var(--accent)}
+.cur-sec[open]>summary{border-bottom:1px solid var(--border);background:var(--surface-2)}
 .cur-sec[open]>summary::before{content:"▾"}
-.cur-body{padding:2px 16px 16px;color:var(--fg-2);font-size:13.5px;line-height:1.75}
-.cur-body h4{margin:16px 0 6px;font-size:14.5px;font-weight:900;color:var(--fg)}
-.cur-body p{margin:8px 0}
-.cur-body ul,.cur-body ol{margin:6px 0 8px 22px;padding:0}
+.cur-body{padding:4px 12px 12px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-body h4{margin:12px 0 4px;font-size:13.5px;font-weight:800;color:var(--fg)}
+.cur-body p{margin:6px 0}
+.cur-body ul,.cur-body ol{margin:4px 0 6px 20px;padding:0}
 .cur-body ul{list-style:disc}
 .cur-body ol{list-style:decimal}
-.cur-body li::marker{color:var(--accent-dark)}
-.cur-body li{margin:3px 0}
-.cur-body code{padding:1px 5px;border-radius:5px;background:rgba(15,23,42,.06);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--fg)}
+.cur-body li::marker{color:var(--accent)}
+.cur-body li{margin:2px 0}
+.cur-body code{padding:0 4px;border-radius:2px;background:var(--warn-bg);font:12px var(--font-mono);color:var(--warn)}
 .cur-body a{color:var(--accent-dark);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
-.cur-code{margin:10px 0;padding:14px 16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+.cur-code{margin:8px 0;padding:8px 10px;border:1px solid var(--border);border-radius:0;overflow:auto;background:var(--bg);color:var(--fg-2);font:12px/1.6 var(--font-mono);white-space:pre}
 .cur-code code{padding:0;background:none;color:inherit;font:inherit}
-.cur-quote{margin:10px 0;padding:12px 14px;border-radius:9px;background:#FFF8E8;color:#854D0E;font-size:13px;line-height:1.7}
+.cur-quote{margin:8px 0;padding:6px 10px;border-left:2px solid var(--warn);border-radius:0;background:var(--warn-bg);color:var(--warn);font-size:12.5px;line-height:1.6}
 .cur-quote p{margin:0}
-.cur-table-wrap{overflow:auto;margin:10px 0}
-.cur-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
-.cur-table th,.cur-table td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
+.cur-table-wrap{overflow:auto;margin:8px 0}
+.cur-table{width:100%;min-width:600px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
+.cur-table th,.cur-table td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
 .cur-table th{background:var(--surface-2);color:var(--muted);font-size:11px;white-space:nowrap}
-.cur-hr{border:0;border-top:1px solid var(--border);margin:14px 0}
-.cur-foot{margin-top:12px;font-size:12px;color:var(--muted)}
-@media(max-width:700px){.cur-card{padding:16px}.cur-body{padding:2px 12px 12px}}
+.cur-hr{border:0;border-top:1px solid var(--border);margin:10px 0}
+.cur-foot{margin-top:8px;font-size:12px;color:var(--muted)}
+@media(max-width:700px){.cur-body{padding:4px 10px 10px}}
 </style>"""
 
 
@@ -249,7 +250,7 @@ def render_doc(md: str, label: str, source: str) -> str:
     return "\n".join(parts)
 
 
-def embed(page: Path, block: str) -> bool:
+def embed(page: Path, block: str, write: bool = True) -> bool:
     s = page.read_text(encoding="utf-8")
     # 이전 블록은 위치와 무관하게 제거한 뒤 항상 </main> 안쪽 끝에 넣는다.
     # (학습 페이지는 body 가 overflow:hidden 이고 main 만 스크롤되므로 main 밖에
@@ -263,24 +264,30 @@ def embed(page: Path, block: str) -> bool:
     if idx == -1:
         raise SystemExit(f"{page.name}: </main> 을 찾지 못했습니다.")
     new = s_wo[:idx].rstrip() + "\n" + block + "\n" + s_wo[idx:]
-    if new != s:
+    if new == s:
+        return False
+    if write:
         page.write_text(new, encoding="utf-8")
-        return True
-    return False
+    return True
 
 
 def main() -> None:
     check = "--check" in sys.argv
+    stale = []
     for md_name, label, pages in TARGETS:
         md = (CURRICULUM / md_name).read_text(encoding="utf-8")
         block = render_doc(md, label, md_name)
         for page_name in pages:
             page = LEARNING / page_name
+            changed = embed(page, block, write=not check)
             if check:
-                print(f"{md_name} -> {page.relative_to(ROOT)}")
+                print(f"{md_name} -> {page.relative_to(ROOT)}: {'다시 생성 필요' if changed else '최신'}")
+                if changed:
+                    stale.append(page_name)
                 continue
-            changed = embed(page, block)
             print(f"{md_name} -> {page.relative_to(ROOT)}: {'updated' if changed else 'unchanged'} ({len(block):,} chars)")
+    if stale:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -1026,12 +1026,20 @@ function ensureSiteFooter(user) {
   // 화면별로 누락되지 않도록 공통 상태 바를 한 번만 만든다. 트레이딩 화면처럼
   // #site-footer가 body 바로 아래가 아니어도 기존 요소를 재사용한다.
   let footer = document.getElementById('site-footer');
+  let note = '';
   if (!footer) {
-    if (document.body.querySelector(':scope > footer')) return;
-    footer = document.createElement('footer');
+    // 페이지가 따로 둔 설명 푸터는 상태 바로 바꾸고, 그 문구는 상태 바 메모로 남긴다.
+    footer = document.body.querySelector(':scope > footer');
+    if (footer) {
+      note = footer.textContent.replace(/\s+/g, ' ').trim().replace(/^Noah Trading Desk\s*·\s*/i, '');
+      footer.className = '';
+    } else {
+      footer = document.createElement('footer');
+      document.body.appendChild(footer);
+    }
     footer.id = 'site-footer';
-    document.body.appendChild(footer);
   }
+  const noteText = (note || '모든 거래 기능은 학습·테스트 용도입니다.').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   footer.classList.add('term-status');
   footer.innerHTML = `
     <div class="term-status-row">
@@ -1039,7 +1047,7 @@ function ensureSiteFooter(user) {
       <span>MODE <b>PAPER</b></span>
       <span>SCREEN <b>${terminalScreenCode()}</b></span>
       <span class="term-status-hide-sm">USER <b>${user?.loggedIn ? user.username : 'GUEST'}</b></span>
-      <span class="term-status-hide-sm">모든 거래 기능은 학습·테스트 용도입니다.</span>
+      <span class="term-status-hide-sm term-status-note">${noteText}</span>
       <span class="term-status-brand">NOAH TRADING DESK</span>
     </div>`;
   setTerminalConnection(user?.__apiReachable !== false);
@@ -1148,15 +1156,64 @@ function mountApiTestGuide() {
   };
   const guide = guides[path];
   if (!guide) return;
-  const host = document.querySelector('main > section') || document.querySelector('main');
+  // 새 레이아웃은 [data-api-guide-host] 자리에 접힌 상태로 두고, 옛 화면은 첫 섹션 끝에 펼쳐 둔다.
+  const slot = document.querySelector('[data-api-guide-host]');
+  const host = slot || document.querySelector('main > section') || document.querySelector('main');
   if (!host) return;
   const rows = guide.rows.map(([name, endpoint, input, expected]) => `<tr><th>${name}</th><td><code>${endpoint}</code></td><td>${input}</td><td>${expected}</td></tr>`).join('');
   const element = document.createElement('details');
   element.id = 'api-test-guide';
   element.className = 'api-test-guide';
-  element.open = true;
+  element.open = !slot;
   element.innerHTML = `<summary>${guide.title}<span>호출 경로 · 입력값 · 성공 기준 보기</span></summary><p class="api-test-guide-rate">${guide.rate}</p><div class="api-test-guide-scroll"><table><thead><tr><th>테스트</th><th>이 웹앱 서버 호출</th><th>필요한 값</th><th>성공 시 확인할 값</th></tr></thead><tbody>${rows}</tbody></table></div>${guide.note ? `<p class="api-test-guide-note">${guide.note}</p>` : ''}<p class="api-test-guide-note">공통 성공 형식은 <code>ok: true</code>입니다. <code>ok: false</code> 또는 HTTP 4xx/5xx이면 결과창의 <code>message</code>를 확인하세요. Key·Secret·Access Token·계좌번호는 응답에 표시하지 않습니다.</p>`;
   host.appendChild(element);
+}
+
+// 학습 문서(main.term-doc)의 섹션 제목으로 왼쪽 목차 레일을 만든다.
+function mountDocToc() {
+  const main = document.querySelector('body > main.term-doc');
+  if (!main || main.querySelector(':scope > .term-toc')) return;
+  const entries = [];
+  let seq = 0;
+  for (const section of main.querySelectorAll(':scope > section')) {
+    if (section.classList.contains('term-hero')) continue;
+    const heading = section.querySelector(':scope > :is(h2, .title, .lesson-title, .cur-title)') || section.querySelector('h2');
+    if (!heading) continue;
+    if (!section.id) section.id = `sec-${++seq}`;
+    const kicker = (section.querySelector(':scope > :is(.kicker, .cur-kicker)')?.textContent || '').split('·')[0].trim();
+    const subs = [...section.querySelectorAll(':scope > details.cur-sec > summary')].map((summary, i) => {
+      const details = summary.parentElement;
+      if (!details.id) details.id = `${section.id}-${i + 1}`;
+      return { id: details.id, label: summary.textContent.trim() };
+    });
+    entries.push({ id: section.id, label: heading.textContent.trim(), kicker, subs });
+  }
+  if (entries.length < 2) return;
+  const esc = text => text.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const items = entries.map(e => `<li><a href="#${e.id}" data-toc="${e.id}">${e.kicker ? `<small>${esc(e.kicker)}</small>` : ''}${esc(e.label)}</a>${
+    e.subs.length ? `<ol class="term-toc-sub">${e.subs.map(s => `<li><a href="#${s.id}" data-toc="${s.id}">${esc(s.label)}</a></li>`).join('')}</ol>` : ''}</li>`).join('');
+  const nav = document.createElement('nav');
+  nav.className = 'term-toc';
+  nav.setAttribute('aria-label', '이 문서의 목차');
+  nav.innerHTML = `<details${matchMedia('(min-width: 1101px)').matches ? ' open' : ''}><summary>목차 · ${entries.length}개 절</summary><ol>${items}</ol></details>`;
+  main.prepend(nav);
+
+  // 접힌 과정표 절로 이동할 때는 먼저 펼친다.
+  nav.addEventListener('click', event => {
+    const id = event.target.closest('a[data-toc]')?.dataset.toc;
+    const target = id && document.getElementById(id);
+    if (target?.tagName === 'DETAILS') target.open = true;
+  });
+
+  const links = new Map([...nav.querySelectorAll('a[data-toc]')].map(a => [a.dataset.toc, a]));
+  const observer = new IntersectionObserver(records => {
+    for (const record of records) {
+      if (!record.isIntersecting) continue;
+      links.forEach(a => a.classList.remove('active'));
+      links.get(record.target.id)?.classList.add('active');
+    }
+  }, { root: main, rootMargin: '0px 0px -75% 0px' });
+  entries.forEach(e => observer.observe(document.getElementById(e.id)));
 }
 
 async function initPage({ requireAuth = false } = {}) {
@@ -1168,6 +1225,7 @@ async function initPage({ requireAuth = false } = {}) {
   renderHeader(user);
   mountDatasetComposerModal();
   mountApiTestGuide();
+  mountDocToc();
   ensureSiteFooter(user);
   const hasMain = document.body.querySelector(':scope > main');
   const hasFooter = document.body.querySelector(':scope > footer');

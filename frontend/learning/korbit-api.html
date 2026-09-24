@@ -4,36 +4,37 @@
 <body><div id="header-mount"></div><main class="wrap"><section class="card"><div class="k">KORBIT · OPEN API LEARNING</div><h1>Korbit Open API: 공개 데이터와 권한 분리</h1><p>이 웹앱은 API Key 없이 사용할 수 있는 Korbit 공개 시세·호가 API부터 확인합니다. 개인 자산·주문·입출금 API는 생성한 키의 권한과 서명이 필요하므로 공개 화면에 연결하지 않습니다.</p></section><section class="card"><div class="k">1 · 공개 API</div><h2>KRW 거래쌍의 시세·호가를 먼저 조회합니다</h2><div class="grid"><div class="box"><b>현재가</b><p><code>GET /v2/tickers?symbol=btc_krw</code></p></div><div class="box"><b>호가</b><p><code>GET /v2/orderbook?symbol=btc_krw</code></p></div><div class="box"><b>최근 체결·캔들</b><p><code>/v2/trades</code>, <code>/v2/candles</code>는 공식 명세의 필수값을 확인해 추가합니다.</p></div></div><pre>curl 'https://api.korbit.co.kr/v2/tickers?symbol=btc_krw'&#10;curl 'https://api.korbit.co.kr/v2/orderbook?symbol=btc_krw'</pre><a class="btn" href="/korbit-api-test.html">웹앱 공개 시세 테스트 →</a></section><section class="card"><div class="k">2 · 개인 API 키</div><h2>권한을 최소화하고 서명 요청은 서버에서만 만듭니다</h2><p>Korbit 개인 API는 키별로 자산 조회, 주문 조회, 주문 신청, 입금·출금 조회·신청 권한을 따로 설정합니다. 초기에는 공개 API만 사용하고, 개인 조회가 필요할 때도 자산 조회 권한만 둡니다.</p><pre>KORBIT_API_KEY=발급받은_키&#10;KORBIT_API_SECRET=발급받은_비밀값</pre><div class="danger"><strong>주의:</strong> 이 웹앱에는 Korbit 개인 잔고, 주문, 취소, 입출금 API가 구현되어 있지 않습니다. 특히 출금 권한은 자동화 기본값으로 사용하지 마세요.</div><a class="btn" href="https://docs.korbit.co.kr/" target="_blank" rel="noopener noreferrer">Korbit 공식 API 문서 ↗</a></section>
 <!-- curriculum:start -->
 <style id="curriculum-embed-style">
-.cur-card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}
-.cur-kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}
-.cur-title{margin:0 0 6px;font-size:23px;font-weight:900;color:var(--fg)}
-.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:14px;line-height:1.75}
-.cur-sec{margin-top:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
-.cur-sec>summary{cursor:pointer;list-style:none;padding:13px 16px;font-size:16px;font-weight:900;color:var(--fg)}
+.cur-card{margin-top:0;padding:14px 0 18px;border:0;border-top:1px solid var(--border);border-radius:0;background:none}
+.cur-kicker{font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--accent)}
+.cur-title{margin:3px 0 6px;font-size:17px;font-weight:800;color:var(--fg)}
+.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-sec{margin-top:6px;border:1px solid var(--border);border-radius:0;background:var(--surface)}
+.cur-sec>summary{cursor:pointer;list-style:none;padding:6px 10px;font-size:14px;font-weight:800;color:var(--fg)}
 .cur-sec>summary::-webkit-details-marker{display:none}
 .cur-sec>summary::before{content:"▸";display:inline-block;width:16px;color:var(--accent)}
+.cur-sec[open]>summary{border-bottom:1px solid var(--border);background:var(--surface-2)}
 .cur-sec[open]>summary::before{content:"▾"}
-.cur-body{padding:2px 16px 16px;color:var(--fg-2);font-size:13.5px;line-height:1.75}
-.cur-body h4{margin:16px 0 6px;font-size:14.5px;font-weight:900;color:var(--fg)}
-.cur-body p{margin:8px 0}
-.cur-body ul,.cur-body ol{margin:6px 0 8px 22px;padding:0}
+.cur-body{padding:4px 12px 12px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-body h4{margin:12px 0 4px;font-size:13.5px;font-weight:800;color:var(--fg)}
+.cur-body p{margin:6px 0}
+.cur-body ul,.cur-body ol{margin:4px 0 6px 20px;padding:0}
 .cur-body ul{list-style:disc}
 .cur-body ol{list-style:decimal}
-.cur-body li::marker{color:var(--accent-dark)}
-.cur-body li{margin:3px 0}
-.cur-body code{padding:1px 5px;border-radius:5px;background:rgba(15,23,42,.06);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--fg)}
+.cur-body li::marker{color:var(--accent)}
+.cur-body li{margin:2px 0}
+.cur-body code{padding:0 4px;border-radius:2px;background:var(--warn-bg);font:12px var(--font-mono);color:var(--warn)}
 .cur-body a{color:var(--accent-dark);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
-.cur-code{margin:10px 0;padding:14px 16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+.cur-code{margin:8px 0;padding:8px 10px;border:1px solid var(--border);border-radius:0;overflow:auto;background:var(--bg);color:var(--fg-2);font:12px/1.6 var(--font-mono);white-space:pre}
 .cur-code code{padding:0;background:none;color:inherit;font:inherit}
-.cur-quote{margin:10px 0;padding:12px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.7}
+.cur-quote{margin:8px 0;padding:6px 10px;border-left:2px solid var(--warn);border-radius:0;background:var(--warn-bg);color:var(--warn);font-size:12.5px;line-height:1.6}
 .cur-quote p{margin:0}
-.cur-table-wrap{overflow:auto;margin:10px 0}
-.cur-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
-.cur-table th,.cur-table td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
+.cur-table-wrap{overflow:auto;margin:8px 0}
+.cur-table{width:100%;min-width:600px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
+.cur-table th,.cur-table td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
 .cur-table th{background:var(--surface-2);color:var(--muted);font-size:11px;white-space:nowrap}
-.cur-hr{border:0;border-top:1px solid var(--border);margin:14px 0}
-.cur-foot{margin-top:12px;font-size:12px;color:var(--muted)}
-@media(max-width:700px){.cur-card{padding:16px}.cur-body{padding:2px 12px 12px}}
+.cur-hr{border:0;border-top:1px solid var(--border);margin:10px 0}
+.cur-foot{margin-top:8px;font-size:12px;color:var(--muted)}
+@media(max-width:700px){.cur-body{padding:4px 10px 10px}}
 </style>
 <section class="cur-card" id="curriculum">
 <div class="cur-kicker">CURRICULUM · 4일차 모의투자·OpenAPI 실습 과정표</div>
