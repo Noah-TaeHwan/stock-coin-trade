@@ -22,6 +22,7 @@ from ai import ai_bp
 from ai_sheet import ai_sheet_bp
 from alpaca_test_api import alpaca_test_bp
 from alpaca_test_aws_api import aws_alpaca_test_bp
+from arbitrage import arb_bp
 from api_keys import api_key_bp
 from broker_test_api import broker_test_bp
 from kis_api_explorer import kis_explorer_bp
@@ -65,6 +66,7 @@ app.register_blueprint(member_bp)
 app.register_blueprint(market_bp)
 app.register_blueprint(trade_bp)
 app.register_blueprint(crypto_exchange_test_bp)
+app.register_blueprint(arb_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(ai_bp)
 app.register_blueprint(ai_sheet_bp)

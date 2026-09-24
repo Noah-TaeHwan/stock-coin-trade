@@ -164,6 +164,7 @@ function renderHeader(user) {
     { type: 'single', href: '/index.html', label: '대시보드', icon: 'fa-solid fa-gauge-high' },
     { type: 'group', label: '거래', items: [
       { href: '/trade/order.html', label: '코인',          icon: 'fa-solid fa-coins' },
+      { href: '/arbitrage.html', label: '코인 차익·김프', icon: 'fa-solid fa-scale-unbalanced' },
       { href: '/trade/stock.html', label: '주식',          icon: 'fa-solid fa-chart-line' },
       { href: '/trade/alternatives.html', label: '파생·금속·부동산', icon: 'fa-solid fa-landmark' },
     ]},
@@ -405,6 +406,7 @@ const TERMINAL_COMMANDS = [
   { codes: ['MON', 'HOME'], label: '대시보드', href: '/index.html' },
   { codes: ['EQ', 'STOCK'], label: '주식 (예: STK 005930)', href: '/trade/stock.html' },
   { codes: ['COIN', 'CRYPTO'], label: '코인 (예: BTC, KRW-ETH)', href: '/trade/order.html' },
+  { codes: ['ARB', 'KIMP'], label: '코인 차익·김프 (예: ARB ETH)', href: '/arbitrage.html', argParam: 'symbol' },
   { codes: ['PORT', 'PRT'], label: '보유자산', href: '/trade/hold.html' },
   { codes: ['AVG'], label: '물타기 계산기', href: '/trade/avg-down.html' },
   { codes: ['QUANT'], label: '퀀트 랩', href: '/quant.html' },
@@ -497,6 +499,7 @@ function runTerminalCommand(raw) {
     }
     const coinArg = tokens[1] && /^[A-Z0-9]{2,10}$/.test(tokens[1]) ? tokens[1] : '';
     if (command.href === '/trade/order.html' && coinArg) { location.href = `/trade/order.html?market=KRW-${coinArg}`; return; }
+    if (command.argParam && coinArg) { location.href = `${command.href}?${command.argParam}=${coinArg}`; return; }
     location.href = command.href;
     return;
   }

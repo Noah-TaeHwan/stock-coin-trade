@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>코인 차익·김프 — Noah Trading Desk</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+  <style>
+    @font-face { font-family:'Pretendard'; font-weight:400; font-display:swap; src:url('/fonts/Pretendard-Regular.woff2') format('woff2'); }
+    @font-face { font-family:'Pretendard'; font-weight:600; font-display:swap; src:url('/fonts/Pretendard-SemiBold.woff2') format('woff2'); }
+    @font-face { font-family:'Pretendard'; font-weight:700; font-display:swap; src:url('/fonts/Pretendard-Bold.woff2') format('woff2'); }
+    @font-face { font-family:'Pretendard'; font-weight:800; font-display:swap; src:url('/fonts/Pretendard-ExtraBold.woff2') format('woff2'); }
+    @font-face { font-family:'Pretendard'; font-weight:900; font-display:swap; src:url('/fonts/Pretendard-Black.woff2') format('woff2'); }
+
+    html, body { overflow: hidden; height: 100dvh; }
+    .trading-root { display:grid; grid-template-rows:auto minmax(0, 1fr) auto; grid-template-columns:minmax(0, 1fr); height:100dvh; overflow:hidden; }
+
+    /* 워크스페이스: 코인 목록 | 지표·추이·도크 | 시뮬레이터·안내 */
+    .arb-ws { min-height:0; display:grid; grid-template-columns:320px minmax(0, 1fr) 340px; gap:4px; padding:4px; }
+    .arb-col { min-height:0; min-width:0; display:grid; gap:4px; }
+    .arb-left   { grid-template-rows: minmax(0, 1fr); }
+    .arb-center { grid-template-rows: auto minmax(220px, 1fr) minmax(200px, 40%); }
+    .arb-right  { grid-template-rows: auto minmax(0, 1fr); }
+
+    .arb-kpis { display:flex; align-items:stretch; flex-wrap:wrap; gap:0; background:var(--surface); border:1px solid var(--border); }
+    .arb-kpi { display:grid; gap:1px; padding:5px 12px; border-right:1px solid var(--border); min-width:0; }
+    .arb-kpi span { color:var(--muted); font-size:10.5px; font-weight:700; white-space:nowrap; }
+    .arb-kpi b { color:var(--fg); font-family:var(--font-mono); font-size:15px; font-weight:700; white-space:nowrap; }
+    .arb-kpi small { color:var(--muted); font-family:var(--font-mono); font-size:10.5px; white-space:nowrap; }
+    .arb-kpi--sel b { font-size:17px; }
+    .arb-sources { margin-left:auto; display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; padding:5px 10px; font-family:var(--font-mono); font-size:10.5px; color:var(--muted); }
+    .src-dot { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+    .src-dot i { width:7px; height:7px; border-radius:50%; background:var(--flat); }
+    .src-dot[data-status="ok"] i { background:var(--up); }
+    .src-dot[data-status="error"] i { background:var(--down); }
+    .src-dot[data-status="blocked"] i { background:var(--warn); }
+
+    .arb-chart-bar { gap:6px; flex-wrap:wrap; min-height:30px; text-transform:none; letter-spacing:0; }
+    #arbHover { color:var(--fg-2); font-family:var(--font-mono); font-size:11px; font-weight:600; }
+    #premiumChart { flex:1 1 auto; min-height:0; position:relative; }
+    .arb-chart-note { padding:3px 10px; border-top:1px solid var(--border); color:var(--muted); font-size:10.5px; }
+
+    .arb-list tbody tr { cursor:pointer; }
+    .arb-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
+    .arb-list th[data-sort] { cursor:pointer; }
+    .arb-list th[data-sort].sorted { color:var(--accent); }
+
+    .arb-dock-pane { display:none; }
+    .arb-dock-pane.active { display:block; }
+    .heat td.cell { cursor:pointer; min-width:74px; }
+    .heat td.cell small { display:block; color:var(--muted); font-size:10px; }
+    .heat td.cell.diag { cursor:default; color:var(--muted); background:var(--surface-2); }
+    /* 호가 깊이가 모자란 칸은 빗금으로 표시한다(색만으로 구분하지 않음). */
+    .heat td.cell.thin { background-image:repeating-linear-gradient(45deg, transparent 0 5px, rgba(255,214,10,.16) 5px 7px); }
+    .heat td.cell.picked { outline:1px solid var(--accent); outline-offset:-1px; }
+    .heat-legend { display:flex; align-items:center; flex-wrap:wrap; gap:6px 14px; padding:6px 10px; color:var(--muted); font-size:11px; }
+    .heat-legend .sw { display:inline-block; width:14px; height:10px; margin-right:4px; vertical-align:-1px; border:1px solid var(--border); }
+    .dock-note { padding:6px 10px; color:var(--muted); font-size:11px; line-height:1.55; }
+    .dock-note a { color:var(--info); }
+
+    .sim { display:grid; gap:6px; padding:8px; }
+    .sim .lbl { color:var(--muted); font-size:11px; font-weight:700; }
+    .sim-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .sim select.dark-input { padding-right:4px; }
+    .sim-out { width:100%; border-collapse:collapse; font-size:12px; }
+    .sim-out th { padding:3px 0; color:var(--muted); font-weight:600; text-align:left; }
+    .sim-out td { padding:3px 0; color:var(--fg); font-family:var(--font-mono); text-align:right; white-space:nowrap; }
+    .sim-out tr.total th, .sim-out tr.total td { border-top:1px solid var(--border-strong); padding-top:5px; color:var(--fg); font-size:13.5px; font-weight:800; }
+    .sim-warn { display:none; padding:5px 8px; border:1px solid rgba(255,214,10,.4); background:var(--warn-bg); color:var(--warn); font-size:11.5px; }
+    .sim-warn.show { display:block; }
+    .sim-best { color:var(--muted); font-size:11px; }
+    .sim-best b { color:var(--fg-2); font-family:var(--font-mono); }
+
+    .risk { padding:8px 10px 10px; color:var(--fg-2); font-size:12px; line-height:1.6; }
+    .risk ul { margin:0; padding-left:16px; list-style:disc; }
+    .risk li + li { margin-top:4px; }
+    .risk b { color:var(--warn); }
+    .risk p { margin:8px 0 0; color:var(--muted); font-size:11px; }
+
+    @media (max-width: 1280px) {
+      .arb-ws { grid-template-columns: minmax(0, 1fr) 320px; }
+      .arb-left { grid-column: 1 / -1; grid-row: 2; grid-template-rows: 340px; }
+      html, body { overflow:auto; height:auto; }
+      .trading-root { height:auto; min-height:100dvh; overflow:visible; }
+      .arb-center { grid-template-rows: auto 380px 340px; }
+      .arb-right { grid-template-rows: auto auto; }
+    }
+    @media (max-width: 900px) {
+      .arb-ws { grid-template-columns: minmax(0, 1fr); }
+      .arb-center { order:1; } .arb-right { order:2; } .arb-left { order:3; grid-row:auto; }
+      .arb-center { grid-template-rows: auto 320px 360px; }
+      .arb-sources { margin-left:0; }
+      .arb-kpi { flex:1 1 45%; border-bottom:1px solid var(--border); }
+      .arb-kpi--sel { flex-basis:100%; }
+      .arb-kpi small { white-space:normal; overflow-wrap:anywhere; }
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','sans-serif']}}}}</script>
+  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+<div class="trading-root">
+  <div id="header-mount"></div>
+
+  <div class="arb-ws">
+    <!-- ── 왼쪽: 코인별 김프 ── -->
+    <div class="arb-col arb-left">
+      <section class="term-panel" aria-labelledby="kimpTitle">
+        <div class="term-panel__bar"><span class="term-code">KIMP</span><span id="kimpTitle">코인별 가격 차이</span><span class="term-sub">10초 갱신</span><span class="term-right"><span class="live-dot" id="arbLive"></span><span class="term-link" title="선택 코인과 연결됨"></span></span></div>
+        <div class="term-panel__body">
+          <table class="term-table arb-list">
+            <thead><tr>
+              <th data-sort="symbol">코인</th>
+              <th data-sort="kimpUsdtPct" title="업비트 ÷ (해외 USDT 가격 × 업비트 USDT 원화가격) − 1">김프 USDT</th>
+              <th data-sort="kimpFxPct" title="업비트 ÷ (해외 USDT 가격 × USD/KRW 환율) − 1">김프 환율</th>
+              <th data-sort="domesticPct" title="원화 거래소 4곳 중 최고가 ÷ 최저가 − 1">국내 차</th>
+            </tr></thead>
+            <tbody id="coinListBody"><tr><td class="empty" colspan="4">로딩 중...</td></tr></tbody>
+          </table>
+          <p class="dock-note">김프 USDT는 원화로 산 USDT로 해외에서 같은 코인을 살 때 기준이고, 김프 환율은 은행 환율 기준입니다. 둘의 차이가 USDT 프리미엄입니다.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── 가운데: 지표 + 추이 + 도크 ── -->
+    <div class="arb-col arb-center">
+      <header class="arb-kpis" aria-label="환율·프리미엄 지표">
+        <div class="arb-kpi arb-kpi--sel"><span id="kpiSelLabel">BTC 김프 (USDT / 환율)</span><b><span id="kpiSelUsdt">-</span> <span style="color:var(--muted);font-size:12px;">/</span> <span id="kpiSelFx">-</span></b><small id="kpiSelPrice">-</small></div>
+        <div class="arb-kpi"><span>USD/KRW 환율</span><b id="kpiUsdKrw">-</b><small id="kpiUsdKrwAt">-</small></div>
+        <div class="arb-kpi"><span>USDT/KRW</span><b id="kpiUsdtKrw">-</b><small id="kpiUsdtSrc">-</small></div>
+        <div class="arb-kpi"><span>USDT 프리미엄</span><b id="kpiUsdtPrem">-</b><small>USDT ÷ 환율 − 1</small></div>
+        <div class="arb-sources" id="sourceDots" aria-label="시세 소스 상태"></div>
+      </header>
+
+      <section class="term-panel" aria-label="김프 추이 차트">
+        <div class="term-panel__bar arb-chart-bar">
+          <span class="term-code">PRM</span>
+          <span id="chartTitle">BTC 김프 추이</span>
+          <span class="term-sub" id="chartSub">업비트 ÷ (해외 × 업비트 USDT)</span>
+          <span id="arbHover"></span>
+          <span class="term-right" id="intervalBtns">
+            <button type="button" data-interval="1H" class="period-btn active">1H</button>
+            <button type="button" data-interval="1D" class="period-btn">1D</button>
+          </span>
+        </div>
+        <div id="premiumChart" role="img" aria-label="선택 코인의 김프 추이 선 차트"></div>
+        <div class="arb-chart-note" id="chartNote">-</div>
+      </section>
+
+      <section class="term-panel" aria-label="거래소 비교 도크">
+        <div class="term-dock-tabs" role="tablist" aria-label="거래소 비교">
+          <button type="button" class="term-dock-tab active" data-dock="matrix" role="tab" aria-selected="true">순스프레드 매트릭스</button>
+          <button type="button" class="term-dock-tab" data-dock="exchanges" role="tab" aria-selected="false">거래소별 김프</button>
+          <button type="button" class="term-dock-tab" data-dock="network" role="tab" aria-selected="false">전송·수수료</button>
+          <button type="button" class="term-dock-tab" data-dock="sources" role="tab" aria-selected="false">소스 상태</button>
+        </div>
+        <div class="term-panel__body">
+          <div class="arb-dock-pane active" id="dock-matrix">
+            <table class="term-table heat" aria-describedby="matrixLegend">
+              <thead id="matrixHead"></thead>
+              <tbody id="matrixBody"><tr><td class="empty">로딩 중...</td></tr></tbody>
+            </table>
+            <div class="heat-legend" id="matrixLegend">
+              <span>행 = 매수 거래소, 열 = 매도 거래소. 칸의 큰 숫자는 수수료·출금비를 뺀 <b style="color:var(--fg-2);">순손익 %</b>, 작은 숫자는 수수료 전 호가 차이입니다.</span>
+              <span><i class="sw" style="background:var(--up-bg);"></i>이익</span>
+              <span><i class="sw" style="background:var(--surface-2);"></i>0 근처</span>
+              <span><i class="sw" style="background:var(--down-bg);"></i>손실</span>
+              <span><i class="sw" style="background-image:repeating-linear-gradient(45deg, transparent 0 3px, rgba(255,214,10,.5) 3px 4px);"></i>호가 부족</span>
+            </div>
+          </div>
+          <div class="arb-dock-pane" id="dock-exchanges">
+            <table class="term-table heat">
+              <thead id="exchangeHead"></thead>
+              <tbody id="exchangeBody"><tr><td class="empty">로딩 중...</td></tr></tbody>
+            </table>
+            <p class="dock-note">각 원화 거래소 가격을 해외 USDT 가격 × 업비트 USDT 원화가격과 비교한 값입니다.</p>
+          </div>
+          <div class="arb-dock-pane" id="dock-network">
+            <table class="term-table">
+              <thead><tr><th>코인</th><th>네트워크</th><th>블록</th><th>확인 수</th><th>예상 전송</th><th>출금 수수료(참고)</th><th>≈ 원화</th></tr></thead>
+              <tbody id="networkBody"><tr><td class="empty" colspan="7">로딩 중...</td></tr></tbody>
+            </table>
+            <p class="dock-note" id="btcOnchainNote">-</p>
+            <table class="term-table">
+              <thead><tr><th>거래소</th><th>마켓</th><th>테이커 수수료(기본)</th><th>수수료 안내</th></tr></thead>
+              <tbody id="feeBody"></tbody>
+            </table>
+            <p class="dock-note" id="feeNote">예상 전송 시간은 블록 시간 × 입금 반영 확인 수로 계산했습니다. 거래소 출금 심사와 트래블룰 확인 시간은 빠져 있습니다. 출금 수수료와 거래 수수료는 참고값이고, 거래소·등급·네트워크마다 다르고 수시로 바뀝니다. 실제 값은 각 거래소 화면에서 확인하세요.</p>
+          </div>
+          <div class="arb-dock-pane" id="dock-sources">
+            <table class="term-table">
+              <thead><tr><th>소스</th><th>상태</th><th>내용</th></tr></thead>
+              <tbody id="sourceBody"><tr><td class="empty" colspan="3">로딩 중...</td></tr></tbody>
+            </table>
+            <p class="dock-note">원화 거래소 4곳과 OKX는 공개 API를 서버에서 조회하고 5초간 캐시합니다. Binance는 서버 위치에 따라 접속이 제한될 수 있으며, 이때는 OKX만 해외 기준으로 씁니다. 환율은 open.er-api.com 일간 값입니다.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── 오른쪽: 시뮬레이터 + 안내 ── -->
+    <div class="arb-col arb-right">
+      <section class="term-panel" aria-labelledby="simTitle">
+        <div class="term-panel__bar"><span class="term-code">SIM</span><span id="simTitle">차익 시뮬레이터</span><span class="term-sub">호가 기준 · 모의 계산</span><span class="term-right"><span class="term-link" title="선택 코인과 연결됨"></span></span></div>
+        <div class="sim">
+          <label class="lbl" for="simSize">투입 금액 (KRW)</label>
+          <input type="text" id="simSize" class="dark-input" value="1,000,000" inputmode="numeric">
+          <div class="sim-row">
+            <div><label class="lbl" for="simBuy">매수 거래소</label><select id="simBuy" class="dark-input"></select></div>
+            <div><label class="lbl" for="simSell">매도 거래소</label><select id="simSell" class="dark-input"></select></div>
+          </div>
+          <div class="sim-row">
+            <div><label class="lbl" for="simBuyFee">매수 수수료 %</label><input type="text" id="simBuyFee" class="dark-input" inputmode="decimal"></div>
+            <div><label class="lbl" for="simSellFee">매도 수수료 %</label><input type="text" id="simSellFee" class="dark-input" inputmode="decimal"></div>
+          </div>
+          <div><label class="lbl" for="simWithdraw">출금 수수료 (<span id="simWithdrawUnit">BTC</span>)</label><input type="text" id="simWithdraw" class="dark-input" inputmode="decimal"></div>
+          <div class="sim-best" id="simBest">-</div>
+          <table class="sim-out" aria-label="차익 계산 결과">
+            <tbody>
+              <tr><th>매수 평균가</th><td id="outBuyAvg">-</td></tr>
+              <tr><th>매도 평균가</th><td id="outSellAvg">-</td></tr>
+              <tr><th>호가 차이 (수수료 전)</th><td id="outGross">-</td></tr>
+              <tr><th>− 매수 수수료</th><td id="outBuyFee">-</td></tr>
+              <tr><th>− 출금 수수료</th><td id="outWithdrawFee">-</td></tr>
+              <tr><th>− 매도 수수료</th><td id="outSellFee">-</td></tr>
+              <tr class="total"><th>= 순손익</th><td id="outNet">-</td></tr>
+              <tr><th>예상 전송 시간</th><td id="outTransfer">-</td></tr>
+              <tr><th>입출금 상태</th><td id="outWallet">-</td></tr>
+            </tbody>
+          </table>
+          <div class="sim-warn" id="simWarn"></div>
+        </div>
+      </section>
+
+      <section class="term-panel" aria-labelledby="riskTitle">
+        <div class="term-panel__bar"><span class="term-code">RISK</span><span id="riskTitle">실행 전 확인</span></div>
+        <div class="term-panel__body risk">
+          <ul>
+            <li><b>전송 중 가격 변동:</b> 코인이 도착하는 동안 가격 차이가 사라질 수 있습니다. 예상 전송 시간이 길수록 위험이 커집니다.</li>
+            <li><b>트래블룰:</b> 100만 원 이상 전송하면 받는 쪽 신원 정보를 제공해야 하고, 국내 거래소는 허용한 해외 거래소로만 출금할 수 있습니다.</li>
+            <li><b>해외 거래소 차익:</b> 원화를 해외로 옮겨 반복 거래하면 외국환거래법 위반 소지가 있고, 수사 사례도 있습니다.</li>
+            <li><b>입출금 중단:</b> 거래소가 지갑 점검 중이면 가격 차이가 크게 벌어져도 옮길 수 없습니다. 빗썸만 공개 API로 상태를 확인할 수 있고, 나머지는 거래소 화면에서 확인해야 합니다.</li>
+          </ul>
+          <p>이 화면은 공개 시세로 계산한 학습·정보용 모의 결과이며 투자·법률 자문이 아닙니다. 주문과 출금 기능은 없습니다.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer id="site-footer"></footer>
+</div><!-- /trading-root -->
+
+<script src="/js/config.js"></script>
+<script src="/js/common.js?v=20260924-terminal"></script>
+<script src="/js/arbitrage.js?v=20260924-arb"></script>
+</body>
+</html>
