@@ -17,402 +17,302 @@
     .trading-root {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr);
       height: 100dvh;
       overflow: hidden;
     }
-    .trading-body {
-      flex: 1;
+
+    /* TWS형 워크스페이스: 종목 모니터 | 시세·차트·도크 | 주문·호가 */
+    .stk-ws {
       min-height: 0;
-      overflow: hidden;
       display: grid;
-      grid-template-columns: minmax(0,1fr) 340px;
-      gap: 0;
+      grid-template-columns: 260px minmax(0, 1fr) 320px;
+      gap: 4px;
+      padding: 4px;
     }
-    @media (max-width: 1024px) {
-      .trading-body { grid-template-columns: 1fr; }
-      .market-col   { display: none; }
-    }
-    .left-col {
-      min-height: 0;
-      overflow-y: scroll;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      padding: 10px 12px 0 10px;
-      scrollbar-width: thin;
-      scrollbar-color: #94A3B8 #E8EDF5;
-    }
-    .left-col::-webkit-scrollbar { width: 10px; }
-    .left-col::-webkit-scrollbar-track { margin: 8px 0; border-radius: 999px; background: #E8EDF5; }
-    .left-col::-webkit-scrollbar-thumb { border: 3px solid #E8EDF5; border-radius: 999px; background: #94A3B8; }
-    .left-col::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-    .market-col {
-      min-height: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      border-left:1px solid var(--border);
-    }
-    .market-col-scroll { flex: 1; overflow-y: scroll; scrollbar-width:thin; scrollbar-color:#94A3B8 #E8EDF5; }
-    .market-col-scroll::-webkit-scrollbar { width:9px; }
-    .market-col-scroll::-webkit-scrollbar-track { background:#E8EDF5; }
-    .market-col-scroll::-webkit-scrollbar-thumb { border:2px solid #E8EDF5; border-radius:999px; background:#94A3B8; }
+    .stk-col { min-height: 0; min-width: 0; display: grid; gap: 4px; }
+    .stk-left   { grid-template-rows: minmax(0, 1.3fr) minmax(0, 1fr); }
+    .stk-center { grid-template-rows: auto minmax(240px, 1fr) minmax(170px, 36%); }
+    .stk-right  { grid-template-rows: auto minmax(0, 1fr); }
 
-    .trade-tabs { display:flex; gap:8px; padding:10px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#F8FAFD 0%,#F2F6FC 100%); }
-    .trade-tab { position:relative; flex:1; min-height:54px; padding:9px 10px; border:1px solid transparent; border-radius:9px; color:var(--muted); background:transparent; font-family:inherit; font-size:15px; font-weight:800; cursor:pointer; transition:background .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-    .trade-tab:hover { color:var(--accent-dark); background:rgba(255,255,255,.76); border-color:rgba(41,98,255,.18); }
-    .trade-tab.active { color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-dark)); border-color:var(--accent-dark); box-shadow:0 4px 12px rgba(41,98,255,.26); transform:translateY(-1px); }
-    .trade-tab::after { display:block; margin-top:3px; color:inherit; font-size:11px; font-weight:600; opacity:.74; }
-    .trade-tab[data-tab="positions"]::after { content:'내 자산'; }
-    .trade-tab[data-tab="overview"]::after { content:'시세 · 계좌'; }
-    .trade-tab[data-tab="history"]::after { content:'체결 기록'; }
-    .trade-tab[data-tab="orderbook"]::after { content:'실시간 가격'; }
-    .ma-legend { display:flex; align-items:center; gap:6px; padding:5px 12px; border-bottom:1px solid var(--border); }
-    .ma-toggle { --ma-color:var(--accent); display:inline-flex; align-items:center; gap:4px; min-height:24px; padding:2px 7px; border:1px solid transparent; border-radius:5px; color:var(--ma-color); background:transparent; font-family:inherit; font-size:10px; font-weight:800; cursor:pointer; transition:background .15s,border-color .15s,opacity .15s; }
-    .ma-toggle::before { content:''; width:13px; height:2px; border-radius:999px; background:currentColor; }
-    .ma-toggle:hover { border-color:color-mix(in srgb, var(--ma-color) 38%, transparent); background:color-mix(in srgb, var(--ma-color) 9%, transparent); }
-    .ma-toggle:not(.active) { color:var(--muted); opacity:.62; text-decoration:line-through; }
-    .ma-toggle:not(.active)::before { background:currentColor; }
-    .stock-chart-card { flex:0 0 auto; min-height:0; }
-    #stockChart { height:clamp(340px, 42vh, 520px) !important; min-height:340px; }
-    .detail-launcher { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-top:0; padding:6px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius) var(--radius); background:var(--surface); box-shadow:var(--shadow-sm); }
-    .detail-launcher-btn { min-height:50px; padding:7px; border:1px solid var(--border); border-radius:8px; color:var(--accent-dark); background:linear-gradient(180deg,#fff,#F5F8FD); font-family:inherit; font-size:12px; font-weight:850; cursor:pointer; transition:transform .15s,box-shadow .15s,border-color .15s; }
-    .detail-launcher-btn::after { display:block; margin-top:3px; color:var(--muted); font-size:9px; font-weight:600; }
-    .detail-launcher-btn[data-tab="positions"]::after { content:'내 자산'; }
-    .detail-launcher-btn[data-tab="overview"]::after { content:'시세 · 계좌'; }
-    .detail-launcher-btn[data-tab="history"]::after { content:'체결 기록'; }
-    .detail-launcher-btn[data-tab="orderbook"]::after { content:'실시간 가격'; }
-    .detail-launcher-btn:hover { border-color:var(--accent); box-shadow:0 5px 14px rgba(41,98,255,.18); transform:translateY(-1px); }
-    .usage-guide { flex:1 0 140px; display:flex; flex-direction:column; justify-content:center; min-height:140px; padding:18px 22px; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius) var(--radius); background:linear-gradient(135deg,#F8FBFF 0%,#EEF4FF 100%); }
-    .usage-guide-title { display:flex; align-items:center; gap:7px; margin:0; color:var(--accent-dark); font-size:12px; font-weight:900; }
-    .usage-guide-title::before { content:'i'; display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; color:#fff; background:var(--accent); font-size:11px; font-family:serif; font-weight:900; }
-    .usage-guide-message { max-width:760px; margin:7px 0 0 24px; color:var(--fg-2); font-size:13px; line-height:1.65; }
-    .details-modal-backdrop { position:fixed; inset:0; z-index:110; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,23,42,.5); backdrop-filter:blur(3px); }
-    .details-modal-backdrop.open { display:flex; }
-    .details-modal { width:95vw; max-width:95vw; height:95dvh; max-height:95dvh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:16px; background:var(--surface); box-shadow:0 24px 64px rgba(15,23,42,.3); }
-    .details-modal-header { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border); }
-    .details-modal-title { margin:0; color:var(--fg); font-size:22px; font-weight:900; }
-    .details-modal-close { width:38px; height:38px; border:0; border-radius:9px; color:var(--muted); background:var(--surface-2); font-size:26px; line-height:1; cursor:pointer; }
-    .details-modal-body { flex:1 1 auto; min-height:0; overflow:auto; font-size:15px; }
-    .positions-overview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; padding:18px; border-bottom:1px solid var(--border); background:var(--surface-2); }
-    .positions-overview .glass-card { box-shadow:none; }
-    .order-panel { flex-shrink:0; margin:8px 8px 0; }
-    @media (max-width:640px) { .positions-overview { grid-template-columns:1fr; } }
+    /* 종목 헤더 (Bloomberg 보안 헤더) */
+    .stk-sec { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:6px 10px; background:var(--surface); border:1px solid var(--border); }
+    .stk-sec-id { display:flex; align-items:baseline; gap:8px; min-width:0; }
+    #chartStockName { color:var(--fg); font-size:17px; font-weight:900; }
+    .stk-sec-code { color:var(--accent); font-family:var(--font-mono); font-size:12px; font-weight:800; letter-spacing:.04em; }
+    .stk-sec-px { display:flex; align-items:baseline; gap:10px; font-family:var(--font-mono); }
+    #quotePrice { font-size:20px; font-weight:700; }
+    #quoteChangeRate { font-size:13px; font-weight:700; }
+    .stk-sec-idx { margin-left:auto; display:flex; gap:14px; font-family:var(--font-mono); }
+    .stk-sec-idx > div { display:grid; grid-template-columns:auto auto; column-gap:6px; align-items:baseline; }
+    .stk-sec-idx .lbl { grid-row:span 2; color:var(--accent); font-size:11px; font-weight:800; }
+    .stk-sec-idx .v { color:var(--fg); font-size:12.5px; font-weight:700; }
+    .stk-sec-idx .c { font-size:11px; font-weight:700; }
 
-    .stock-picker { position:relative; min-width:min(420px, 72vw); }
-    .stock-picker-input-wrap { display:flex; align-items:center; gap:8px; min-height:38px; padding:0 10px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:10px; transition:border-color .15s,box-shadow .15s; }
-    .stock-picker-input-wrap:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
-    .stock-picker-input-wrap i { color:var(--muted); }
-    .stock-picker-input { width:100%; min-width:0; border:0; outline:0; color:var(--fg); background:transparent; font-size:13px; font-weight:650; }
+    /* 차트 패널 */
+    .stk-chart-bar { gap:6px; flex-wrap:wrap; min-height:34px; padding:3px 8px; text-transform:none; letter-spacing:0; }
+    .ma-legend { display:flex; align-items:center; gap:4px; padding:3px 8px; border-bottom:1px solid var(--border); background:var(--surface); }
+    .ma-toggle { --ma-color:var(--accent); display:inline-flex; align-items:center; gap:4px; min-height:20px; padding:1px 6px; border:1px solid transparent; color:var(--ma-color); background:transparent; font-family:var(--font-mono); font-size:10.5px; font-weight:800; cursor:pointer; }
+    .ma-toggle::before { content:''; width:12px; height:2px; background:currentColor; }
+    .ma-toggle:hover { border-color:var(--border-strong); }
+    .ma-toggle:not(.active) { color:var(--muted); opacity:.6; text-decoration:line-through; }
+    #stockChart { flex:1 1 auto; min-height:0; }
+    #watchlistBtn { font-size:16px; background:none; border:none; cursor:pointer; color:var(--muted); padding:0 2px; line-height:1; }
+
+    /* 종목 검색 */
+    .stock-picker { position:relative; min-width:min(340px, 60vw); }
+    .stock-picker-input-wrap { display:flex; align-items:center; gap:6px; height:26px; padding:0 6px; background:var(--bg); border:1px solid var(--border-strong); }
+    .stock-picker-input-wrap:focus-within { border-color:var(--accent); }
+    .stock-picker-input-wrap i { color:var(--muted); font-size:11px; }
+    .stock-picker-input { width:100%; min-width:0; border:0; outline:0; color:var(--fg); background:transparent; font-size:12.5px; font-weight:650; }
     .stock-picker-input::placeholder { color:var(--muted); font-weight:500; }
-    .stock-picker-clear { display:none; width:22px; height:22px; border:0; border-radius:50%; color:var(--muted); background:transparent; cursor:pointer; }
+    .stock-picker-clear { display:none; width:18px; height:18px; border:0; color:var(--muted); background:transparent; cursor:pointer; }
     .stock-picker-input:not(:placeholder-shown) ~ .stock-picker-clear { display:block; }
-    .stock-picker-clear:hover { color:var(--fg); background:var(--surface); }
-    .stock-picker-search { flex:none; min-width:52px; height:26px; border:0; border-radius:7px; color:#fff; background:var(--accent); font-size:12px; font-weight:800; cursor:pointer; }
+    .stock-picker-clear:hover { color:var(--fg); }
+    .stock-picker-search { flex:none; height:20px; padding:0 8px; border:0; color:var(--accent-ink); background:var(--accent); font-family:var(--font-mono); font-size:10.5px; font-weight:900; cursor:pointer; }
     .stock-picker-search:hover { background:var(--accent-dark); }
-    .order-percent-btn { min-height:25px; padding:0 2px; border:1px solid var(--border); border-radius:5px; color:var(--fg); background:var(--surface); font-size:11px; font-weight:750; white-space:nowrap; cursor:pointer; }
-    .order-percent-btn:hover { border-color:var(--accent); color:var(--accent-dark); background:rgba(37,99,235,.08); }
-    .stock-picker-results { position:absolute; z-index:40; top:calc(100% + 6px); left:0; right:0; display:none; max-height:320px; overflow-y:auto; padding:6px; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 16px 32px rgba(15,23,42,.18); }
+    .stock-picker-results { position:absolute; z-index:40; top:calc(100% + 3px); left:0; right:0; display:none; max-height:320px; overflow-y:auto; padding:3px; background:var(--surface); border:1px solid var(--border-strong); box-shadow:var(--shadow-md); }
     .stock-picker-results.open { display:block; }
-    .stock-picker-result { width:100%; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:9px 10px; border:0; border-radius:7px; color:var(--fg); background:transparent; text-align:left; cursor:pointer; }
-    .stock-picker-result:hover, .stock-picker-result.active { background:rgba(37,99,235,.1); }
-    .stock-picker-result-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:800; }
-    .stock-picker-result-meta { display:block; margin-top:2px; color:var(--muted); font-size:11px; }
-    .stock-picker-result-code { color:var(--accent-dark); font-size:12px; font-weight:800; }
-    .stock-picker-empty { padding:14px 10px; color:var(--muted); font-size:12px; text-align:center; }
-    .stock-picker-selected { display:block; margin:4px 0 0 2px; color:var(--muted); font-size:10px; }
-    @media (max-width:640px) { .stock-picker { min-width:100%; width:100%; } }
+    .stock-picker-result { width:100%; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:6px 8px; border:0; color:var(--fg); background:transparent; text-align:left; cursor:pointer; }
+    .stock-picker-result:hover, .stock-picker-result.active { background:var(--surface-3); box-shadow:inset 2px 0 0 var(--accent); }
+    .stock-picker-result-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12.5px; font-weight:800; }
+    .stock-picker-result-meta { display:block; margin-top:1px; color:var(--muted); font-size:11px; }
+    .stock-picker-result-code { color:var(--accent); font-size:12px; font-weight:800; }
+    .stock-picker-empty { padding:12px 10px; color:var(--muted); font-size:12px; text-align:center; }
+    .stock-picker-selected { display:none; }
 
-    .avgdown-modal-backdrop { position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(15,23,42,.52); }
+    /* 주문 티켓 */
+    .order-ticket { padding:8px; display:grid; gap:6px; }
+    .order-ticket label, .order-ticket .lbl { color:var(--muted); font-size:11px; font-weight:700; }
+    .order-percent-btn { min-height:22px; padding:0 2px; border:1px solid var(--border-strong); color:var(--fg-2); background:transparent; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer; }
+    .order-percent-btn[data-order-side="buy"]:hover  { border-color:var(--up); color:var(--up); }
+    .order-percent-btn[data-order-side="sell"]:hover { border-color:var(--down); color:var(--down); }
+    #orderSummary { padding:6px 8px; background:var(--bg); border:1px solid var(--border); font-size:11.5px; line-height:1.6; color:var(--muted); }
+    #orderSummary strong { font-family:var(--font-mono); }
+    #avgDownBtn { width:100%; padding:.35rem; border:1px solid var(--border-strong); color:var(--fg-2); background:transparent; font-size:11.5px; font-weight:800; cursor:pointer; }
+    #avgDownBtn:hover { color:var(--accent); border-color:var(--accent); }
+    #stockMessage { min-height:16px; margin:0; font-size:11.5px; color:var(--muted); }
+
+    /* 하단 도크 */
+    .stk-dock-pane { display:none; }
+    .stk-dock-pane.active { display:block; }
+    .positions-overview { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1px; background:var(--border); }
+    .positions-overview > div { padding:8px 12px; background:var(--surface); }
+    .stk-kv-title { margin-bottom:4px; color:var(--accent); font-family:var(--font-mono); font-size:11px; font-weight:800; letter-spacing:.06em; }
+    .stk-kv { display:flex; justify-content:space-between; align-items:baseline; padding:3px 0; border-top:1px solid var(--border); font-size:12.5px; }
+    .stk-kv:first-of-type { border-top:0; }
+    .stk-kv span:first-child { color:var(--muted); }
+    .stk-kv span:last-child { font-family:var(--font-mono); font-weight:700; color:var(--fg); }
+    #resetBtn { padding:1px 8px; border:1px solid rgba(255,77,77,.4); color:var(--down); background:transparent; font-size:11px; font-weight:700; cursor:pointer; }
+    #resetBtn:hover { color:#000; background:var(--down); }
+
+    /* 종목 모니터 */
+    .wl-tabs { display:flex; gap:1px; }
+    .wl-tab { padding:1px 8px; border:1px solid var(--border-strong); color:var(--fg-2); background:transparent; font-family:var(--font-mono); font-size:10.5px; font-weight:800; cursor:pointer; }
+    .wl-tab.active { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); }
+    .stk-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
+    .stk-list tbody tr { cursor:pointer; }
+
+    /* 물타기 계산기 모달 */
+    .avgdown-modal-backdrop { position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.7); }
     .avgdown-modal-backdrop.open { display:flex; }
-    .avgdown-modal { width:95vw; max-width:95vw; height:95dvh; max-height:95dvh; overflow-y:auto; padding:20px; border:1px solid var(--border); border-radius:16px; background:var(--surface); box-shadow:0 24px 60px rgba(15,23,42,.28); }
-    .avgdown-result { display:grid; grid-template-columns:1fr 1fr; overflow:hidden; margin-top:14px; border:1px solid var(--border); border-radius:10px; }
-    .avgdown-result > div { padding:10px; background:var(--surface-2); border-bottom:1px solid var(--border); }
-    .avgdown-result > div:nth-child(odd) { border-right:1px solid var(--border); }
-    .avgdown-result > div:nth-last-child(-n+2) { border-bottom:0; }
+    .avgdown-modal { width:min(560px, 95vw); max-height:95dvh; overflow-y:auto; padding:16px; border:1px solid var(--border-strong); border-top:2px solid var(--accent); background:var(--surface); box-shadow:var(--shadow-md); }
+    .avgdown-result { display:grid; grid-template-columns:1fr 1fr; gap:1px; overflow:hidden; margin-top:12px; background:var(--border); border:1px solid var(--border); }
+    .avgdown-result > div { padding:8px 10px; background:var(--surface-2); }
+    .avgdown-card { padding:8px 10px; background:var(--surface-2); border:1px solid var(--border); }
 
-    #site-footer {
-      margin-top: 0;
+    @media (max-width: 1280px) {
+      .stk-ws { grid-template-columns: minmax(0, 1fr) 300px; }
+      .stk-left { grid-column: 1 / -1; grid-row: 2; grid-template-rows: 260px; grid-template-columns: 1fr 1fr; }
+      html, body { overflow: auto; height: auto; }
+      .trading-root { height: auto; min-height: 100dvh; overflow: visible; }
+      .stk-center { grid-template-rows: auto 420px 280px; }
+      .stk-right { grid-template-rows: auto 420px; }
+    }
+    @media (max-width: 900px) {
+      .stk-ws { grid-template-columns: minmax(0, 1fr); }
+      .stk-center { order: 1; } .stk-right { order: 2; } .stk-left { order: 3; }
+      .stk-left { grid-template-columns: 1fr; grid-template-rows: 260px 220px; grid-row: auto; }
+      .stk-center { grid-template-rows: auto 360px 300px; }
+      .stk-right { grid-template-rows: auto 330px; }
+      .stk-sec-idx { margin-left:0; }
+      .positions-overview { grid-template-columns:1fr; }
     }
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','sans-serif']}}}}</script>
-  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
+  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
 <div class="trading-root">
   <div id="header-mount"></div>
 
-  <div class="trading-body">
-    <!-- ── 왼쪽 컬럼 ── -->
-    <div class="left-col">
-
-      <!-- 종목명 + 현재가 요약 -->
-      <div style="display:flex;align-items:center;gap:10px;padding:4px 2px 8px;flex-wrap:wrap;">
-        <span id="chartStockName" style="font-size:20px;font-weight:900;color:var(--fg);">-</span>
-        <span id="dataSourceBadge" class="hidden badge badge-muted" style="font-size:11px;">시뮬레이션</span>
-        <span id="quotePrice" style="font-size:18px;font-weight:900;color:var(--accent-dark);margin-left:4px;">-</span>
-        <span id="quoteChangeRate" style="font-size:13px;font-weight:700;">-</span>
-        <span class="live-dot" title="실시간 갱신 중"></span>
-        <!-- 시장지수 compact -->
-        <div style="margin-left:auto;display:flex;gap:12px;">
-          <div style="text-align:center;">
-            <div style="font-size:10px;color:var(--muted);font-weight:700;">KOSPI</div>
-            <div id="kospiPrice" style="font-size:13px;font-weight:800;color:var(--fg);">-</div>
-            <div id="kospiChange" style="font-size:10px;font-weight:700;">-</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:10px;color:var(--muted);font-weight:700;">KOSDAQ</div>
-            <div id="kosdaqPrice" style="font-size:13px;font-weight:800;color:var(--fg);">-</div>
-            <div id="kosdaqChange" style="font-size:10px;font-weight:700;">-</div>
-          </div>
+  <div class="stk-ws">
+    <!-- ── 왼쪽: 종목 모니터 + 내 보유 종목 ── -->
+    <div class="stk-col stk-left">
+      <section class="term-panel" aria-labelledby="wlTitle">
+        <div class="term-panel__bar"><span class="term-code">WL</span><span id="wlTitle">종목 모니터</span>
+          <span class="term-right"><span class="wl-tabs" role="tablist" aria-label="종목 목록"><button type="button" class="wl-tab active" data-wl="ALL" role="tab" aria-selected="true">전체</button><button type="button" class="wl-tab" data-wl="WATCH" role="tab" aria-selected="false">관심</button></span><span class="term-link" title="선택 종목과 연결됨"></span></span>
         </div>
-      </div>
+        <div class="term-panel__body">
+          <table class="term-table stk-list">
+            <thead><tr><th>종목</th><th>현재가</th><th>등락률</th></tr></thead>
+            <tbody id="stockWatchListBody"><tr><td class="empty" colspan="3">로딩 중...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="term-panel" aria-labelledby="posListTitle">
+        <div class="term-panel__bar"><span class="term-code">POS</span><span id="posListTitle">내 보유 종목</span><span class="term-right"><span class="live-dot"></span><span class="term-link" title="선택 종목과 연결됨"></span></span></div>
+        <div class="term-panel__body">
+          <table class="term-table stk-list">
+            <thead><tr><th>종목</th><th>수량</th><th>평가손익</th></tr></thead>
+            <tbody id="stockMarketListBody"><tr><td class="empty" colspan="3">로딩 중...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
 
-      <!-- LW Charts 캔들 차트 -->
-      <div class="glass-card stock-chart-card" style="padding:0;overflow:hidden;" data-guide="캔들을 드래그해 기간을 이동하고, 마우스 휠로 확대·축소할 수 있습니다.">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="stock-picker" id="stockPicker" data-guide="종목명·종목코드·업종으로 종목을 검색해 차트를 바꿉니다.">
-              <div class="stock-picker-input-wrap">
-                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                <input id="stockPickerInput" class="stock-picker-input" type="search" autocomplete="off"
-                  placeholder="회사명 · 종목코드 · 업종으로 검색" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="stockSearchResults">
-                <button id="stockPickerClear" class="stock-picker-clear" type="button" aria-label="종목 검색 지우기"><i class="fa-solid fa-xmark"></i></button>
-                <button id="stockPickerSearch" class="stock-picker-search" type="button">검색</button>
-              </div>
-              <div id="stockSearchResults" class="stock-picker-results" role="listbox" aria-label="종목 검색 결과"></div>
-              <span id="stockPickerSelected" class="stock-picker-selected">종목을 검색해 선택하세요.</span>
+    <!-- ── 가운데: 종목 헤더 + 차트 + 도크 ── -->
+    <div class="stk-col stk-center">
+      <header class="stk-sec" aria-label="선택 종목 시세">
+        <div class="stk-sec-id">
+          <span class="term-code" style="padding:1px 5px;color:var(--accent-ink);background:var(--accent);font-family:var(--font-mono);font-size:10.5px;font-weight:900;">EQ</span>
+          <span id="chartStockName">-</span>
+          <span class="stk-sec-code" id="secCode">-</span>
+          <span id="dataSourceBadge" class="hidden badge badge-muted">시뮬레이션</span>
+        </div>
+        <div class="stk-sec-px">
+          <span id="quotePrice">-</span>
+          <span id="quoteChangeRate">-</span>
+          <span class="live-dot" title="5초 갱신"></span>
+        </div>
+        <div class="stk-sec-idx">
+          <div><span class="lbl">KOSPI</span><span class="v" id="kospiPrice">-</span><span class="c" id="kospiChange">-</span></div>
+          <div><span class="lbl">KOSDAQ</span><span class="v" id="kosdaqPrice">-</span><span class="c" id="kosdaqChange">-</span></div>
+        </div>
+      </header>
+
+      <section class="term-panel" aria-label="가격 차트">
+        <div class="term-panel__bar stk-chart-bar">
+          <span class="term-code">GP</span>
+          <div class="stock-picker" id="stockPicker">
+            <div class="stock-picker-input-wrap">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input id="stockPickerInput" class="stock-picker-input" type="search" autocomplete="off"
+                placeholder="회사명 · 종목코드 · 업종 검색" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="stockSearchResults">
+              <button id="stockPickerClear" class="stock-picker-clear" type="button" aria-label="종목 검색 지우기"><i class="fa-solid fa-xmark"></i></button>
+              <button id="stockPickerSearch" class="stock-picker-search" type="button">GO</button>
             </div>
-            <select id="stockSymbol" aria-label="선택한 종목" tabindex="-1" style="display:none;"></select>
-            <button id="watchlistBtn" type="button" title="관심종목" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--muted);padding:0 2px;line-height:1;">☆</button>
+            <div id="stockSearchResults" class="stock-picker-results" role="listbox" aria-label="종목 검색 결과"></div>
+            <span id="stockPickerSelected" class="stock-picker-selected"></span>
           </div>
-          <div id="periodBtns" style="display:flex;gap:4px;">
-            <button data-period="1d"  class="period-btn" data-guide="차트 조회 기간을 1일로 바꿉니다.">1일</button>
-            <button data-period="1w"  class="period-btn" data-guide="차트 조회 기간을 1주로 바꿉니다.">1주</button>
-            <button data-period="1m"  class="period-btn active" data-guide="차트 조회 기간을 1개월로 바꿉니다.">1개월</button>
-            <button data-period="3m"  class="period-btn" data-guide="차트 조회 기간을 3개월로 바꿉니다.">3개월</button>
-            <button data-period="1y"  class="period-btn" data-guide="차트 조회 기간을 1년으로 바꿉니다.">1년</button>
-          </div>
+          <select id="stockSymbol" aria-label="선택한 종목" tabindex="-1" style="display:none;"></select>
+          <button id="watchlistBtn" type="button" title="관심종목 추가·제거">☆</button>
+          <span class="term-right" id="periodBtns">
+            <button data-period="1d" class="period-btn">1D</button>
+            <button data-period="1w" class="period-btn">1W</button>
+            <button data-period="1m" class="period-btn active">1M</button>
+            <button data-period="3m" class="period-btn">3M</button>
+            <button data-period="1y" class="period-btn">1Y</button>
+          </span>
         </div>
         <div class="ma-legend" aria-label="이동평균선 표시 선택">
-          <button type="button" class="ma-toggle active" data-ma-period="5" aria-pressed="true" style="--ma-color:#F59E0B;" onclick="toggleMovingAverage(5)" data-guide="5기간 이동평균선을 표시하거나 숨깁니다.">MA 5</button>
-          <button type="button" class="ma-toggle active" data-ma-period="20" aria-pressed="true" style="--ma-color:#8B5CF6;" onclick="toggleMovingAverage(20)" data-guide="20기간 이동평균선을 표시하거나 숨깁니다.">MA 20</button>
-          <button type="button" class="ma-toggle active" data-ma-period="60" aria-pressed="true" style="--ma-color:#0891B2;" onclick="toggleMovingAverage(60)" data-guide="60기간 이동평균선을 표시하거나 숨깁니다.">MA 60</button>
-          <button type="button" class="ma-toggle active" data-ma-period="120" aria-pressed="true" style="--ma-color:#EC4899;" onclick="toggleMovingAverage(120)" data-guide="120기간 이동평균선을 표시하거나 숨깁니다.">MA 120</button>
+          <button type="button" class="ma-toggle active" data-ma-period="5" aria-pressed="true" style="--ma-color:#FFD60A;" onclick="toggleMovingAverage(5)">MA 5</button>
+          <button type="button" class="ma-toggle active" data-ma-period="20" aria-pressed="true" style="--ma-color:#4FC3F7;" onclick="toggleMovingAverage(20)">MA 20</button>
+          <button type="button" class="ma-toggle active" data-ma-period="60" aria-pressed="true" style="--ma-color:#B39DFF;" onclick="toggleMovingAverage(60)">MA 60</button>
+          <button type="button" class="ma-toggle active" data-ma-period="120" aria-pressed="true" style="--ma-color:#FF6FAE;" onclick="toggleMovingAverage(120)">MA 120</button>
         </div>
-        <div id="stockChart" style="height:300px;"></div>
-      </div>
+        <div id="stockChart"></div>
+      </section>
 
-      <!-- 현재 시세 + 계좌 + 주문: 화면 초기화 후 각각 모달/우측 패널로 이동 -->
-      <div id="stockSummaryPanels" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;">
-        <!-- 현재 시세 -->
-        <div id="quotePanel" class="glass-card" style="padding:18px;" data-guide="선택한 종목의 전일 대비, 거래량, 시장과 손익분기가를 확인합니다.">
-          <div style="font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">현재 시세</div>
-          <div style="space-y:4px;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;">
-              <span style="font-size:14px;color:var(--muted);">전일 대비</span>
-              <span id="quoteChange" style="font-size:16px;font-weight:700;">-</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border);">
-              <span style="font-size:14px;color:var(--muted);">거래량</span>
-              <span id="quoteVolume" style="font-size:16px;font-weight:600;color:var(--fg);">-</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border);">
-              <span style="font-size:14px;color:var(--muted);">시장</span>
-              <span id="quoteMarket" class="badge badge-muted" style="font-size:13px;">-</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border);">
-              <span style="font-size:14px;color:var(--muted);">손익분기가</span>
-              <span id="quoteBreakEven" style="font-size:14px;color:var(--muted);">-</span>
+      <section class="term-panel" aria-label="계좌·포지션·체결">
+        <div class="term-dock-tabs" role="tablist" aria-label="주식 상세 정보">
+          <button type="button" class="term-dock-tab active" data-dock="positions" role="tab" aria-selected="true">포지션</button>
+          <button type="button" class="term-dock-tab" data-dock="history" role="tab" aria-selected="false">체결 내역</button>
+          <button type="button" class="term-dock-tab" data-dock="overview" role="tab" aria-selected="false">시세·계좌</button>
+        </div>
+        <div class="term-panel__body">
+          <div class="stk-dock-pane active" id="dock-positions">
+            <table class="term-table">
+              <thead><tr><th>종목</th><th>섹터</th><th>수량</th><th>평균단가</th><th>평가금액</th><th>손익</th></tr></thead>
+              <tbody id="positionsBody"><tr><td class="empty" colspan="6">로딩 중...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="stk-dock-pane" id="dock-history">
+            <table class="term-table">
+              <thead><tr><th>시간</th><th>종목</th><th>구분</th><th>수량</th><th>거래금액</th></tr></thead>
+              <tbody id="historyBody"><tr><td class="empty" colspan="5">거래 내역이 없습니다.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="stk-dock-pane" id="dock-overview">
+            <div id="positionsOverview" class="positions-overview">
+              <div id="quotePanel">
+                <div class="stk-kv-title">QUOTE · 현재 시세</div>
+                <div class="stk-kv"><span>전일 대비</span><span id="quoteChange">-</span></div>
+                <div class="stk-kv"><span>거래량</span><span id="quoteVolume">-</span></div>
+                <div class="stk-kv"><span>시장</span><span id="quoteMarket">-</span></div>
+                <div class="stk-kv"><span>손익분기가</span><span id="quoteBreakEven">-</span></div>
+              </div>
+              <div id="accountPanel">
+                <div class="stk-kv-title" style="display:flex;justify-content:space-between;align-items:center;">ACCT · 계좌 현황 <button id="resetBtn" type="button">초기화</button></div>
+                <div class="stk-kv"><span>보유 현금</span><span id="accountCash">-</span></div>
+                <div class="stk-kv"><span>총 자산</span><span id="accountAsset">-</span></div>
+                <div class="stk-kv"><span>수익률</span><span id="accountPnlRate">-</span></div>
+                <div id="portfolioChart"></div>
+              </div>
             </div>
           </div>
         </div>
+      </section>
+    </div>
 
-        <!-- 계좌 현황 -->
-        <div id="accountPanel" class="glass-card" style="padding:18px;" data-guide="보유 현금, 총자산, 수익률과 보유 비중을 확인합니다.">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div style="font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">계좌 현황</div>
-            <button id="resetBtn" type="button" style="font-size:13px;padding:4px 11px;border-radius:999px;background:rgba(248,113,113,0.1);color:#F87171;border:1px solid rgba(248,113,113,0.2);cursor:pointer;font-weight:600;">초기화</button>
+    <!-- ── 오른쪽: 주문 티켓 + 호가 사다리 ── -->
+    <div class="stk-col stk-right">
+      <section id="orderPanel" class="term-panel" aria-labelledby="orderTitle">
+        <div class="term-panel__bar"><span class="term-code">OT</span><span id="orderTitle">주문 티켓</span><span class="term-sub">시장가 · 모의</span><span class="term-right"><span class="term-link" title="선택 종목과 연결됨"></span></span></div>
+        <div class="order-ticket">
+          <label for="orderQty">수량 (주)</label>
+          <input id="orderQty" type="number" min="1" step="1" placeholder="0" class="dark-input">
+          <div>
+            <div class="lbl" style="margin-bottom:3px;">매수 · 보유 현금 비율</div>
+            <div id="buyPercentBtns" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;">
+              <button type="button" data-order-side="buy" data-percent="10" class="order-percent-btn">10%</button>
+              <button type="button" data-order-side="buy" data-percent="25" class="order-percent-btn">25%</button>
+              <button type="button" data-order-side="buy" data-percent="50" class="order-percent-btn">50%</button>
+              <button type="button" data-order-side="buy" data-percent="100" class="order-percent-btn">MAX</button>
+            </div>
           </div>
           <div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;">
-              <span style="font-size:14px;color:var(--muted);">보유 현금</span>
-              <span id="accountCash" style="font-size:16px;font-weight:700;color:var(--fg);">-</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border);">
-              <span style="font-size:14px;color:var(--muted);">총 자산</span>
-              <span id="accountAsset" style="font-size:16px;font-weight:700;color:var(--fg);">-</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border);">
-              <span style="font-size:14px;color:var(--muted);">수익률</span>
-              <span id="accountPnlRate" style="font-size:20px;font-weight:900;">-</span>
+            <div class="lbl" style="margin-bottom:3px;">매도 · 보유 주식 비율</div>
+            <div id="sellPercentBtns" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;">
+              <button type="button" data-order-side="sell" data-percent="25" class="order-percent-btn">25%</button>
+              <button type="button" data-order-side="sell" data-percent="50" class="order-percent-btn">50%</button>
+              <button type="button" data-order-side="sell" data-percent="100" class="order-percent-btn">ALL</button>
             </div>
           </div>
-          <div id="portfolioChart" style="min-height:126px;margin-top:12px;"></div>
-        </div>
-
-        <!-- 주문 -->
-        <div id="orderPanel" class="glass-card order-panel" style="padding:12px;" data-guide="수량 또는 비율을 선택해 현재 종목을 매수·매도합니다.">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">주문</div>
-          <input id="orderQty" type="number" min="1" step="1" placeholder="수량 (주)" class="dark-input" style="font-size:13px;padding:.4rem .7rem;margin-bottom:6px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <div>
-              <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;">매수 · 보유 현금 비율</div>
-              <div id="buyPercentBtns" style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;">
-                <button type="button" data-order-side="buy" data-percent="10" class="order-percent-btn">10%</button>
-                <button type="button" data-order-side="buy" data-percent="25" class="order-percent-btn">25%</button>
-                <button type="button" data-order-side="buy" data-percent="50" class="order-percent-btn">50%</button>
-                <button type="button" data-order-side="buy" data-percent="100" class="order-percent-btn">전액</button>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;">매도 · 보유 주식 비율</div>
-              <div id="sellPercentBtns" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;">
-                <button type="button" data-order-side="sell" data-percent="25" class="order-percent-btn">25%</button>
-                <button type="button" data-order-side="sell" data-percent="50" class="order-percent-btn">50%</button>
-                <button type="button" data-order-side="sell" data-percent="100" class="order-percent-btn">전량</button>
-              </div>
-            </div>
+          <div id="orderSummary">시세를 불러오는 중입니다.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+            <button id="buyBtn" type="button" class="btn-buy">BUY 매수</button>
+            <button id="sellBtn" type="button" class="btn-sell">SELL 매도</button>
           </div>
-          <div id="orderSummary" style="padding:7px 8px;margin-bottom:7px;border-radius:7px;background:var(--surface-2);font-size:10px;line-height:1.55;color:var(--muted);">시세를 불러오는 중입니다.</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-            <button id="buyBtn" type="button" class="btn-buy" style="font-size:13px;padding:.45rem;">매수</button>
-            <button id="sellBtn" type="button" class="btn-sell" style="font-size:13px;padding:.45rem;">매도</button>
-          </div>
-          <button id="avgDownBtn" type="button" style="width:100%;padding:.42rem;border:1px solid rgba(37,99,235,.28);border-radius:7px;color:var(--accent-dark);background:rgba(37,99,235,.07);font-size:11px;font-weight:800;cursor:pointer;">물타기 계산기</button>
-          <p id="stockMessage" style="font-size:11px;color:var(--muted);"></p>
+          <button id="avgDownBtn" type="button">물타기 계산기</button>
+          <p id="stockMessage" role="status"></p>
         </div>
-      </div>
+      </section>
 
-      <!-- 보유 포지션 + 거래 내역 (모달 탭) -->
-      <div class="detail-launcher" aria-label="주식 상세 메뉴">
-        <button type="button" class="detail-launcher-btn" data-tab="overview" onclick="openDetailsModal('overview')" data-guide="현재 시세와 계좌 현황을 모달로 엽니다.">현재 시세·계좌</button>
-        <button type="button" class="detail-launcher-btn" data-tab="positions" onclick="openDetailsModal('positions')" data-guide="현재 보유 중인 주식 포지션을 모달로 엽니다.">보유 포지션</button>
-        <button type="button" class="detail-launcher-btn" data-tab="history" onclick="openDetailsModal('history')" data-guide="최근 매수·매도 체결 내역을 모달로 엽니다.">거래 내역</button>
-        <button type="button" class="detail-launcher-btn" data-tab="orderbook" onclick="openDetailsModal('orderbook')" data-guide="선택한 종목의 매수·매도 호가를 모달로 엽니다.">호가창</button>
-      </div>
-      <aside class="usage-guide" aria-live="polite">
-        <h2 class="usage-guide-title">사용설명</h2>
-        <p id="usageGuideMessage" class="usage-guide-message">기능 위에 마우스를 올리면 사용 방법을 안내합니다.</p>
-      </aside>
-
-      <div id="detailsModal" class="details-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="detailsModalTitle" aria-hidden="true" onclick="if(event.target === this) closeDetailsModal()">
-        <section class="details-modal">
-          <header class="details-modal-header">
-            <h2 id="detailsModalTitle" class="details-modal-title">보유 포지션</h2>
-            <button type="button" class="details-modal-close" aria-label="닫기" onclick="closeDetailsModal()">×</button>
-          </header>
-          <div class="details-modal-body">
-        <div class="trade-tabs" role="tablist" aria-label="주식 상세 정보">
-          <button class="tab-btn trade-tab" data-tab="overview" onclick="switchTab('overview')" role="tab" aria-selected="false"
-            aria-controls="tab-overview">
-            현재 시세·계좌
-          </button>
-          <button class="tab-btn trade-tab active" data-tab="positions" onclick="switchTab('positions')" role="tab" aria-selected="true"
-            aria-controls="tab-positions">
-            보유 포지션
-          </button>
-          <button class="tab-btn trade-tab" data-tab="history" onclick="switchTab('history')" role="tab" aria-selected="false"
-            aria-controls="tab-history">
-            거래 내역
-          </button>
-          <button class="tab-btn trade-tab" data-tab="orderbook" onclick="switchTab('orderbook')" role="tab" aria-selected="false"
-            aria-controls="tab-orderbook">
-            호가창
-          </button>
+      <section class="term-panel" aria-labelledby="bookTitle">
+        <div class="term-panel__bar"><span class="term-code">DOM</span><span id="bookTitle">호가</span><span class="term-sub">5단계 · 교육용 합성 호가</span><span class="term-right"><span class="term-link" title="선택 종목과 연결됨"></span></span></div>
+        <div class="term-panel__body">
+          <table class="term-ladder" aria-label="매도 호가"><tbody id="askBody"></tbody></table>
+          <div class="term-ladder-mid"><span>LAST</span><strong id="obCurrentPrice">-</strong><span>SPREAD <b id="obSpread" style="color:var(--fg-2);">-</b></span></div>
+          <table class="term-ladder" aria-label="매수 호가"><tbody id="bidBody"></tbody></table>
         </div>
-
-        <div id="tab-overview" style="max-height:60dvh;overflow-y:auto;display:none;">
-          <div id="positionsOverview" class="positions-overview"></div>
-        </div>
-
-        <div id="tab-positions" style="max-height:60dvh;overflow-y:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:15px;">
-            <thead><tr style="background:var(--surface-2);">
-              <th style="padding:10px 12px;text-align:left;color:var(--muted);font-size:12px;font-weight:700;">종목</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--muted);font-size:12px;font-weight:700;">섹터</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--muted);font-size:12px;font-weight:700;">수량</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--muted);font-size:12px;font-weight:700;">평균단가</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--muted);font-size:12px;font-weight:700;">평가금액</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--muted);font-size:12px;font-weight:700;">손익</th>
-            </tr></thead>
-            <tbody id="positionsBody"></tbody>
-          </table>
-        </div>
-
-        <div id="tab-history" style="max-height:60dvh;overflow-y:auto;display:none;">
-          <table style="width:100%;border-collapse:collapse;font-size:15px;">
-            <thead><tr style="background:var(--surface-2);">
-              <th style="padding:10px 12px;text-align:left;color:var(--muted);font-size:12px;font-weight:700;">시간</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--muted);font-size:12px;font-weight:700;">종목</th>
-              <th style="padding:10px 12px;text-align:center;color:var(--muted);font-size:12px;font-weight:700;">구분</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--muted);font-size:12px;font-weight:700;">수량</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--muted);font-size:12px;font-weight:700;">거래금액</th>
-            </tr></thead>
-            <tbody id="historyBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--muted);">거래 내역이 없습니다.</td></tr></tbody>
-          </table>
-        </div>
-
-        <div id="tab-orderbook" style="display:none;">
-          <div style="display:grid;grid-template-rows:auto auto auto;font-size:15px;">
-            <div>
-              <div style="padding:7px 12px;font-size:13px;font-weight:700;color:#F87171;border-bottom:1px solid rgba(255,255,255,0.05);">매수 호가 (Bid)</div>
-              <table style="width:100%;"><thead><tr style="background:rgba(225,29,72,0.04);"><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">가격</th><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">수량</th></tr></thead><tbody id="bidBody"></tbody></table>
-            </div>
-            <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid var(--border);gap:10px;">
-              <span style="font-size:13px;color:var(--muted);">현재가</span>
-              <span id="obCurrentPrice" style="font-size:18px;font-weight:900;color:var(--accent-dark);">-</span>
-              <span style="font-size:13px;color:var(--muted);margin-left:8px;">스프레드</span>
-              <span id="obSpread" style="font-size:13px;font-weight:700;color:var(--muted);">-</span>
-            </div>
-            <div>
-              <div style="padding:7px 12px;font-size:13px;font-weight:700;color:#60A5FA;border-bottom:1px solid rgba(255,255,255,0.05);">매도 호가 (Ask)</div>
-              <table style="width:100%;"><thead><tr style="background:rgba(37,99,235,0.04);"><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">가격</th><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">수량</th></tr></thead><tbody id="askBody"></tbody></table>
-            </div>
-          </div>
-        </div>
-          </div>
-        </section>
-      </div>
-
-    </div><!-- /left-col -->
-
-    <!-- ── 오른쪽 마켓 리스트 ── -->
-    <div class="market-col">
-      <div style="padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;" data-guide="내 보유 종목에서 현재가, 수량과 손익을 확인하고 종목을 선택할 수 있습니다.">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-          <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">내 보유 종목</span>
-          <span class="live-dot" style="margin-left:auto;"></span>
-        </div>
-      </div>
-      <div class="market-col-scroll" data-guide="보유 종목이 많으면 이 영역을 스크롤해 전체 목록을 확인합니다.">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="position:sticky;top:0;z-index:10;background:var(--surface);">
-              <th style="padding:5px 10px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.05em;">종목</th>
-              <th style="padding:5px 10px;text-align:right;color:var(--muted);font-size:10px;font-weight:700;">현재가</th>
-              <th style="padding:5px 10px;text-align:right;color:var(--muted);font-size:10px;font-weight:700;">수량</th>
-              <th style="padding:5px 5px;text-align:right;color:var(--muted);font-size:10px;">손익</th>
-            </tr>
-          </thead>
-          <tbody id="stockMarketListBody">
-            <tr><td colspan="4" style="padding:16px;text-align:center;color:var(--muted);">로딩 중...</td></tr>
-          </tbody>
-        </table>
-      </div>
+      </section>
     </div>
+  </div>
 
-  </div><!-- /trading-body -->
-
-  <footer id="site-footer">
-    <div class="w-full px-4 py-2 flex items-center justify-between">
-      <span class="brand-logo-text" style="font-size:12px;letter-spacing:1.5px;">Noah Trading Desk</span>
-      <p style="font-size:11px;color:var(--muted);">모의투자·OpenAPI 실습</p>
-    </div>
-  </footer>
+  <footer id="site-footer"></footer>
 </div><!-- /trading-root -->
 
 <!-- 추가 매수 시뮬레이션: 실제 주문은 이 모달에서 실행하지 않습니다. -->
@@ -420,73 +320,35 @@
   <section class="avgdown-modal">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
       <div>
-        <h2 id="avgDownTitle" style="margin:0;font-size:18px;font-weight:900;color:var(--fg);">물타기 계산기</h2>
-        <p id="avgDownSubtitle" style="margin:5px 0 0;font-size:11px;line-height:1.55;color:var(--muted);"></p>
+        <h2 id="avgDownTitle" style="margin:0;font-size:16px;font-weight:900;color:var(--fg);"><span class="badge badge-gold">AVG</span> 물타기 계산기</h2>
+        <p id="avgDownSubtitle" style="margin:5px 0 0;font-size:11.5px;line-height:1.55;color:var(--muted);"></p>
       </div>
-      <button id="avgDownCloseBtn" type="button" aria-label="닫기" style="width:30px;height:30px;border:0;border-radius:7px;background:var(--surface-2);color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+      <button id="avgDownCloseBtn" type="button" aria-label="닫기" class="oc-close-btn">✕</button>
     </div>
-    <div id="avgDownUnavailable" style="display:none;margin-top:14px;padding:12px;border-radius:9px;background:rgba(37,99,235,.08);color:var(--accent-dark);font-size:12px;line-height:1.6;"></div>
+    <div id="avgDownUnavailable" style="display:none;margin-top:12px;padding:10px;background:var(--accent-light);border:1px solid rgba(255,159,26,.35);color:var(--accent-dark);font-size:12px;line-height:1.6;"></div>
     <div id="avgDownContent">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">
-        <div style="padding:10px;border-radius:9px;background:var(--surface-2);"><div style="font-size:10px;color:var(--muted);">보유 수량 · 평균단가</div><strong id="avgDownHolding" style="display:block;margin-top:3px;font-size:13px;color:var(--fg);">-</strong></div>
-        <div style="padding:10px;border-radius:9px;background:var(--surface-2);"><div style="font-size:10px;color:var(--muted);">현재가 · 현재 손익률</div><strong id="avgDownCurrent" style="display:block;margin-top:3px;font-size:13px;">-</strong></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px;">
+        <div class="avgdown-card"><div style="font-size:10.5px;color:var(--muted);">보유 수량 · 평균단가</div><strong id="avgDownHolding" class="num" style="display:block;margin-top:3px;font-size:13px;color:var(--fg);">-</strong></div>
+        <div class="avgdown-card"><div style="font-size:10.5px;color:var(--muted);">현재가 · 현재 손익률</div><strong id="avgDownCurrent" class="num" style="display:block;margin-top:3px;font-size:13px;">-</strong></div>
       </div>
-      <label for="avgDownQty" style="display:block;margin-top:15px;font-size:11px;font-weight:800;color:var(--fg);">추가 매수 수량 (주)</label>
-      <input id="avgDownQty" type="number" min="1" step="1" class="dark-input" style="margin-top:6px;font-size:14px;" placeholder="수량을 입력하세요">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px;">
-        <button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="10">10%</button><button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="25">25%</button><button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="50">50%</button><button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="100">전액</button>
+      <label for="avgDownQty" style="display:block;margin-top:14px;font-size:11.5px;font-weight:800;color:var(--fg);">추가 매수 수량 (주)</label>
+      <input id="avgDownQty" type="number" min="1" step="1" class="dark-input" style="margin-top:6px;" placeholder="수량을 입력하세요">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px;">
+        <button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="10">10%</button><button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="25">25%</button><button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="50">50%</button><button type="button" class="order-percent-btn avgdown-percent-btn" data-percent="100">MAX</button>
       </div>
       <div class="avgdown-result">
-        <div><span style="font-size:10px;color:var(--muted);">추가 매수금액</span><strong id="avgDownCost" style="display:block;margin-top:3px;font-size:13px;color:var(--fg);">-</strong></div>
-        <div><span style="font-size:10px;color:var(--muted);">매수 후 평균단가</span><strong id="avgDownNewAvg" style="display:block;margin-top:3px;font-size:13px;color:var(--accent-dark);">-</strong></div>
-        <div><span style="font-size:10px;color:var(--muted);">평균단가 변화</span><strong id="avgDownDiff" style="display:block;margin-top:3px;font-size:13px;">-</strong></div>
-        <div><span style="font-size:10px;color:var(--muted);">남는 현금</span><strong id="avgDownCashLeft" style="display:block;margin-top:3px;font-size:13px;color:var(--fg);">-</strong></div>
+        <div><span style="font-size:10.5px;color:var(--muted);">추가 매수금액</span><strong id="avgDownCost" class="num" style="display:block;margin-top:3px;font-size:13px;color:var(--fg);">-</strong></div>
+        <div><span style="font-size:10.5px;color:var(--muted);">매수 후 평균단가</span><strong id="avgDownNewAvg" class="num" style="display:block;margin-top:3px;font-size:13px;color:var(--accent-dark);">-</strong></div>
+        <div><span style="font-size:10.5px;color:var(--muted);">평균단가 변화</span><strong id="avgDownDiff" class="num" style="display:block;margin-top:3px;font-size:13px;">-</strong></div>
+        <div><span style="font-size:10.5px;color:var(--muted);">남는 현금</span><strong id="avgDownCashLeft" class="num" style="display:block;margin-top:3px;font-size:13px;color:var(--fg);">-</strong></div>
       </div>
-      <p id="avgDownNotice" style="margin:12px 0 0;font-size:11px;line-height:1.55;color:var(--muted);"></p>
+      <p id="avgDownNotice" style="margin:10px 0 0;font-size:11.5px;line-height:1.55;color:var(--muted);"></p>
     </div>
   </section>
 </div>
 
-<script>
-function switchTab(name) {
-  ['overview','positions','history','orderbook'].forEach(t => {
-    const el  = document.getElementById('tab-' + t);
-    const btn = document.querySelector(`.tab-btn[data-tab="${t}"]`);
-    if (!el || !btn) return;
-    if (t === name) {
-      el.style.display  = '';
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-      document.getElementById('detailsModalTitle').textContent = btn.textContent.trim();
-    } else {
-      el.style.display  = 'none';
-      btn.classList.remove('active');
-      btn.setAttribute('aria-selected', 'false');
-    }
-  });
-}
-
-function openDetailsModal(name) {
-  switchTab(name);
-  const modal = document.getElementById('detailsModal');
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-}
-
-function closeDetailsModal() {
-  const modal = document.getElementById('detailsModal');
-  modal.classList.remove('open');
-  modal.setAttribute('aria-hidden', 'true');
-}
-
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') closeDetailsModal();
-});
-
-switchTab('positions');
-</script>
 <script src="/js/config.js"></script>
-<script src="/js/common.js?v=20260920-chart"></script>
-<script src="/js/stock.js?v=20260819-default-symbol-4"></script>
+<script src="/js/common.js?v=20260924-terminal"></script>
+<script src="/js/stock.js?v=20260924-terminal"></script>
 </body>
 </html>
