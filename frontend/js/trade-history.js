@@ -50,7 +50,7 @@ function createHistoryGrid() {
     pagination:true,
     paginationPageSize:20,
     paginationPageSizeSelector:[20, 50, 100],
-    overlayNoRowsTemplate:'<span style="padding:16px;color:#64748B;">표시할 거래이력이 없습니다.</span>',
+    overlayNoRowsTemplate:'<span style="padding:16px;color:var(--muted);">표시할 거래이력이 없습니다.</span>',
   });
 }
 

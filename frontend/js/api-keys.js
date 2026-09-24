@@ -27,7 +27,7 @@ async function loadKeys() {
         <td class="px-4 py-3 text-center">
           ${k.isActive
             ? '<span class="badge" style="background:var(--up-bg);color:var(--up);font-size:11px;">활성</span>'
-            : '<span class="badge" style="background:rgba(156,163,175,0.15);color:#9CA3AF;font-size:11px;">폐기됨</span>'}
+            : '<span class="badge" style="background:rgba(156,163,175,0.15);color:var(--muted);font-size:11px;">폐기됨</span>'}
         </td>
         <td class="px-4 py-3 text-center">
           ${k.isActive

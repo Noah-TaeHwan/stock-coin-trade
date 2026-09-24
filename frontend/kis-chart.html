@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260920-chart">
+  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
   <style>
     .c-wrap{max-width:1360px;margin:0 auto;padding:22px 20px 56px}
     .kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}
@@ -24,10 +24,10 @@
     .c-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
     .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface-2)}
     .seg button{padding:9px 13px;border:0;background:none;font:inherit;font-size:13px;font-weight:800;color:var(--fg-2);cursor:pointer}
-    .seg button.on{background:var(--accent);color:#fff}
+    .seg button.on{background:var(--accent);color:var(--accent-ink)}
     .seg button:disabled{opacity:.5;cursor:not-allowed}
     .c-tools select{padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--fg);font:inherit;font-size:13px;font-weight:700}
-    .btn{padding:10px 14px;border:0;border-radius:9px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+    .btn{padding:10px 14px;border:0;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:13px;cursor:pointer}
     .btn:disabled{opacity:.6;cursor:wait}
     .chk{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--fg-2);cursor:pointer}
     .chk input{accent-color:var(--accent)}
@@ -35,21 +35,21 @@
     .q{padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}
     .q small{display:block;font-size:11px;color:var(--muted);font-weight:700}
     .q b{display:block;margin-top:3px;font-size:15px;color:var(--fg);font-variant-numeric:tabular-nums}
-    .q.up b,.up{color:#E11D48!important}.q.down b,.down{color:#2563EB!important}
+    .q.up b,.up{color:var(--down)!important}.q.down b,.down{color:var(--info)!important}
     .price-big{font-size:28px;font-weight:900;color:var(--fg);font-variant-numeric:tabular-nums}
     .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--fg-2);font-variant-numeric:tabular-nums;min-height:18px}
     .legend b{color:var(--fg)}
-    .legend .ma5{color:#F59E0B}.legend .ma20{color:#10B981}.legend .ma60{color:#8B5CF6}
-    #chart{position:relative;width:100%;height:520px;margin-top:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
-    #chart .loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.7);font-size:13px;font-weight:800;color:var(--fg-2);z-index:5}
-    .danger{margin-top:12px;padding:12px 14px;border-radius:9px;background:#FFF1F2;color:#9F1239;font-size:13px;line-height:1.65}
-    .notice{margin-top:12px;padding:12px 14px;border-radius:9px;background:#FFF8E8;color:#854D0E;font-size:13px;line-height:1.65}
+    .legend .ma5{color:var(--warn)}.legend .ma20{color:var(--up)}.legend .ma60{color:var(--info)}
+    #chart{position:relative;width:100%;height:520px;margin-top:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+    #chart .loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:var(--surface);font-size:13px;font-weight:800;color:var(--fg-2);z-index:5}
+    .danger{margin-top:12px;padding:12px 14px;border-radius:9px;background:var(--surface-2);color:var(--down);font-size:13px;line-height:1.65}
+    .notice{margin-top:12px;padding:12px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.65}
     .tbl-wrap{overflow:auto;border:1px solid var(--border);border-radius:9px;max-height:420px;margin-top:10px}
     .tbl{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface)}
     .tbl th,.tbl td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
     .tbl th:first-child,.tbl td:first-child{text-align:left}
     .tbl th{position:sticky;top:0;background:var(--surface-2);color:var(--fg);font-size:11px}
-    .tbl tr:nth-child(even) td{background:#FAFBFD}
+    .tbl tr:nth-child(even) td{background:var(--surface)}
     .footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:1360px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:12px}
     @media(max-width:760px){.c-wrap{padding:14px 12px 40px}.c-card{padding:14px}#chart{height:400px}.price-big{font-size:22px}}
   </style>
@@ -95,6 +95,6 @@
     </section>
   </main>
   <footer class="footer"><div>Noah Trading Desk · KIS 모의투자 API 종목 차트 · 조회 전용 · 교육용 콘텐츠</div></footer>
-  <script src="/js/config.js"></script><script src="/js/common.js?v=20260920-chart"></script><script src="/js/kis-chart.js?v=20260920-1"></script>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script src="/js/kis-chart.js?v=20260924-terminal"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@ function createUsageGrid() {
     ],
     rowData: [], defaultColDef:{ sortable:true, filter:true, resizable:true, suppressHeaderMenuButton:true },
     pagination:true, paginationPageSize:25, paginationPageSizeSelector:[25,50,100],
-    overlayNoRowsTemplate:'<span style="padding:16px;color:#64748B">아직 기록된 API 호출이 없습니다. API 테스트를 실행한 뒤 새로고침하세요.</span>',
+    overlayNoRowsTemplate:'<span style="padding:16px;color:var(--muted)">아직 기록된 API 호출이 없습니다. API 테스트를 실행한 뒤 새로고침하세요.</span>',
     onRowClicked:event => loadDetail(event.data.id),
   });
 }
