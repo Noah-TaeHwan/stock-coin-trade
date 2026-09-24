@@ -144,7 +144,7 @@ function initWebSocket(marketCodes) {
   const socket = new WebSocket(upbitWebSocketUrl());
   socket.onopen = () => {
     socket.send(JSON.stringify([
-      { ticket: 'edumgt-order' },
+      { ticket: 'portfolio-order' },
       { type: 'ticker', codes: marketCodes },
     ]));
   };

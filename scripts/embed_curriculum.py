@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CURRICULUM = ROOT / "curriculum"
 LEARNING = ROOT / "frontend" / "learning"
-GITHUB_BLOB = "https://github.com/edumgt/stock-coin-trade/blob/main/"
+GITHUB_BLOB = "https://github.com/Noah-TaeHwan/stock-coin-trade/blob/main/"
 
 # (curriculum 파일, 라벨, 대상 페이지들, 기본으로 접어 둘 ## 절 제목 접두어)
 TARGETS = [
@@ -235,7 +235,7 @@ def render_doc(md: str, label: str, source: str) -> str:
         START,
         CSS,
         '<section class="cur-card" id="curriculum">',
-        f'<div class="cur-kicker">CURRICULUM · {html.escape(label)} 실전연습 과정표</div>',
+        f'<div class="cur-kicker">CURRICULUM · {html.escape(label)} 모의투자·OpenAPI 실습 과정표</div>',
         f'<h2 class="cur-title">{inline(title)}</h2>',
         '<p class="cur-desc">아래 과정표는 저장소의 <code>curriculum/</code> 문서와 같은 내용입니다. 절 제목을 누르면 접거나 펼 수 있습니다.</p>',
     ]
@@ -243,7 +243,7 @@ def render_doc(md: str, label: str, source: str) -> str:
         opened = "" if sec_title.startswith(COLLAPSED_PREFIXES) else " open"
         parts.append(f'<details class="cur-sec"{opened}><summary>{inline(sec_title)}</summary>')
         parts.append(f'<div class="cur-body">{render_blocks(sec_lines)}</div></details>')
-    parts.append(f'<div class="cur-foot">원본: {_link("../" + source, "curriculum/" + source)} · <code>scripts/embed_curriculum.py</code>로 다시 생성합니다.</div>')
+    parts.append(f'<div class="cur-foot">과정표 문서: {_link("../curriculum/" + source, "curriculum/" + source)} · <code>scripts/embed_curriculum.py</code>로 다시 생성합니다.</div>')
     parts.append("</section>")
     parts.append(END)
     return "\n".join(parts)

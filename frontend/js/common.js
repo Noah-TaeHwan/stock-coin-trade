@@ -257,15 +257,15 @@ function renderHeader(user) {
     <!-- 왼쪽 오프캔버스 — 네비게이션 메뉴 -->
     <aside id="oc-panel">
       <div class="oc-header">
-        <span class="brand-logo-text" style="font-size:18.7px;letter-spacing:1.5px;"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>실전투자</span>
+        <span class="brand-logo-text" style="font-size:18.7px;letter-spacing:1.5px;"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>Noah Trading Desk</span>
         <button class="oc-close-btn" onclick="closeOffcanvas()">✕</button>
       </div>
       <nav class="oc-nav" aria-label="TR 실전연습 메뉴">
         ${isLoggedIn ? ocNavAuthed : ocNavGuest}
       </nav>
       <div class="oc-footer" style="font-size:12.1px;color:var(--muted);">
-        <div>(주)에듀엠지티</div>
-        <a href="https://www.edumgt.co.kr" target="_blank" style="color:var(--accent-dark);text-decoration:none;font-weight:600;">www.edumgt.co.kr</a>
+        <div>Noah Trading Desk</div>
+        <div>모의투자·OpenAPI 실습</div>
       </div>
     </aside>
 
@@ -274,7 +274,7 @@ function renderHeader(user) {
       <div class="site-header-inner">
         <div class="site-header-left">
           <button onclick="openOffcanvas()" aria-label="메뉴 열기" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .12s;color:var(--fg-2);font-size:15.4px;font-weight:600;"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="header-menu-label">메뉴</span></button>
-          <a href="/index.html" style="text-decoration:none;display:flex;align-items:center;"><span class="brand-logo-text"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>실전투자</span></a>
+          <a href="/index.html" style="text-decoration:none;display:flex;align-items:center;"><span class="brand-logo-text"><i class="fa-solid fa-chart-pie" aria-hidden="true" style="margin-right:6px;"></i>Noah Trading Desk</span></a>
         </div>
         <nav class="gnb-shortcuts" aria-label="AI 기능 바로가기"><a href="/ai-analysis.html"><i class="fa-solid fa-robot" aria-hidden="true"></i> AI 분석</a><a href="/knowledge-search.html"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> 지식 검색</a><a href="/knowledge-dataset.html"><i class="fa-solid fa-book-open" aria-hidden="true"></i> 데이터셋</a></nav>
         <div class="site-header-actions"><button onclick="openAiPanel()" aria-label="분석 도구 메뉴 열기" style="border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--accent-dark);padding:6px 9px;font-size:13.2px;font-weight:800;cursor:pointer;white-space:nowrap;"><i class="fa-solid fa-toolbox" aria-hidden="true"></i> 도구 메뉴</button>${userSection}</div>
@@ -721,7 +721,7 @@ function ensureSiteFooter() {
   if (document.body.querySelector(':scope > footer')) return;
   const footer = document.createElement('footer');
   footer.id = 'site-footer';
-  footer.innerHTML = '<div>EDUMGT · 모의투자 교육 플랫폼 <span aria-hidden="true">·</span> 모든 거래 기능은 학습·테스트 용도입니다.</div>';
+  footer.innerHTML = '<div>Noah Trading Desk · 모의투자·OpenAPI 실습 <span aria-hidden="true">·</span> 모든 거래 기능은 학습·테스트 용도입니다.</div>';
   document.body.appendChild(footer);
 }
 

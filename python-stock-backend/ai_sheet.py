@@ -125,7 +125,7 @@ def crawl_to_sheet():
     if not _is_public_url(url):
         return jsonify({"message": "공개 HTTP(S) 주소만 입력할 수 있습니다."}), 400
     try:
-        with requests.get(url, headers={"User-Agent": "EDUMGT-AISheet/1.0 (+educational)"},
+        with requests.get(url, headers={"User-Agent": "Portfolio-AISheet/1.0"},
                           timeout=(4, 12), allow_redirects=True, stream=True) as response:
             if not _is_public_url(response.url):
                 return jsonify({"message": "안전하지 않은 리디렉션 주소입니다."}), 400

@@ -27,9 +27,44 @@ const lessons = [
 ];
 
 const lessonMap = Object.fromEntries(lessons.flatMap(group => group.items.map(item => [item.id, {...item, group:group.group, icon:group.icon}])));
-const analysisStorageKey = 'edumgt-investment-academy-progress-v1';
+/** 투자 분석 학습 진행 상태를 저장하는 브라우저 키입니다. */
+const analysisStorageKey = 'stock-coin-trade-learning-progress-v1';
 const globalProgressTarget = 100;
-function loadLearningState() { try { return JSON.parse(localStorage.getItem(analysisStorageKey)) ?? { lessons:{}, clicks:[] }; } catch { return { lessons:{}, clicks:[] }; } }
+/**
+ * 학습 진행을 읽고 유효한 이전 저장값 하나만 새 키로 옮깁니다.
+ * @returns {{lessons: object, clicks: Array, completed?: object, activeLesson?: string}} 학습 진행 상태
+ */
+function loadLearningState() {
+  const empty = { lessons:{}, clicks:[] };
+  try {
+    const saved = localStorage.getItem(analysisStorageKey);
+    if (saved !== null) return JSON.parse(saved) ?? empty;
+
+    let legacyKey = null;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || key === analysisStorageKey || !key.endsWith('investment-academy-progress-v1')) continue;
+      if (legacyKey) return empty;
+      legacyKey = key;
+    }
+    if (!legacyKey) return empty;
+
+    const state = JSON.parse(localStorage.getItem(legacyKey));
+    if (!state || typeof state !== 'object' || Array.isArray(state) ||
+        !state.lessons || typeof state.lessons !== 'object' || Array.isArray(state.lessons) ||
+        !Array.isArray(state.clicks) ||
+        (state.completed != null && (typeof state.completed !== 'object' || Array.isArray(state.completed))) ||
+        (state.activeLesson != null && typeof state.activeLesson !== 'string') ||
+        Object.values(state.lessons).some(lesson =>
+          !lesson || typeof lesson !== 'object' || Array.isArray(lesson) ||
+          !lesson.fields || typeof lesson.fields !== 'object' || Array.isArray(lesson.fields) ||
+          !lesson.actions || typeof lesson.actions !== 'object' || Array.isArray(lesson.actions))) return empty;
+
+    localStorage.setItem(analysisStorageKey, JSON.stringify(state));
+    localStorage.removeItem(legacyKey);
+    return state;
+  } catch { return empty; }
+}
 let learningState = loadLearningState();
 learningState.lessons ??= {}; learningState.clicks ??= []; learningState.completed ??= {};
 function saveLearningState() { localStorage.setItem(analysisStorageKey, JSON.stringify(learningState)); }

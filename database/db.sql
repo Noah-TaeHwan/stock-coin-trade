@@ -1,5 +1,4 @@
 -- --------------------------------------------------------
--- 호스트:                          edumgt.cg0ugoglztrn.ap-northeast-2.rds.amazonaws.com
 -- 서버 버전:                        10.4.32-MariaDB-log - Source distribution
 -- 서버 OS:                        Linux
 -- HeidiSQL 버전:                  11.3.0.6295
@@ -167,12 +166,6 @@ CREATE TABLE IF NOT EXISTS `hold_crypto` (
   CONSTRAINT `FKj5gx2leqo6dkwrg5isrvsfg7g` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 테이블 데이터 mockinv.hold_crypto:~0 rows (대략적) 내보내기
-/*!40000 ALTER TABLE `hold_crypto` DISABLE KEYS */;
-INSERT INTO `hold_crypto` (`hold_crypto_id`, `buy_average`, `buy_crypto_count`, `buy_total_krw`, `member_id`, `upbit_market_id`) VALUES
-	(1, 71004000, 0.01267534, 900000, 1, 1),
-	(2, 4061000, 0.22408274, 910000, 1, 1027);
-/*!40000 ALTER TABLE `hold_crypto` ENABLE KEYS */;
 
 -- 테이블 mockinv.member 구조 내보내기
 CREATE TABLE IF NOT EXISTS `member` (
@@ -184,11 +177,6 @@ CREATE TABLE IF NOT EXISTS `member` (
   PRIMARY KEY (`member_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
--- 테이블 데이터 mockinv.member:~0 rows (대략적) 내보내기
-/*!40000 ALTER TABLE `member` DISABLE KEYS */;
-INSERT INTO `member` (`member_id`, `asset`, `email`, `password`, `username`) VALUES
-	(1, 98190003, 'jj@jj.com', '$2a$10$NdyqwR1CQUhS79ZkL3LtfeZ70ZMR88VgYK2JGuzflPs6Kl.N24YlC', '이코인');
-/*!40000 ALTER TABLE `member` ENABLE KEYS */;
 
 -- HTS 관심종목 개인 메모 (회원별로 분리 저장)
 CREATE TABLE IF NOT EXISTS `hts_watch_memo` (

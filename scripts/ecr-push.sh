@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REGION="${AWS_REGION:-ap-northeast-2}"
-ACCOUNT_ID="${AWS_ACCOUNT_ID:-086015456585}"
+ACCOUNT_ID="${AWS_ACCOUNT_ID:?Set AWS_ACCOUNT_ID to your ECR account ID}"
 ECR_REGISTRY="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,6 +17,10 @@ if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
   DIRTY="-dirty"
 fi
 TAG="${IMAGE_TAG:-local-$SHA$DIRTY-$(date +%Y%m%d%H%M%S)}"
+case "$TAG" in
+  local-*) ;;
+  *) echo "IMAGE_TAG는 local-* 형식만 허용합니다." >&2; exit 1 ;;
+esac
 
 FRONTEND_IMAGE="$ECR_REGISTRY/stock-coin-trade-frontend"
 BACKEND_IMAGE="$ECR_REGISTRY/stock-coin-trade-python-backend"
