@@ -35,10 +35,10 @@ let lwCandle = null;
 let lwVolume = null;
 const movingAverageSeries = {};
 const movingAverageOptions = [
-  { period: 5,   color: '#FFD60A' },
-  { period: 20,  color: '#4FC3F7' },
-  { period: 60,  color: '#B39DFF' },
-  { period: 120, color: '#FF6FAE' },
+  { period: 5,   color: TERM_MA_COLORS[5] },
+  { period: 20,  color: TERM_MA_COLORS[20] },
+  { period: 60,  color: TERM_MA_COLORS[60] },
+  { period: 120, color: TERM_MA_COLORS[120] },
 ];
 const movingAverageVisibility = Object.fromEntries(movingAverageOptions.map(({ period }) => [period, true]));
 
@@ -118,7 +118,7 @@ function updatePortfolioMini(positions, cash) {
     const pct = Math.round((p.evalAmount || 0) / total * 100);
     return `<div title="${p.name} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
+  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:var(--series-neutral);min-width:3px;"></div>`);
 
   const sectors = positions.reduce((acc, p) => {
     const sector = p.sector || '기타';
@@ -130,7 +130,7 @@ function updatePortfolioMini(positions, cash) {
     const pct = Math.round(amount / total * 100);
     return `<div title="${sector} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
+  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:var(--series-neutral);min-width:3px;"></div>`);
   const sectorLabels = sectorItems.map(([sector, amount], i) =>
     `<span style="display:inline-flex;align-items:center;gap:3px;"><i style="width:6px;height:6px;background:${colors[i % colors.length]};display:inline-block;"></i>${sector} ${Math.round(amount / total * 100)}%</span>`
   ).join(' · ');

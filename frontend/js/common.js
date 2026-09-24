@@ -121,8 +121,13 @@ function termCandleColors() {
   };
 }
 
-// 범주형 차트 색. 상승·하락 의미와 겹치지 않게 초록·빨강 계열은 뺐다.
-const TERM_PALETTE = ['#FF9F1A', '#4FC3F7', '#B39DFF', '#5EEAD4', '#FF6FAE', '#FFD60A', '#A3E635', '#F97316'];
+// 범주형 차트 색(style.css의 --series-1~8과 같은 값). 차트 라이브러리는 CSS 변수를
+// 읽지 못하므로 hex로 둔다. 상승·하락과 헷갈리지 않게 초록·빨강 계열은 뺐다.
+const TERM_PALETTE = ['#FF9F1A', '#4FC3F7', '#B39DFF', '#5EEAD4', '#FF6FAE', '#FFD60A', '#90A4AE', '#F97316'];
+// 이동평균 기간별 선 색. 주식·KIS 차트·Pine 화면이 같은 색을 쓴다.
+const TERM_MA_COLORS = { 5: TERM_PALETTE[5], 20: TERM_PALETTE[1], 60: TERM_PALETTE[2], 120: TERM_PALETTE[4] };
+// 현금·기타처럼 의미 없는 나머지 몫
+const TERM_NEUTRAL = '#5B616C';
 
 // 거래량 막대처럼 투명도가 필요한 곳을 위해 #RRGGBB를 rgba로 바꾼다.
 function termAlpha(hex, alpha) {

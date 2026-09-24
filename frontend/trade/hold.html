@@ -20,7 +20,7 @@
        sticky로 고정하고, 탭을 전환해도 필요할 때만 그 안에서 스크롤되게 한다. */
     .hold-tabs { position:sticky; top:0; z-index:5; display:flex; gap:8px; margin:0 0 20px; padding:10px; border-bottom:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow-sm); overflow-x:auto; }
     .hold-tab { flex:0 0 auto; padding:10px 18px; border:1px solid transparent; border-radius:var(--radius); color:var(--muted); background:transparent; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; transition:background .15s,border-color .15s,color .15s; }
-    .hold-tab:hover { color:var(--accent-dark); background:var(--accent-light); border-color:rgba(41,98,255,.18); }
+    .hold-tab:hover { color:var(--accent-dark); background:var(--accent-light); border-color:var(--border-strong); }
     .hold-tab.active { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); box-shadow:none; }
     .hold-panel { display:none; }
     .hold-panel.active { display:block; }

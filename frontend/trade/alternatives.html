@@ -12,24 +12,25 @@
     body.alternatives-layout > main { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
     body.alternatives-layout #site-footer { margin-top:0; background:#000; border-top:1px solid #27272A; }
     .asset-menu-btn { width:100%; display:flex; align-items:center; gap:9px; padding:10px 11px; border:1px solid transparent; border-radius:var(--radius); background:transparent; color:var(--fg-2); text-align:left; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
-    .asset-menu-btn:hover { background:var(--accent-light); color:var(--accent-dark); }.asset-menu-btn.active { background:var(--accent); color:var(--accent-ink); box-shadow:0 4px 10px rgba(37,99,235,.22); }
+    .asset-menu-btn:hover { background:var(--accent-light); color:var(--accent-dark); }.asset-menu-btn.active { background:var(--accent); color:var(--accent-ink); }
+    .alt-ladder-head { display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid var(--border); background:var(--surface-2); font-size:12px; font-weight:800; }.alt-ladder-head span { color:var(--muted); font-weight:600; }.alt-ladder-head.ask { color:var(--down); }.alt-ladder-head.bid { color:var(--up); border-top:1px solid var(--border); border-bottom:0; }
     .asset-menu-icon { width:25px; height:25px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius); background:rgba(255,255,255,.16); font-size:13px; }.asset-menu-note { margin:4px 0 10px; padding:0 11px; color:var(--muted); font-size:11px; line-height:1.45; }
     .market-row { cursor:pointer; transition:background .15s; }.market-row:hover,.market-row.selected { background:var(--accent-light); }
-    .futures-guide { border:1px solid rgba(79,195,247,.35); background:var(--surface); }.futures-guide summary { cursor:pointer; list-style:none; }.futures-guide summary::-webkit-details-marker { display:none; }.futures-guide summary::after { content:'＋'; float:right; color:var(--accent); font-size:18px; line-height:1; }.futures-guide[open] summary::after { content:'−'; }
+    .futures-guide { border:1px solid var(--border); background:var(--surface); }.futures-guide summary { cursor:pointer; list-style:none; }.futures-guide summary::-webkit-details-marker { display:none; }.futures-guide summary::after { content:'＋'; float:right; color:var(--accent); font-size:18px; line-height:1; }.futures-guide[open] summary::after { content:'−'; }
     /* 실제 거래화면 패턴 (frontend/trade/stock.html과 동일) — 상세 메뉴 + 탭 모달 */
     .detail-launcher { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; padding:6px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow-sm); }
     .detail-launcher-btn { min-height:50px; padding:7px; border:1px solid var(--border); border-radius:var(--radius); color:var(--accent-dark); background:var(--surface-2); font-family:inherit; font-size:12px; font-weight:850; cursor:pointer; transition:transform .15s,box-shadow .15s,border-color .15s; }
-    .detail-launcher-btn:hover { border-color:var(--accent); box-shadow:0 5px 14px rgba(41,98,255,.18); transform:translateY(-1px); }
-    .details-modal-backdrop { position:fixed; inset:0; z-index:110; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,23,42,.5); backdrop-filter:blur(3px); }
+    .detail-launcher-btn:hover { border-color:var(--accent); box-shadow:none; transform:translateY(-1px); }
+    .details-modal-backdrop { position:fixed; inset:0; z-index:110; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.7); backdrop-filter:blur(3px); }
     .details-modal-backdrop.open { display:flex; }
-    .details-modal { width:95vw; max-width:95vw; height:95dvh; max-height:95dvh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:0 24px 64px rgba(15,23,42,.3); }
+    .details-modal { width:95vw; max-width:95vw; height:95dvh; max-height:95dvh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:none; }
     .details-modal-header { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border); }
     .details-modal-title { margin:0; color:var(--fg); font-size:22px; font-weight:900; }
     .details-modal-close { width:38px; height:38px; border:0; border-radius:var(--radius); color:var(--muted); background:var(--surface-2); font-size:26px; line-height:1; cursor:pointer; }
     .details-modal-body { flex:1 1 auto; min-height:0; overflow:auto; font-size:15px; }
     .trade-tabs { display:flex; gap:8px; padding:10px; border-bottom:1px solid var(--border); background:var(--surface-2); }
     .trade-tab { position:relative; flex:1; padding:9px 10px; border:1px solid transparent; border-radius:var(--radius); color:var(--muted); background:transparent; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; transition:background .15s,border-color .15s,color .15s; }
-    .trade-tab:hover { color:var(--accent-dark); background:var(--surface); border-color:rgba(41,98,255,.18); }
+    .trade-tab:hover { color:var(--accent-dark); background:var(--surface); border-color:var(--border-strong); }
     .trade-tab.active { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); box-shadow:none; }
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -124,19 +125,12 @@
           <table class="dark-table min-w-full"><thead><tr><th class="text-left">체결시간</th><th class="text-left">상품</th><th class="text-center">구분</th><th class="text-right">수량</th><th class="text-right">거래금액</th></tr></thead><tbody id="altHistoryBody"></tbody></table>
         </div>
         <div id="tab-orderbook" style="display:none;">
-          <div style="display:grid;grid-template-rows:auto auto auto;font-size:15px;">
-            <div>
-              <div style="padding:7px 12px;font-size:13px;font-weight:700;color:var(--down);border-bottom:1px solid var(--border);">매수 호가 (Bid)</div>
-              <table style="width:100%;"><thead><tr style="background:rgba(225,29,72,0.04);"><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">가격</th><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">수량</th></tr></thead><tbody id="altBidBody"></tbody></table>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:center;padding:12px 14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);gap:10px;">
-              <span style="font-size:13px;color:var(--muted);">현재가</span><span id="altObCurrentPrice" style="font-size:18px;font-weight:900;color:var(--accent-dark);">-</span>
-              <span style="font-size:13px;color:var(--muted);margin-left:8px;">스프레드</span><span id="altObSpread" style="font-size:13px;font-weight:700;color:var(--muted);">-</span>
-            </div>
-            <div>
-              <div style="padding:7px 12px;font-size:13px;font-weight:700;color:var(--info);border-bottom:1px solid var(--border);">매도 호가 (Ask)</div>
-              <table style="width:100%;"><thead><tr style="background:rgba(37,99,235,0.04);"><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">가격</th><th style="padding:7px 12px;text-align:right;font-size:12px;color:var(--muted);">수량</th></tr></thead><tbody id="altAskBody"></tbody></table>
-            </div>
+          <div class="alt-ladder">
+            <div class="alt-ladder-head ask">매도 호가 (Ask)<span>가격 · 수량</span></div>
+            <table class="term-ladder"><tbody id="altAskBody"></tbody></table>
+            <div class="term-ladder-mid"><span>현재가</span><strong id="altObCurrentPrice">-</strong><span>스프레드 <b id="altObSpread">-</b></span></div>
+            <table class="term-ladder"><tbody id="altBidBody"></tbody></table>
+            <div class="alt-ladder-head bid">매수 호가 (Bid)<span>가격 · 수량</span></div>
           </div>
         </div>
       </div>

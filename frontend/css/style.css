@@ -68,6 +68,17 @@
     --lh-prose:      1.65;
     --shadow-lg:     var(--shadow-md);
 
+    /* 범주형 차트 색(common.js TERM_PALETTE와 같은 순서). 초록·빨강은 등락 전용이라 뺐다. */
+    --series-1:       #FF9F1A;
+    --series-2:       #4FC3F7;
+    --series-3:       #B39DFF;
+    --series-4:       #5EEAD4;
+    --series-5:       #FF6FAE;
+    --series-6:       #FFD60A;
+    --series-7:       #90A4AE;
+    --series-8:       #F97316;
+    --series-neutral: #5B616C;
+
     /* 명령줄 GO 버튼·티커 테이프 바탕 */
     --go:            #1F7A3A;
     --go-hover:      #26944A;

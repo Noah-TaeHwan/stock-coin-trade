@@ -22,10 +22,10 @@
     .endpoint-table th { text-align:left; color:var(--muted); font-weight:700; border-bottom:1px solid var(--border); }
     .endpoint-table td { border-bottom:1px solid var(--border); color:var(--fg); vertical-align:top; }
     .method-badge { display:inline-block; font-size:11px; font-weight:800; padding:1px 8px; border-radius:var(--radius); }
-    .method-get   { background:rgba(37,99,235,0.12); color:var(--info); }
-    .method-post  { background:rgba(225,29,72,0.12); color:var(--down); }
+    .method-get   { background:var(--info-bg); color:var(--info); }
+    .method-post  { background:var(--accent-light); color:var(--accent); }
     pre.code-block {
-      background:#0F172A; color:#E2E8F0; border-radius:var(--radius); padding:14px 16px;
+      background:var(--bg); color:var(--fg-2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;
       font-size:12.5px; line-height:1.65; overflow-x:auto; white-space:pre;
     }
     code.inline-code { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); padding:1px 6px; font-size:12.5px; }
@@ -40,7 +40,7 @@
   <section class="glass-card p-6">
     <div class="flex flex-wrap items-center gap-3 mb-2">
       <h1 class="text-2xl font-black" style="color:var(--fg);">Open API — 가상 주식 매매</h1>
-      <span class="badge" style="font-size:11px;background:rgba(37,99,235,0.12);color:var(--info);">v1</span>
+      <span class="badge" style="font-size:11px;background:var(--info-bg);color:var(--info);">v1</span>
     </div>
     <p style="font-size:13.5px;color:var(--muted);line-height:1.7;">
       외부 시스템(봇, 트레이딩 프로그램 등)이 Noah Trading Desk 모의투자 플랫폼의 주식 계좌를 API Key로 인증해 조회·매매할 수 있는 REST API입니다.

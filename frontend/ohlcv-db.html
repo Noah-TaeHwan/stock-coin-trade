@@ -26,8 +26,8 @@
     .ohlcv-table-wrap { overflow:auto; border:1px solid var(--quant-line); border-radius:var(--radius); }
     .ohlcv-table-toolbar { display:flex; justify-content:space-between; gap:12px; align-items:center; }
     .ohlcv-table-toolbar p { margin:0; color:var(--muted); font-size:12px; }
-    .ohlcv-table-toolbar input { width:min(100%,230px); padding:8px 10px; border:1px solid rgba(79,195,247,.35); border-radius:var(--radius); font:inherit; font-size:12px; }
-    .ohlcv-table-toolbar button { padding:8px 10px; border:1px solid rgba(79,195,247,.35); border-radius:var(--radius); color:var(--info); background:var(--surface); font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+    .ohlcv-table-toolbar input { width:min(100%,230px); padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); font:inherit; font-size:12px; }
+    .ohlcv-table-toolbar button { padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); color:var(--info); background:var(--surface); font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
     .ohlcv-table-toolbar button:disabled { opacity:.45; cursor:default; }
     @media (max-width:1050px) { .ohlcv-pipeline { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } .ohlcv-pipeline > i { display:none; } }
     @media (max-width:760px) { .ohlcv-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .ohlcv-table-toolbar { align-items:stretch; flex-direction:column; } .ohlcv-table-toolbar input { width:100%; box-sizing:border-box; } }
