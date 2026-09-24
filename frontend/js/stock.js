@@ -1,4 +1,5 @@
 /* ── 상태 ─────────────────────────────────────────────────────────────────── */
+let currentUser         = null;
 let currentPeriod       = '1m';
 let currentMarketFilter = 'ALL';
 let allStocks           = [];
@@ -271,7 +272,7 @@ async function requestJson(url, options = {}) {
   const raw = await response.text();
   let data = null;
   try { data = raw.trim() ? JSON.parse(raw) : null; } catch { throw new Error('응답 형식 오류'); }
-  if (!response.ok) throw new Error(data?.message || '요청 실패');
+  if (!response.ok) throw Object.assign(new Error(data?.message || '요청 실패'), { status: response.status });
   if (data === null) throw new Error('빈 응답');
   return data;
 }
@@ -315,7 +316,7 @@ function renderStockMarketList() {
   renderStockWatchList();
   const selectedSymbol = document.getElementById('stockSymbol')?.value;
   if (!lastPositions.length) {
-    tbody.innerHTML = `<tr><td class="empty" colspan="3">보유 중인 종목이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td class="empty" colspan="3">${currentUser?.loggedIn ? '보유 중인 종목이 없습니다.' : '로그인 필요'}</td></tr>`;
     return;
   }
 
@@ -611,8 +612,30 @@ async function loadMarket() {
 }
 
 /* ── 계좌 + 포지션 ───────────────────────────────────────────────────────── */
+// 계좌·포지션·체결 API는 로그인 전용(비로그인 401)이다. 게스트는 요청하지 않고,
+// 세션이 만료돼 401을 받으면 비로그인으로 전환해 이후 폴링도 요청 없이 안내만 유지한다.
+function showLoginRequired() {
+  currentUser = { loggedIn: false };
+  lastCash = 0;
+  lastPositions = [];
+  setEl('accountCash', '로그인 필요', 'var(--muted)');
+  setEl('accountAsset', '-', 'var(--muted)');
+  setEl('accountPnlRate', '-', 'var(--muted)');
+  const positionsBody = document.getElementById('positionsBody');
+  if (positionsBody) positionsBody.innerHTML = `<tr><td class="empty" colspan="6">로그인 필요</td></tr>`;
+  const historyBody = document.getElementById('historyBody');
+  if (historyBody) historyBody.innerHTML = `<tr><td class="empty" colspan="5">로그인 필요</td></tr>`;
+  renderStockMarketList();
+  updatePortfolioMini([], 0);
+  updateBreakEven([], document.getElementById('stockSymbol')?.value);
+  updateOrderSummary();
+}
+
 async function loadAccount() {
-  const data = await requestJson('/api/stocks/account');
+  if (!currentUser?.loggedIn) return showLoginRequired();
+  let data;
+  try { data = await requestJson('/api/stocks/account'); }
+  catch (error) { if (error.status === 401) showLoginRequired(); return; }
   lastCash = data.cash;
   setText('accountCash',   fmtKrw(data.cash));
   setText('accountAsset',  fmtKrw(data.totalAsset));
@@ -623,7 +646,10 @@ async function loadAccount() {
 }
 
 async function loadPositions() {
-  const data = await requestJson('/api/stocks/positions');
+  if (!currentUser?.loggedIn) return showLoginRequired();
+  let data;
+  try { data = await requestJson('/api/stocks/positions'); }
+  catch (error) { if (error.status === 401) showLoginRequired(); return; }
   lastPositions = data.positions ?? [];
   const tbody = document.getElementById('positionsBody');
   if (!tbody) return;
@@ -655,6 +681,7 @@ async function loadPositions() {
 }
 
 async function loadHistory() {
+  if (!currentUser?.loggedIn) return showLoginRequired();
   try {
     const data = await requestJson('/api/stocks/orders/history');
     const tbody = document.getElementById('historyBody');
@@ -676,7 +703,9 @@ async function loadHistory() {
         <td>${fmtKrw(h.amount)}</td>
       </tr>`;
     }).join('');
-  } catch {}
+  } catch (error) {
+    if (error.status === 401) showLoginRequired();
+  }
 }
 
 /* ── 호가창 ──────────────────────────────────────────────────────────────── */
@@ -863,7 +892,7 @@ function setEl(id, val, color) {
 
 /* ── 부트 ────────────────────────────────────────────────────────────────── */
 (async () => {
-  await initPage();
+  currentUser = await initPage();
   initStockChart();
 
   await pickTopVolumeKospiSymbol();
