@@ -6,22 +6,20 @@
   <title>Alpaca Paper Trading 3일차 전체 과정 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
-  <link rel="stylesheet" href="/css/alpaca-lab.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
+  <link rel="stylesheet" href="/css/alpaca-lab.css?v=20260925-terminal">
 
-  <style>
-    .learn-wrap{max-width:none;margin:0;padding:32px 20px 48px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.title{margin:0 0 7px;font-size:22px;font-weight:900;color:var(--fg)}.desc{margin:0;color:var(--fg-2);font-size:14px;line-height:1.75}.steps{display:grid;gap:10px;margin-top:16px}.step{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:900}.step h3{margin:0;color:var(--fg);font-size:15px;font-weight:900}.step p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}.box{padding:15px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.box b{display:block;color:var(--fg);font-size:14px}.box p,.box li{margin:6px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.box ul{margin:6px 0 0;padding-left:18px}.notice{margin-top:14px;padding:13px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.7}.danger{margin-top:14px;padding:13px 14px;border-radius:9px;background:var(--surface-2);color:var(--down);font-size:13px;line-height:1.7}.code{margin:14px 0 0;padding:16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}.btn{display:inline-block;margin-top:14px;padding:9px 13px;border:0;border-radius:7px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:13px;font-weight:800}.btn-alt{display:inline-block;margin:14px 0 0 8px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;color:var(--fg);text-decoration:none;font-size:13px;font-weight:800}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:none;margin:0;padding:14px 20px;color:var(--muted);font-size:12px}@media(max-width:760px){.learn-wrap{padding:20px 12px 30px}.card{padding:17px}.grid{grid-template-columns:1fr}}
-  </style>
+
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="learn-wrap">
-    <section style="padding:28px;border:1px solid rgba(79,195,247,.35);border-radius:15px;background:var(--surface-2);">
+  <main class="learn-wrap term-doc">
+    <section class="term-hero">
       <div class="kicker">PRACTICE · ALPACA API</div>
-      <h1 style="margin:7px 0;font-size:30px;line-height:1.25;font-weight:900;color:var(--fg);">Alpaca API로 미국주식·암호화폐 Paper Trading 시작하기</h1>
+      <h1>Alpaca API로 미국주식·암호화폐 Paper Trading 시작하기</h1>
       <p class="desc" style="max-width:850px">Alpaca의 개발자 API와 Python SDK(<code>alpaca-py</code>)로 계정 조회, 시세, 주문 흐름을 연습합니다. 이 실습은 <strong>Paper Trading</strong>에서만 시작하며, 실제 주문 코드는 실행 전에 별도로 검토합니다.</p>
       <nav class="alpaca-stage-nav" aria-label="Alpaca Paper 실습 단계"><a href="/learning/alpaca-signup.html">1 가입</a><a href="/learning/alpaca-key.html">2 Key</a><a href="/learning/alpaca-install.html">3 설치</a><a href="/learning/alpaca-setup.html">4 설정</a><a href="/alpaca-test.html">5 조회</a><a href="/alpaca-order-flow-test.html">6 주문</a><a href="/alpaca-api-history.html">7 이력</a></nav>
-      <figure style="margin:22px 0 0;border:1px solid rgba(0,0,0,.12);border-radius:12px;overflow:hidden;background:var(--warn-bg);box-shadow:0 8px 24px rgba(0,0,0,.12)">
+      <figure style="margin:22px 0 0;border:1px solid rgba(0,0,0,.12);border-radius:var(--radius);overflow:hidden;background:var(--warn-bg);box-shadow:0 8px 24px rgba(0,0,0,.12)">
         <img src="https://alpaca.markets/static/images/meta-image-homepage.png" alt="Alpaca의 주식·옵션·암호화폐 API 소개 화면과 웹·모바일 거래 화면" width="2400" height="1260" loading="lazy" style="display:block;width:100%;height:auto">
         <figcaption style="padding:10px 13px;background:var(--surface);color:var(--muted);font-size:12px;line-height:1.55">Alpaca 공식 홈페이지 소개 이미지 · 실제 제공 상품과 계정별 기능은 <a href="https://alpaca.markets" target="_blank" rel="noopener noreferrer" style="color:var(--accent-dark);font-weight:700">공식 웹사이트</a>에서 확인하세요.</figcaption>
       </figure>
@@ -48,14 +46,14 @@
         <div class="step"><span class="num">4</span><div><h3>Python SDK로 연결 확인</h3><p>키 발급 후에는 주문 전에 <code>get_account()</code>를 실행해 키와 Paper 환경이 정상 연결되는지 먼저 확인합니다. 응답·로그에 Secret을 출력하지 않습니다.</p></div></div>
       </div>
       <div class="grid"><div class="box"><b>Paper Trading</b><p>무료 모의 거래 환경입니다. 실거래소로 주문을 전송하지 않으므로 API·전략·리스크 제어를 먼저 검증하는 데 사용합니다.</p></div><div class="box"><b>Live Trading</b><p>실제 거래용 환경입니다. Paper와 API 키·도메인이 다르며, 거주 국가, KYC 심사, 상품 및 규제 요건에 따라 이용 가능 여부가 달라질 수 있습니다.</p></div></div>
-      <figure style="margin:18px 0 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)"><img src="/images/alpaca-paper-api-key-guide.svg" alt="Alpaca Paper Trading 계정을 선택하고 Home 화면의 API Keys에서 Generate New Keys를 누르는 순서" width="1200" height="680" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">Paper API Key 생성 위치 안내 · 실제 대시보드 메뉴와 버튼명은 Alpaca 화면 업데이트에 따라 달라질 수 있습니다. 계정 식별자·API Key·Secret은 이미지나 문서에 기록하지 마세요.</figcaption></figure>
+      <figure style="margin:18px 0 0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface-2)"><img src="/images/alpaca-paper-api-key-guide.svg" alt="Alpaca Paper Trading 계정을 선택하고 Home 화면의 API Keys에서 Generate New Keys를 누르는 순서" width="1200" height="680" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">Paper API Key 생성 위치 안내 · 실제 대시보드 메뉴와 버튼명은 Alpaca 화면 업데이트에 따라 달라질 수 있습니다. 계정 식별자·API Key·Secret은 이미지나 문서에 기록하지 마세요.</figcaption></figure>
       <div class="notice"><strong>API Keys 패널이 보이지 않을 때:</strong> (1) 문서 사이트가 아닌 <a href="https://app.alpaca.markets/account/login" target="_blank" rel="noopener noreferrer">Alpaca 대시보드</a>에 로그인했는지, (2) 좌측 상단 계정 선택기가 <strong>Paper Trading</strong>인지, (3) <strong>Home</strong> 화면을 새로고침했는지 확인하세요. 계속 없으면 계정 선택기에서 새 Paper 계정을 생성한 후 다시 확인하고 Alpaca Support에 문의하세요.</div>
       <div class="notice"><strong>다음 단계:</strong> 계정을 만든 뒤 API 키가 준비되면 이 페이지의 Python SDK 예제로 연결 상태만 먼저 확인하세요. 전략 백테스트와 리스크 한도를 확인하기 전에는 Live Trading으로 전환하지 않습니다.</div>
     </section>
 
     <section class="card">
       <div class="kicker">PYTHON SDK</div><h2 class="title">키는 코드가 아닌 환경변수에서 읽습니다</h2>
-      <figure style="margin:16px 0;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)">
+      <figure style="margin:16px 0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)">
         <img src="https://files.readme.io/0ea3a33-meta-image-docs.png" alt="Alpaca 공식 API 문서와 여러 프로그래밍 언어 SDK를 소개하는 이미지" width="2400" height="1260" loading="lazy" style="display:block;width:100%;height:auto">
         <figcaption style="padding:10px 13px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;line-height:1.55">Alpaca 공식 문서 안내 · 인증, SDK, API Reference는 <a href="https://docs.alpaca.markets/docs/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-dark);font-weight:700">Alpaca Documentation</a>에서 최신 명세를 확인하세요.</figcaption>
       </figure>
@@ -146,36 +144,37 @@ ALPACA_SECRET_KEY=발급받은_PAPER_API_SECRET</pre>
     </section>
 <!-- curriculum:start -->
 <style id="curriculum-embed-style">
-.cur-card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}
-.cur-kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}
-.cur-title{margin:0 0 6px;font-size:23px;font-weight:900;color:var(--fg)}
-.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:14px;line-height:1.75}
-.cur-sec{margin-top:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
-.cur-sec>summary{cursor:pointer;list-style:none;padding:13px 16px;font-size:16px;font-weight:900;color:var(--fg)}
+.cur-card{margin-top:0;padding:14px 0 18px;border:0;border-top:1px solid var(--border);border-radius:0;background:none}
+.cur-kicker{font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--accent)}
+.cur-title{margin:3px 0 6px;font-size:17px;font-weight:800;color:var(--fg)}
+.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-sec{margin-top:6px;border:1px solid var(--border);border-radius:0;background:var(--surface)}
+.cur-sec>summary{cursor:pointer;list-style:none;padding:6px 10px;font-size:14px;font-weight:800;color:var(--fg)}
 .cur-sec>summary::-webkit-details-marker{display:none}
 .cur-sec>summary::before{content:"▸";display:inline-block;width:16px;color:var(--accent)}
+.cur-sec[open]>summary{border-bottom:1px solid var(--border);background:var(--surface-2)}
 .cur-sec[open]>summary::before{content:"▾"}
-.cur-body{padding:2px 16px 16px;color:var(--fg-2);font-size:13.5px;line-height:1.75}
-.cur-body h4{margin:16px 0 6px;font-size:14.5px;font-weight:900;color:var(--fg)}
-.cur-body p{margin:8px 0}
-.cur-body ul,.cur-body ol{margin:6px 0 8px 22px;padding:0}
+.cur-body{padding:4px 12px 12px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-body h4{margin:12px 0 4px;font-size:13.5px;font-weight:800;color:var(--fg)}
+.cur-body p{margin:6px 0}
+.cur-body ul,.cur-body ol{margin:4px 0 6px 20px;padding:0}
 .cur-body ul{list-style:disc}
 .cur-body ol{list-style:decimal}
-.cur-body li::marker{color:var(--accent-dark)}
-.cur-body li{margin:3px 0}
-.cur-body code{padding:1px 5px;border-radius:5px;background:rgba(15,23,42,.06);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--fg)}
+.cur-body li::marker{color:var(--accent)}
+.cur-body li{margin:2px 0}
+.cur-body code{padding:0 4px;border-radius:var(--radius-xs);background:var(--warn-bg);font:12px var(--font-mono);color:var(--warn)}
 .cur-body a{color:var(--accent-dark);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
-.cur-code{margin:10px 0;padding:14px 16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+.cur-code{margin:8px 0;padding:8px 10px;border:1px solid var(--border);border-radius:0;overflow:auto;background:var(--bg);color:var(--fg-2);font:12px/1.6 var(--font-mono);white-space:pre}
 .cur-code code{padding:0;background:none;color:inherit;font:inherit}
-.cur-quote{margin:10px 0;padding:12px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.7}
+.cur-quote{margin:8px 0;padding:6px 10px;border-left:2px solid var(--warn);border-radius:0;background:var(--warn-bg);color:var(--warn);font-size:12.5px;line-height:1.6}
 .cur-quote p{margin:0}
-.cur-table-wrap{overflow:auto;margin:10px 0}
-.cur-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
-.cur-table th,.cur-table td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
+.cur-table-wrap{overflow:auto;margin:8px 0}
+.cur-table{width:100%;min-width:600px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
+.cur-table th,.cur-table td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
 .cur-table th{background:var(--surface-2);color:var(--muted);font-size:11px;white-space:nowrap}
-.cur-hr{border:0;border-top:1px solid var(--border);margin:14px 0}
-.cur-foot{margin-top:12px;font-size:12px;color:var(--muted)}
-@media(max-width:700px){.cur-card{padding:16px}.cur-body{padding:2px 12px 12px}}
+.cur-hr{border:0;border-top:1px solid var(--border);margin:10px 0}
+.cur-foot{margin-top:8px;font-size:12px;color:var(--muted)}
+@media(max-width:700px){.cur-body{padding:4px 10px 10px}}
 </style>
 <section class="cur-card" id="curriculum">
 <div class="cur-kicker">CURRICULUM · 3일차 모의투자·OpenAPI 실습 과정표</div>
@@ -202,6 +201,6 @@ curl -s &#x27;http://localhost:3333/api/alpaca-test/market/quote?symbol=AAPL&#x2
 <!-- curriculum:end -->
 </main>
   <footer class="footer"><div>Noah Trading Desk · Alpaca API Paper Trading · 교육용 콘텐츠</div></footer>
-  <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260925-terminal"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
 </body>
 </html>

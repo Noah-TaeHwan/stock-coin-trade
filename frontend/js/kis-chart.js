@@ -11,7 +11,7 @@
   let symbolName = '';
   let data = [];
   let chart; let candleSeries; let volumeSeries; const maSeries = {};
-  const MA = [[5, '#FFD60A'], [20, '#4FC3F7'], [60, '#B39DFF']];
+  const MA = [5, 20, 60].map(period => [period, TERM_MA_COLORS[period]]);
 
   // ── 차트 생성 ─────────────────────────────────────────────────────────
   function initChart() {

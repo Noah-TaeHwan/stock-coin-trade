@@ -61,8 +61,8 @@ function initChart() {
   const el = $('pineChart');
   pineChart = LightweightCharts.createChart(el, termChartOptions());
   pineCandles = pineChart.addCandlestickSeries(termCandleColors());
-  pineFast = pineChart.addLineSeries({ color:'#FFD60A', lineWidth:2, lastValueVisible:false, priceLineVisible:false });
-  pineSlow = pineChart.addLineSeries({ color:'#B39DFF', lineWidth:2, lastValueVisible:false, priceLineVisible:false });
+  pineFast = pineChart.addLineSeries({ color:TERM_MA_COLORS[5], lineWidth:2, lastValueVisible:false, priceLineVisible:false });
+  pineSlow = pineChart.addLineSeries({ color:TERM_MA_COLORS[60], lineWidth:2, lastValueVisible:false, priceLineVisible:false });
   new ResizeObserver(() => pineChart.resize(el.clientWidth, el.clientHeight)).observe(el);
 }
 async function loadStocks() {

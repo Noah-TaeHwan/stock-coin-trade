@@ -6,21 +6,19 @@
   <title>KIS 모의투자 실습 3단계 · 테스트 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
 
-  <style>
-    .learn-wrap{max-width:1080px;margin:0 auto;padding:32px 20px 48px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.title{margin:0 0 7px;font-size:23px;font-weight:900;color:var(--fg)}.desc{margin:0;color:var(--fg-2);font-size:14px;line-height:1.75}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}.flow span{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:13px;font-weight:800;color:var(--fg)}.flow i{color:var(--accent);font-style:normal;font-weight:900}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}.box{padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.box b{display:block;color:var(--fg);font-size:14px}.box p{margin:5px 0 0;color:var(--fg-2);font-size:12px;line-height:1.65}.steps{display:grid;gap:10px;margin-top:16px}.step{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:900}.step h3{margin:0;color:var(--fg);font-size:15px;font-weight:900}.step p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.table-wrap{overflow:auto;margin-top:14px}.table{width:100%;min-width:680px;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.table th{background:var(--surface-2);color:var(--muted);font-size:11px}.guide-figure{margin:18px auto 0;max-width:940px;overflow:hidden;border:1px solid rgba(79,195,247,.35);border-radius:12px;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.guide-figure img{display:block;width:100%;height:auto}.guide-figure figcaption{padding:10px 14px;border-top:1px solid var(--border);color:var(--fg-2);font-size:12px;line-height:1.55}.code{margin:14px 0 0;padding:16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}.notice{margin-top:14px;padding:13px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.7}.danger{margin-top:14px;padding:13px 14px;border-radius:9px;background:var(--surface-2);color:var(--down);font-size:13px;line-height:1.7}.check{display:flex;gap:8px;align-items:flex-start;margin-top:9px;color:var(--fg-2);font-size:13px;line-height:1.55}.check input{margin-top:3px;accent-color:var(--accent)}.btn{display:inline-block;margin-top:14px;padding:9px 13px;border:0;border-radius:7px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:13px;font-weight:800}.btn-alt{display:inline-block;margin:14px 0 0 8px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;color:var(--fg);text-decoration:none;font-size:13px;font-weight:800}@media(max-width:760px){.learn-wrap{padding:20px 12px 30px}.card{padding:17px}.grid{grid-template-columns:1fr}.title{font-size:20px}.guide-figure figcaption{padding:9px 11px;font-size:11px}}
-  .card figure{width:min(100%,920px);margin:20px auto 0;border:1px solid rgba(79,195,247,.35);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:0 8px 22px rgba(15,23,42,.06)}.card figure img{display:block;width:100%;height:auto}.card figcaption{padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);color:var(--fg-2);font-size:12px;line-height:1.55}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:1080px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:12px}.stage-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}.stage-nav a{display:block;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);text-decoration:none;color:var(--fg-2)}.stage-nav a b{display:block;color:var(--fg);font-size:14px;font-weight:900}.stage-nav a small{display:block;margin-top:3px;font-size:12px;line-height:1.5}.stage-nav a.on{border-color:var(--accent);background:var(--surface-2);color:var(--accent-dark)}.stage-nav a.on b{color:var(--accent-dark)}.stage-nav a.on::before{content:'현재 단계 · ';font-size:11px;font-weight:900;color:var(--accent)}@media(max-width:760px){.stage-nav{grid-template-columns:1fr}}</style>
+
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="learn-wrap">
-    <section style="padding:28px;border:1px solid rgba(79,195,247,.35);border-radius:15px;background:var(--surface-2);">
+  <main class="learn-wrap term-doc">
+    <section class="term-hero">
       <div class="kicker">KIS 모의투자 실습 · 3단계 테스트</div>
-      <h1 style="margin:7px 0;font-size:30px;line-height:1.25;font-weight:900;color:var(--fg);">키 발급 후 간단한 테스트: 현재가 조회부터 모의 주문 흐름까지</h1>
+      <h1>키 발급 후 간단한 테스트: 현재가 조회부터 모의 주문 흐름까지</h1>
       <p class="desc" style="max-width:850px">2단계에서 설정한 모의 키로 이 웹앱의 KIS 조회 모듈을 하나씩 실행합니다. 현재가 1건 → 일봉·호가·지수 → 잔고 순서로 넓힌 뒤, 마지막에 로그인 후 보호된 <strong>모의 주문 → 정정 → 취소</strong> 흐름을 한 번만 실행합니다. 실전 키·실전 계좌는 사용하지 않습니다.</p>
       <div class="flow"><span>현재가 1건 확인</span><i>→</i><span>조회 API 검증</span><i>→</i><span>잔고 확인</span><i>→</i><span>모의 주문 흐름</span><i>→</i><span>체결·잔고 대사</span></div>
-      <nav class="stage-nav" aria-label="KIS 모의투자 실습 단계"><a href="/learning/kis-regist.html"><b>1단계 · 가입</b><small>한국투자증권 계좌와 모의투자 계좌 준비</small></a><a href="/learning/kis-dev.html"><b>2단계 · 키 발급</b><small>KIS Developers API 신청과 kis.key 설정</small></a><a href="/learning/kis-test.html" class="on"><b>3단계 · 테스트</b><small>현재가 조회부터 모의 주문 흐름까지 점검</small></a></nav>
+      <nav class="term-steps" aria-label="KIS 모의투자 실습 단계"><a href="/learning/kis-regist.html"><b>1단계 · 가입</b><small>한국투자증권 계좌와 모의투자 계좌 준비</small></a><a href="/learning/kis-dev.html"><b>2단계 · 키 발급</b><small>KIS Developers API 신청과 kis.key 설정</small></a><a href="/learning/kis-test.html" class="on"><b>3단계 · 테스트</b><small>현재가 조회부터 모의 주문 흐름까지 점검</small></a></nav>
     </section>
 
 <section class="card">
@@ -146,7 +144,7 @@ curl 'http://localhost:3333/api/broker-test/kis/balance'
 <section class="card">
       <div class="kicker">STEP 5 · 인증과 주문 구현 (참고 코드)</div><h2 class="title">토큰 → 조회 → 최소 주문 순서로 검증합니다</h2>
       <p class="desc">개인·일반법인 API는 Client Credentials 방식으로 접근 토큰을 발급받습니다. KIS 공식 문서상 토큰 유효기간은 24시간이므로, 응답의 만료시각을 저장해 불필요한 재발급을 피하세요.</p>
-      <figure style="margin:16px 0 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2)"><img src="/images/kis-api-request-flow.svg" alt="KIS 모의투자 API의 서버 측 인증과 주문 검증 흐름" width="1200" height="390" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">KIS Developers API 문서와 공식 샘플 코드의 구조를 바탕으로 만든 교육용 서버 처리 흐름도입니다.</figcaption></figure>
+      <figure style="margin:16px 0 0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface-2)"><img src="/images/kis-api-request-flow.svg" alt="KIS 모의투자 API의 서버 측 인증과 주문 검증 흐름" width="1200" height="390" style="display:block;width:100%;height:auto"><figcaption style="padding:9px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">KIS Developers API 문서와 공식 샘플 코드의 구조를 바탕으로 만든 교육용 서버 처리 흐름도입니다.</figcaption></figure>
       <pre class="code">import os, requests
 
 KIS_BASE_URL = "https://openapivts.koreainvestment.com:29443"   # Testbed 고정
@@ -257,36 +255,37 @@ def get_access_token():
     </section>
 <!-- curriculum:start -->
 <style id="curriculum-embed-style">
-.cur-card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}
-.cur-kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}
-.cur-title{margin:0 0 6px;font-size:23px;font-weight:900;color:var(--fg)}
-.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:14px;line-height:1.75}
-.cur-sec{margin-top:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
-.cur-sec>summary{cursor:pointer;list-style:none;padding:13px 16px;font-size:16px;font-weight:900;color:var(--fg)}
+.cur-card{margin-top:0;padding:14px 0 18px;border:0;border-top:1px solid var(--border);border-radius:0;background:none}
+.cur-kicker{font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--accent)}
+.cur-title{margin:3px 0 6px;font-size:17px;font-weight:800;color:var(--fg)}
+.cur-desc{margin:0 0 4px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-sec{margin-top:6px;border:1px solid var(--border);border-radius:0;background:var(--surface)}
+.cur-sec>summary{cursor:pointer;list-style:none;padding:6px 10px;font-size:14px;font-weight:800;color:var(--fg)}
 .cur-sec>summary::-webkit-details-marker{display:none}
 .cur-sec>summary::before{content:"▸";display:inline-block;width:16px;color:var(--accent)}
+.cur-sec[open]>summary{border-bottom:1px solid var(--border);background:var(--surface-2)}
 .cur-sec[open]>summary::before{content:"▾"}
-.cur-body{padding:2px 16px 16px;color:var(--fg-2);font-size:13.5px;line-height:1.75}
-.cur-body h4{margin:16px 0 6px;font-size:14.5px;font-weight:900;color:var(--fg)}
-.cur-body p{margin:8px 0}
-.cur-body ul,.cur-body ol{margin:6px 0 8px 22px;padding:0}
+.cur-body{padding:4px 12px 12px;color:var(--fg-2);font-size:13.5px;line-height:1.65}
+.cur-body h4{margin:12px 0 4px;font-size:13.5px;font-weight:800;color:var(--fg)}
+.cur-body p{margin:6px 0}
+.cur-body ul,.cur-body ol{margin:4px 0 6px 20px;padding:0}
 .cur-body ul{list-style:disc}
 .cur-body ol{list-style:decimal}
-.cur-body li::marker{color:var(--accent-dark)}
-.cur-body li{margin:3px 0}
-.cur-body code{padding:1px 5px;border-radius:5px;background:rgba(15,23,42,.06);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--fg)}
+.cur-body li::marker{color:var(--accent)}
+.cur-body li{margin:2px 0}
+.cur-body code{padding:0 4px;border-radius:var(--radius-xs);background:var(--warn-bg);font:12px var(--font-mono);color:var(--warn)}
 .cur-body a{color:var(--accent-dark);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
-.cur-code{margin:10px 0;padding:14px 16px;border-radius:10px;overflow:auto;background:#131722;color:#D1D4DC;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+.cur-code{margin:8px 0;padding:8px 10px;border:1px solid var(--border);border-radius:0;overflow:auto;background:var(--bg);color:var(--fg-2);font:12px/1.6 var(--font-mono);white-space:pre}
 .cur-code code{padding:0;background:none;color:inherit;font:inherit}
-.cur-quote{margin:10px 0;padding:12px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.7}
+.cur-quote{margin:8px 0;padding:6px 10px;border-left:2px solid var(--warn);border-radius:0;background:var(--warn-bg);color:var(--warn);font-size:12.5px;line-height:1.6}
 .cur-quote p{margin:0}
-.cur-table-wrap{overflow:auto;margin:10px 0}
-.cur-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
-.cur-table th,.cur-table td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
+.cur-table-wrap{overflow:auto;margin:8px 0}
+.cur-table{width:100%;min-width:600px;border-collapse:collapse;font-size:12.5px;background:var(--surface)}
+.cur-table th,.cur-table td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;line-height:1.55}
 .cur-table th{background:var(--surface-2);color:var(--muted);font-size:11px;white-space:nowrap}
-.cur-hr{border:0;border-top:1px solid var(--border);margin:14px 0}
-.cur-foot{margin-top:12px;font-size:12px;color:var(--muted)}
-@media(max-width:700px){.cur-card{padding:16px}.cur-body{padding:2px 12px 12px}}
+.cur-hr{border:0;border-top:1px solid var(--border);margin:10px 0}
+.cur-foot{margin-top:8px;font-size:12px;color:var(--muted)}
+@media(max-width:700px){.cur-body{padding:4px 10px 10px}}
 </style>
 <section class="cur-card" id="curriculum">
 <div class="cur-kicker">CURRICULUM · 1일차 모의투자·OpenAPI 실습 과정표</div>
@@ -321,6 +320,6 @@ cd python-stock-backend &amp;&amp; python kis_quote_test.py --symbol 005930</cod
 <!-- curriculum:end -->
 </main>
   <footer class="footer"><div>Noah Trading Desk · KIS 모의투자 실습 3단계 · Testbed 조회와 모의 주문 흐름 테스트 · 교육용 콘텐츠</div></footer>
-  <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260925-terminal"></script><script>document.addEventListener('DOMContentLoaded',()=>initPage())</script>
 </body>
 </html>

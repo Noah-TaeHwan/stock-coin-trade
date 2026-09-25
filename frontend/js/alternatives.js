@@ -51,15 +51,14 @@ function renderOrderBook(price) {
   else if (price >=   1000) tick = 10;
 
   const qty = (p, o) => Math.max(1, Math.round(((p * 7 + o) % 290) + 10));
-  const askRows = Array.from({ length: 5 }, (_, i) => ({ price: price + tick * (i + 1), qty: qty(price + tick * (i + 1), 13) }));
-  const bidRows = Array.from({ length: 5 }, (_, i) => ({ price: Math.max(1, price - tick * (5 - i)), qty: qty(price - tick * (5 - i), 31) }));
-
-  askBody.innerHTML = askRows.map(r => `<tr style="background:var(--down-bg);">
-    <td style="padding:7px 12px;text-align:right;color:var(--down);font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
-    <td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:14px;">${Number(r.qty).toLocaleString('ko-KR')}</td></tr>`).join('');
-  bidBody.innerHTML = bidRows.map(r => `<tr style="background:var(--up-bg);">
-    <td style="padding:7px 12px;text-align:right;color:var(--up);font-weight:700;font-size:14px;">${Number(r.price).toLocaleString('ko-KR')}</td>
-    <td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:14px;">${Number(r.qty).toLocaleString('ko-KR')}</td></tr>`).join('');
+  // 호가 사다리: 매도는 먼 호가부터 위에서 아래로, 매수는 가까운 호가부터 내려간다.
+  const askRows = Array.from({ length: 5 }, (_, i) => ({ price: price + tick * (5 - i), qty: qty(price + tick * (5 - i), 13) }));
+  const bidRows = Array.from({ length: 5 }, (_, i) => ({ price: Math.max(1, price - tick * (i + 1)), qty: qty(price - tick * (i + 1), 31) }));
+  const maxQty = Math.max(...askRows.map(r => r.qty), ...bidRows.map(r => r.qty));
+  const row = (side, r) => `<tr class="${side}"><td class="px">${Number(r.price).toLocaleString('ko-KR')}</td>
+    <td style="color:var(--fg-2);">${Number(r.qty).toLocaleString('ko-KR')}<span class="bar" style="width:${Math.round(r.qty / maxQty * 100)}%;"></span></td></tr>`;
+  askBody.innerHTML = askRows.map(r => row('ask', r)).join('');
+  bidBody.innerHTML = bidRows.map(r => row('bid', r)).join('');
 
   document.getElementById('altObCurrentPrice').textContent = Number(price).toLocaleString('ko-KR');
   const spread = tick * 2;

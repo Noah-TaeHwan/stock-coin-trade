@@ -121,8 +121,13 @@ function termCandleColors() {
   };
 }
 
-// 범주형 차트 색. 상승·하락 의미와 겹치지 않게 초록·빨강 계열은 뺐다.
-const TERM_PALETTE = ['#FF9F1A', '#4FC3F7', '#B39DFF', '#5EEAD4', '#FF6FAE', '#FFD60A', '#A3E635', '#F97316'];
+// 범주형 차트 색(style.css의 --series-1~8과 같은 값). 차트 라이브러리는 CSS 변수를
+// 읽지 못하므로 hex로 둔다. 상승·하락과 헷갈리지 않게 초록·빨강 계열은 뺐다.
+const TERM_PALETTE = ['#FF9F1A', '#4FC3F7', '#B39DFF', '#5EEAD4', '#FF6FAE', '#FFD60A', '#90A4AE', '#F97316'];
+// 이동평균 기간별 선 색. 주식·KIS 차트·Pine 화면이 같은 색을 쓴다.
+const TERM_MA_COLORS = { 5: TERM_PALETTE[5], 20: TERM_PALETTE[1], 60: TERM_PALETTE[2], 120: TERM_PALETTE[4] };
+// 현금·기타처럼 의미 없는 나머지 몫
+const TERM_NEUTRAL = '#5B616C';
 
 // 거래량 막대처럼 투명도가 필요한 곳을 위해 #RRGGBB를 rgba로 바꾼다.
 function termAlpha(hex, alpha) {
@@ -245,7 +250,6 @@ function renderHeader(user) {
       { href: '/ohlcv-db.html', label: 'OHLCV DB', icon: 'fa-brands fa-docker' },
     ]},
     { type: 'group', label: '분석 · 도구', items: [
-      { href: '/hts.html', label: 'HTS 시뮬레이션', icon: 'fa-solid fa-desktop' },
       { href: '/analysis.html', label: '투자 분석 학습', icon: 'fa-solid fa-graduation-cap' },
       { href: '/ai-sheet.html', label: 'AI Sheet',       icon: 'fa-solid fa-table-cells-large' },
       { href: '/openapi.html',  label: 'Open API',       icon: 'fa-solid fa-key' },
@@ -414,7 +418,7 @@ const TERMINAL_FKEYS = [
   { key: '5', code: 'HOLD', label: '보유자산', href: '/trade/hold.html' },
   { key: '6', code: 'HIST', label: '거래이력', href: '/trade/history.html' },
   { key: '7', code: 'QNT',  label: '퀀트',     href: '/quant.html' },
-  { key: '8', code: 'HTS',  label: 'HTS',      href: '/hts.html' },
+  { key: '8', code: 'KIS',  label: 'KIS 실습', href: '/learning/kis-regist.html' },
   { key: '9', code: 'AI',   label: 'AI 분석',  href: '/ai-analysis.html' },
 ];
 const TERMINAL_SHORTCUTS = [
@@ -438,7 +442,6 @@ const TERMINAL_COMMANDS = [
   { codes: ['SHEET'], label: 'AI Sheet', href: '/ai-sheet.html' },
   { codes: ['ANL'], label: '투자 분석 학습', href: '/analysis.html' },
   { codes: ['API', 'OPENAPI'], label: '플랫폼 Open API', href: '/openapi.html' },
-  { codes: ['KIS'], label: 'KIS 모의투자 실습', href: '/learning/kis-regist.html' },
   { codes: ['KB'], label: 'KB증권 Open API 실습', href: '/learning/kb-securities.html' },
   { codes: ['ALP', 'ALPACA'], label: 'Alpaca 실전연습', href: '/learning/alpaca-api.html' },
   { codes: ['BNB', 'BINANCE'], label: 'Binance 실전연습', href: '/learning/binance-api.html' },
@@ -448,6 +451,15 @@ const TERMINAL_COMMANDS = [
   { codes: ['ERR'], label: '에러분석', href: '/error-analysis.html' },
   { codes: ['KEYS'], label: '플랫폼 API 키', href: '/member/api-keys.html' },
   { codes: ['LOGIN'], label: '로그인', href: '/member/login.html' },
+  // 증권사 HTS 화면번호. 옛 HTS 시뮬레이터 대신 같은 기능이 있는 주식 화면 패널로 연결한다.
+  { codes: ['0130'], label: 'HTS 0130 관심종목', href: '/trade/stock.html?focus=watch' },
+  { codes: ['0101'], label: 'HTS 0101 주식현재가·호가', href: '/trade/stock.html?focus=book' },
+  { codes: ['0400'], label: 'HTS 0400 종합차트', href: '/trade/stock.html?focus=chart' },
+  { codes: ['0600', '4990'], label: 'HTS 0600·4990 주식주문', href: '/trade/stock.html?focus=order' },
+  { codes: ['0919'], label: 'HTS 0919 기업분석(재무제표 학습)', href: '/analysis.html?lesson=fundamental-financials' },
+  { codes: ['RAW', 'BRKR'], label: 'KIS·KB 원본 조회(주식 도크)', href: '/trade/stock.html?dock=broker' },
+  { codes: ['MEMO'], label: '종목 메모(주식 도크)', href: '/trade/stock.html?dock=memo' },
+  { codes: ['HTS'], label: 'HTS 화면번호 목록(0130·0101·0400·0600·0919)', action: 'hts' },
   { codes: ['CVD'], label: '색각이상 팔레트 전환(상승 파랑)', action: 'cvd' },
   { codes: ['HELP', '?'], label: '명령 목록', action: 'help' },
 ];
@@ -513,6 +525,7 @@ function runTerminalCommand(raw) {
 
   if (command) {
     if (command.action === 'help') { renderTerminalHelp(); return; }
+    if (command.action === 'hts') { renderTerminalHelp('HTS'); return; }
     if (command.action === 'cvd') {
       const on = toggleCvdPalette();
       const input = document.getElementById('term-cmd-input');
@@ -799,9 +812,9 @@ async function runAiAnalysis() {
     const listEl = document.getElementById('rag-context-list');
     if (listEl) {
       listEl.innerHTML = ragDocs.map((doc, i) => `
-        <div style="border-left:3px solid var(--info);padding:.45rem .7rem;margin-bottom:.5rem;background:var(--surface-2);border-radius:0 2px 2px 0;">
+        <div style="border-left:3px solid var(--info);padding:.45rem .7rem;margin-bottom:.5rem;background:var(--surface-2);border-radius:0 var(--radius-xs) var(--radius-xs) 0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:.2rem;">
-            <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:2px;">${_catLabel(doc.category)}</span>
+            <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:var(--radius-xs);">${_catLabel(doc.category)}</span>
             <span style="font-size:11px;font-weight:700;color:var(--fg);">${escapeHtml(doc.title)}</span>
             <span style="font-size:10px;color:var(--muted);margin-left:auto;">유사도 ${(doc.score * 100).toFixed(0)}%</span>
           </div>
@@ -878,11 +891,11 @@ async function runQdrantSearch() {
       return;
     }
     res.innerHTML = hits.map(h => `
-      <div style="border:1px solid var(--border);border-left:3px solid var(--info);border-radius:2px;padding:.7rem .9rem;margin-bottom:.5rem;background:var(--surface);">
+      <div style="border:1px solid var(--border);border-left:3px solid var(--info);border-radius:var(--radius-xs);padding:.7rem .9rem;margin-bottom:.5rem;background:var(--surface);">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:.4rem;">
-          <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:2px;">${_catLabel(h.category)}</span>
+          <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:var(--radius-xs);">${_catLabel(h.category)}</span>
           <span style="font-size:12.5px;font-weight:800;color:var(--fg);flex:1;">${escapeHtml(h.title)}</span>
-          <div style="font-size:10px;font-weight:800;color:#000;background:${_scoreColor(h.score)};border-radius:2px;padding:1px 7px;font-family:var(--font-mono);">${(h.score*100).toFixed(0)}%</div>
+          <div style="font-size:10px;font-weight:800;color:#000;background:${_scoreColor(h.score)};border-radius:var(--radius-xs);padding:1px 7px;font-family:var(--font-mono);">${(h.score*100).toFixed(0)}%</div>
         </div>
         <p style="font-size:12px;color:var(--fg-2);margin:0;line-height:1.65;">${escapeHtml(h.text)}</p>
       </div>`).join('');
@@ -919,8 +932,8 @@ async function loadDataset() {
     const docs = data.documents ?? [];
     if (listEl) listEl.innerHTML = docs.length
       ? docs.map(d => `
-        <div style="display:flex;align-items:baseline;gap:6px;padding:.35rem .5rem;border-radius:2px;margin-bottom:.2rem;background:var(--surface);border:1px solid var(--border);">
-          <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent-dark);padding:2px 6px;border-radius:2px;white-space:nowrap;">${_catLabel(d.category)}</span>
+        <div style="display:flex;align-items:baseline;gap:6px;padding:.35rem .5rem;border-radius:var(--radius-xs);margin-bottom:.2rem;background:var(--surface);border:1px solid var(--border);">
+          <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent-dark);padding:2px 6px;border-radius:var(--radius-xs);white-space:nowrap;">${_catLabel(d.category)}</span>
           <span style="font-size:13px;font-weight:600;color:var(--fg);flex:1;">${escapeHtml(d.title)}</span>
         </div>`).join('')
       : '<p style="color:var(--muted);font-size:12px;text-align:center;">문서가 없습니다.</p>';
@@ -1015,7 +1028,7 @@ async function loadKrxNews() {
           onmouseover="this.style.background='var(--surface-3)'" onmouseout="this.style.background='transparent'">
           <div style="font-size:12px;font-weight:600;color:var(--fg);line-height:1.45;margin-bottom:3px;">${escapeHtml(n.title)}</div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:10px;color:var(--info);background:var(--info-bg);border-radius:2px;padding:0 5px;">PDF</span>
+            <span style="font-size:10px;color:var(--info);background:var(--info-bg);border-radius:var(--radius-xs);padding:0 5px;">PDF</span>
             <span style="font-size:10.5px;color:var(--muted);font-family:var(--font-mono);">${escapeHtml(dateStr)}</span>
             <span style="font-size:10px;color:var(--muted);margin-left:auto;">조회 ${escapeHtml(n.view_cnt)}</span>
           </div>
@@ -1054,12 +1067,20 @@ function ensureSiteFooter(user) {
   // 화면별로 누락되지 않도록 공통 상태 바를 한 번만 만든다. 트레이딩 화면처럼
   // #site-footer가 body 바로 아래가 아니어도 기존 요소를 재사용한다.
   let footer = document.getElementById('site-footer');
+  let note = '';
   if (!footer) {
-    if (document.body.querySelector(':scope > footer')) return;
-    footer = document.createElement('footer');
+    // 페이지가 따로 둔 설명 푸터는 상태 바로 바꾸고, 그 문구는 상태 바 메모로 남긴다.
+    footer = document.body.querySelector(':scope > footer');
+    if (footer) {
+      note = footer.textContent.replace(/\s+/g, ' ').trim().replace(/^Noah Trading Desk\s*·\s*/i, '');
+      footer.className = '';
+    } else {
+      footer = document.createElement('footer');
+      document.body.appendChild(footer);
+    }
     footer.id = 'site-footer';
-    document.body.appendChild(footer);
   }
+  const noteText = (note || '모든 거래 기능은 학습·테스트 용도입니다.').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   footer.classList.add('term-status');
   footer.innerHTML = `
     <div class="term-status-row">
@@ -1067,7 +1088,7 @@ function ensureSiteFooter(user) {
       <span>MODE <b>PAPER</b></span>
       <span>SCREEN <b>${terminalScreenCode()}</b></span>
       <span class="term-status-hide-sm">USER <b>${user?.loggedIn ? escapeHtml(user.username) : 'GUEST'}</b></span>
-      <span class="term-status-hide-sm">모든 거래 기능은 학습·테스트 용도입니다.</span>
+      <span class="term-status-hide-sm term-status-note">${noteText}</span>
       <span class="term-status-brand">NOAH TRADING DESK</span>
     </div>`;
   setTerminalConnection(user?.__apiReachable !== false);
@@ -1176,15 +1197,64 @@ function mountApiTestGuide() {
   };
   const guide = guides[path];
   if (!guide) return;
-  const host = document.querySelector('main > section') || document.querySelector('main');
+  // 새 레이아웃은 [data-api-guide-host] 자리에 접힌 상태로 두고, 옛 화면은 첫 섹션 끝에 펼쳐 둔다.
+  const slot = document.querySelector('[data-api-guide-host]');
+  const host = slot || document.querySelector('main > section') || document.querySelector('main');
   if (!host) return;
   const rows = guide.rows.map(([name, endpoint, input, expected]) => `<tr><th>${name}</th><td><code>${endpoint}</code></td><td>${input}</td><td>${expected}</td></tr>`).join('');
   const element = document.createElement('details');
   element.id = 'api-test-guide';
   element.className = 'api-test-guide';
-  element.open = true;
+  element.open = !slot;
   element.innerHTML = `<summary>${guide.title}<span>호출 경로 · 입력값 · 성공 기준 보기</span></summary><p class="api-test-guide-rate">${guide.rate}</p><div class="api-test-guide-scroll"><table><thead><tr><th>테스트</th><th>이 웹앱 서버 호출</th><th>필요한 값</th><th>성공 시 확인할 값</th></tr></thead><tbody>${rows}</tbody></table></div>${guide.note ? `<p class="api-test-guide-note">${guide.note}</p>` : ''}<p class="api-test-guide-note">공통 성공 형식은 <code>ok: true</code>입니다. <code>ok: false</code> 또는 HTTP 4xx/5xx이면 결과창의 <code>message</code>를 확인하세요. Key·Secret·Access Token·계좌번호는 응답에 표시하지 않습니다.</p>`;
   host.appendChild(element);
+}
+
+// 학습 문서(main.term-doc)의 섹션 제목으로 왼쪽 목차 레일을 만든다.
+function mountDocToc() {
+  const main = document.querySelector('body > main.term-doc');
+  if (!main || main.querySelector(':scope > .term-toc')) return;
+  const entries = [];
+  let seq = 0;
+  for (const section of main.querySelectorAll(':scope > section')) {
+    if (section.classList.contains('term-hero')) continue;
+    const heading = section.querySelector(':scope > :is(h2, .title, .lesson-title, .cur-title)') || section.querySelector('h2');
+    if (!heading) continue;
+    if (!section.id) section.id = `sec-${++seq}`;
+    const kicker = (section.querySelector(':scope > :is(.kicker, .cur-kicker)')?.textContent || '').split('·')[0].trim();
+    const subs = [...section.querySelectorAll(':scope > details.cur-sec > summary')].map((summary, i) => {
+      const details = summary.parentElement;
+      if (!details.id) details.id = `${section.id}-${i + 1}`;
+      return { id: details.id, label: summary.textContent.trim() };
+    });
+    entries.push({ id: section.id, label: heading.textContent.trim(), kicker, subs });
+  }
+  if (entries.length < 2) return;
+  const esc = text => text.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const items = entries.map(e => `<li><a href="#${e.id}" data-toc="${e.id}">${e.kicker ? `<small>${esc(e.kicker)}</small>` : ''}${esc(e.label)}</a>${
+    e.subs.length ? `<ol class="term-toc-sub">${e.subs.map(s => `<li><a href="#${s.id}" data-toc="${s.id}">${esc(s.label)}</a></li>`).join('')}</ol>` : ''}</li>`).join('');
+  const nav = document.createElement('nav');
+  nav.className = 'term-toc';
+  nav.setAttribute('aria-label', '이 문서의 목차');
+  nav.innerHTML = `<details${matchMedia('(min-width: 1101px)').matches ? ' open' : ''}><summary>목차 · ${entries.length}개 절</summary><ol>${items}</ol></details>`;
+  main.prepend(nav);
+
+  // 접힌 과정표 절로 이동할 때는 먼저 펼친다.
+  nav.addEventListener('click', event => {
+    const id = event.target.closest('a[data-toc]')?.dataset.toc;
+    const target = id && document.getElementById(id);
+    if (target?.tagName === 'DETAILS') target.open = true;
+  });
+
+  const links = new Map([...nav.querySelectorAll('a[data-toc]')].map(a => [a.dataset.toc, a]));
+  const observer = new IntersectionObserver(records => {
+    for (const record of records) {
+      if (!record.isIntersecting) continue;
+      links.forEach(a => a.classList.remove('active'));
+      links.get(record.target.id)?.classList.add('active');
+    }
+  }, { root: main, rootMargin: '0px 0px -75% 0px' });
+  entries.forEach(e => observer.observe(document.getElementById(e.id)));
 }
 
 async function initPage({ requireAuth = false } = {}) {
@@ -1196,6 +1266,7 @@ async function initPage({ requireAuth = false } = {}) {
   renderHeader(user);
   mountDatasetComposerModal();
   mountApiTestGuide();
+  mountDocToc();
   ensureSiteFooter(user);
   const hasMain = document.body.querySelector(':scope > main');
   const hasFooter = document.body.querySelector(':scope > footer');

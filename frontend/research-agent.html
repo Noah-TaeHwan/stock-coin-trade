@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI 리서치 — 영수증 기반 답변 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
   <style>
     .ra-wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .ra-card { margin-top: 14px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .ra-card { margin-top: 14px; padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
     .ra-card h2 { margin: 0 0 8px; font-size: 16px; }
     .ra-muted { color: var(--muted); font-size: 12px; line-height: 1.6; }
     .ra-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .ra-row input, .ra-row textarea { flex: 1 1 320px; padding: 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+    .ra-row input, .ra-row textarea { flex: 1 1 320px; padding: 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); color: var(--fg); font: inherit; }
     .ra-row textarea { min-height: 84px; resize: vertical; }
-    .ra-btn { padding: 10px 16px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink, #000); font-weight: 800; cursor: pointer; }
+    .ra-btn { padding: 10px 16px; border: 0; border-radius: var(--radius); background: var(--accent); color: var(--accent-ink, #000); font-weight: 800; cursor: pointer; }
     .ra-btn[disabled] { opacity: .5; cursor: wait; }
-    .ra-examples button { padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--fg-2); font-size: 12px; cursor: pointer; }
+    .ra-examples button { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); color: var(--fg-2); font-size: 12px; cursor: pointer; }
     .ra-answer { line-height: 1.8; white-space: pre-wrap; }
-    .ra-num { padding: 1px 6px; border-radius: 5px; background: rgba(255,159,26,.14); color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none; }
+    .ra-num { padding: 1px 6px; border-radius: var(--radius); background: rgba(255,159,26,.14); color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none; }
     .ra-num:hover { text-decoration: underline; }
     .ra-receipts code { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
     .ra-status { margin-top: 8px; font-size: 13px; }
@@ -64,7 +64,7 @@
     </section>
   </main>
   <script src="/js/config.js"></script>
-  <script src="/js/common.js?v=20260924-terminal"></script>
+  <script src="/js/common.js?v=20260925-terminal"></script>
   <script src="/js/research-agent.js?v=20260925-agent"></script>
 </body>
 </html>

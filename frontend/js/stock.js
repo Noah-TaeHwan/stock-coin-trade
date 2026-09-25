@@ -1,4 +1,5 @@
 /* ── 상태 ─────────────────────────────────────────────────────────────────── */
+let currentUser         = null;
 let currentPeriod       = '1m';
 let currentMarketFilter = 'ALL';
 let allStocks           = [];
@@ -35,10 +36,10 @@ let lwCandle = null;
 let lwVolume = null;
 const movingAverageSeries = {};
 const movingAverageOptions = [
-  { period: 5,   color: '#FFD60A' },
-  { period: 20,  color: '#4FC3F7' },
-  { period: 60,  color: '#B39DFF' },
-  { period: 120, color: '#FF6FAE' },
+  { period: 5,   color: TERM_MA_COLORS[5] },
+  { period: 20,  color: TERM_MA_COLORS[20] },
+  { period: 60,  color: TERM_MA_COLORS[60] },
+  { period: 120, color: TERM_MA_COLORS[120] },
 ];
 const movingAverageVisibility = Object.fromEntries(movingAverageOptions.map(({ period }) => [period, true]));
 
@@ -118,7 +119,7 @@ function updatePortfolioMini(positions, cash) {
     const pct = Math.round((p.evalAmount || 0) / total * 100);
     return `<div title="${escapeHtml(p.name)} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
+  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:var(--series-neutral);min-width:3px;"></div>`);
 
   const sectors = positions.reduce((acc, p) => {
     const sector = p.sector || '기타';
@@ -130,7 +131,7 @@ function updatePortfolioMini(positions, cash) {
     const pct = Math.round(amount / total * 100);
     return `<div title="${escapeHtml(sector)} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
+  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:var(--series-neutral);min-width:3px;"></div>`);
   const sectorLabels = sectorItems.map(([sector, amount], i) =>
     `<span style="display:inline-flex;align-items:center;gap:3px;"><i style="width:6px;height:6px;background:${colors[i % colors.length]};display:inline-block;"></i>${escapeHtml(sector)} ${Math.round(amount / total * 100)}%</span>`
   ).join(' · ');
@@ -271,7 +272,7 @@ async function requestJson(url, options = {}) {
   const raw = await response.text();
   let data = null;
   try { data = raw.trim() ? JSON.parse(raw) : null; } catch { throw new Error('응답 형식 오류'); }
-  if (!response.ok) throw new Error(data?.message || '요청 실패');
+  if (!response.ok) throw Object.assign(new Error(data?.message || '요청 실패'), { status: response.status });
   if (data === null) throw new Error('빈 응답');
   return data;
 }
@@ -315,7 +316,7 @@ function renderStockMarketList() {
   renderStockWatchList();
   const selectedSymbol = document.getElementById('stockSymbol')?.value;
   if (!lastPositions.length) {
-    tbody.innerHTML = `<tr><td class="empty" colspan="3">보유 중인 종목이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td class="empty" colspan="3">${currentUser?.loggedIn ? '보유 중인 종목이 없습니다.' : '로그인 필요'}</td></tr>`;
     return;
   }
 
@@ -480,6 +481,7 @@ async function selectStock(symbol) {
   closeStockPicker();
   updateWatchBtn(symbol);
   renderStockMarketList();
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol } }));
   await Promise.all([loadQuote(symbol), loadChart(symbol, currentPeriod)]);
 }
 
@@ -614,8 +616,30 @@ async function loadMarket() {
 }
 
 /* ── 계좌 + 포지션 ───────────────────────────────────────────────────────── */
+// 계좌·포지션·체결 API는 로그인 전용(비로그인 401)이다. 게스트는 요청하지 않고,
+// 세션이 만료돼 401을 받으면 비로그인으로 전환해 이후 폴링도 요청 없이 안내만 유지한다.
+function showLoginRequired() {
+  currentUser = { loggedIn: false };
+  lastCash = 0;
+  lastPositions = [];
+  setEl('accountCash', '로그인 필요', 'var(--muted)');
+  setEl('accountAsset', '-', 'var(--muted)');
+  setEl('accountPnlRate', '-', 'var(--muted)');
+  const positionsBody = document.getElementById('positionsBody');
+  if (positionsBody) positionsBody.innerHTML = `<tr><td class="empty" colspan="6">로그인 필요</td></tr>`;
+  const historyBody = document.getElementById('historyBody');
+  if (historyBody) historyBody.innerHTML = `<tr><td class="empty" colspan="5">로그인 필요</td></tr>`;
+  renderStockMarketList();
+  updatePortfolioMini([], 0);
+  updateBreakEven([], document.getElementById('stockSymbol')?.value);
+  updateOrderSummary();
+}
+
 async function loadAccount() {
-  const data = await requestJson('/api/stocks/account');
+  if (!currentUser?.loggedIn) return showLoginRequired();
+  let data;
+  try { data = await requestJson('/api/stocks/account'); }
+  catch (error) { if (error.status === 401) showLoginRequired(); return; }
   lastCash = data.cash;
   setText('accountCash',   fmtKrw(data.cash));
   setText('accountAsset',  fmtKrw(data.totalAsset));
@@ -626,7 +650,10 @@ async function loadAccount() {
 }
 
 async function loadPositions() {
-  const data = await requestJson('/api/stocks/positions');
+  if (!currentUser?.loggedIn) return showLoginRequired();
+  let data;
+  try { data = await requestJson('/api/stocks/positions'); }
+  catch (error) { if (error.status === 401) showLoginRequired(); return; }
   lastPositions = data.positions ?? [];
   const tbody = document.getElementById('positionsBody');
   if (!tbody) return;
@@ -658,6 +685,7 @@ async function loadPositions() {
 }
 
 async function loadHistory() {
+  if (!currentUser?.loggedIn) return showLoginRequired();
   try {
     const data = await requestJson('/api/stocks/orders/history');
     const tbody = document.getElementById('historyBody');
@@ -679,7 +707,9 @@ async function loadHistory() {
         <td>${fmtKrw(h.amount)}</td>
       </tr>`;
     }).join('');
-  } catch {}
+  } catch (error) {
+    if (error.status === 401) showLoginRequired();
+  }
 }
 
 /* ── 호가창 ──────────────────────────────────────────────────────────────── */
@@ -779,6 +809,7 @@ document.getElementById('stockSymbol')?.addEventListener('change', async () => {
   const sym = document.getElementById('stockSymbol')?.value;
   if (!sym) return;
   updateStockPickerSelected(sym);
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol: sym } }));
   await Promise.all([loadQuote(sym), loadChart(sym, currentPeriod)]);
 });
 
@@ -864,15 +895,42 @@ function setEl(id, val, color) {
   if (color) el.style.color = color;
 }
 
+/* ── 화면번호 진입 ──────────────────────────────────────────────────────── */
+// 명령줄의 HTS 화면번호(0130·0101·0400·0600/4990)나 ?dock= 으로 들어오면 해당 패널을 연다.
+function applyScreenFocus() {
+  const params = new URLSearchParams(window.location.search);
+  const dock = params.get('dock');
+  if (dock) document.querySelector(`.term-dock-tab[data-dock="${dock}"]`)?.click();
+  const focus = params.get('focus');
+  if (focus === 'watch') document.querySelector('.wl-tab[data-wl="WATCH"]')?.click();
+  const targets = {
+    watch: ['#stockWatchListBody', null],
+    book: ['#askBody', null],
+    chart: ['#stockChart', '#stockPickerInput'],
+    order: ['#orderPanel', '#orderQty'],
+    broker: ['#dock-broker', null],
+    memo: ['#dock-memo', '#memoText'],
+  };
+  const [panelSel, inputSel] = targets[focus] || targets[dock] || [];
+  const panel = panelSel && document.querySelector(panelSel)?.closest('.term-panel');
+  if (!panel) return;
+  panel.scrollIntoView({ block: 'nearest' });
+  panel.classList.add('term-flash');
+  setTimeout(() => panel.classList.remove('term-flash'), 1600);
+  if (inputSel) document.querySelector(inputSel)?.focus({ preventScroll: true });
+}
+
 /* ── 부트 ────────────────────────────────────────────────────────────────── */
 (async () => {
-  await initPage();
+  currentUser = await initPage();
   initStockChart();
 
   await pickTopVolumeKospiSymbol();
   await loadStockList();
 
   const sym = document.getElementById('stockSymbol')?.value;
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol: sym } }));
+  applyScreenFocus();
   await Promise.all([loadMarket(), loadQuote(sym), loadAccount(), loadPositions()]);
   await Promise.all([loadChart(sym, currentPeriod), loadHistory(), loadBatchPrices()]);
 

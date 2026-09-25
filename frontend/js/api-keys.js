@@ -31,7 +31,7 @@ async function loadKeys() {
         </td>
         <td class="px-4 py-3 text-center">
           ${k.isActive
-            ? `<button onclick="revokeKey(${Number(k.id)})" style="background:var(--down-bg);color:var(--down);border:1px solid rgba(225,29,72,0.2);border-radius:6px;padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
+            ? `<button onclick="revokeKey(${Number(k.id)})" style="background:var(--down-bg);color:var(--down);border:1px solid rgba(255,77,77,.35);border-radius:var(--radius);padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
             : '-'}
         </td>
       </tr>`).join('');

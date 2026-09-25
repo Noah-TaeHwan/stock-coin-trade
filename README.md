@@ -41,6 +41,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [AI 리서치 에이전트(숫자 영수증·초대·예산·eval) 검증](docs/evidence/ai-agent-eval-2026-09-25.md), [eval 사례와 기준선](evals/numeric_faithfulness/README.md)
 - [AWS 공개 데모 준비(IaC·HTTPS 앞단·배포·롤백) 검증](docs/evidence/aws-demo-prep-2026-09-25.md), [ADR-0003](docs/adr/0003-aws-demo-topology.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
+- [터미널 UI 마감(모서리·색·화면 밀도·HTS 흡수) 검증](docs/evidence/terminal-ui-polish-2026-09-25.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
 
@@ -49,6 +50,8 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 ## 주요 기능
 
 - 터미널형 다크 UI: 명령줄(`005930`, `BTC`, `HOLD`, `HELP` 등 입력 후 Enter), 기능키(`Alt+1~9`), 지수·코인·대표 종목 티커, 상승 초록·하락 빨강 의미 색과 색각이상 팔레트(`CVD`)
+  - 화면번호 명령(`0130` 관심, `0101` 호가, `0400` 차트, `0600` 주문, `0919` 기업분석; `HTS` 입력 시 목록)과 주식 화면 하단 도크의 `KIS·KB 원본`(시세·호가·차트 원본 응답)·`메모` 탭
+  - 테스트·로그·차트 화면은 한 화면 다열 패널, 학습 문서는 목차 레일과 읽기 폭
 - 회원가입·로그인 기반 모의 주식·코인 거래와 보유자산·거래이력 조회
 - KRX 주식 시세·차트·검색, 코인 시세·국내 거래소 가격 비교
 - 코인 차익·김프(`/arbitrage.html`, 명령줄 `ARB`·`ARB ETH`): 원화 거래소 4곳과 OKX·Binance의 가격 차이, 김프(USDT·환율 기준), 캔들로 복원한 김프 추이, 호가 VWAP으로 계산한 거래소 쌍별 순손익(수수료·출금비 차감), 전송 시간·수수료 참고표, 빗썸 입출금 상태. 공개 시세만 쓰고 주문·출금 기능은 없음
