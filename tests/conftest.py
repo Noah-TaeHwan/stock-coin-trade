@@ -36,6 +36,12 @@ def pytest_collection_modifyitems(config, items):
     """
     import os
 
+    # @pytest.mark.network tests call real third-party APIs; CI never runs them.
+    if os.environ.get("RUN_NETWORK") != "1":
+        skip_network = pytest.mark.skip(reason="network test: set RUN_NETWORK=1 to call the real API")
+        for item in items:
+            if "network" in item.keywords:
+                item.add_marker(skip_network)
     if os.environ.get("RUN_INTEGRATION") == "1":
         return
     skip = pytest.mark.skip(reason="integration test: set RUN_INTEGRATION=1 with DB_* and QUANT_DATABASE_URL")

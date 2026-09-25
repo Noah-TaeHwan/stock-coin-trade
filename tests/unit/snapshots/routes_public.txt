@@ -21,6 +21,7 @@ GET /api/member/investor-rankings member.investor_rankings
 GET /api/member/me member.me
 GET /api/member/portfolio-analysis member.portfolio_analysis
 GET /api/member/trading-activity member.trading_activity
+GET /api/quant/data-quality quant.data_quality
 GET /api/quant/factor-analysis quant.factor_analysis
 GET /api/quant/market-data quant.market_data
 GET /api/quant/overview quant.overview

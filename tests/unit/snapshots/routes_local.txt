@@ -65,6 +65,7 @@ GET /api/member/portfolio-analysis member.portfolio_analysis
 GET /api/member/trading-activity member.trading_activity
 GET /api/ohlcv-db/summary ohlcv_db.summary
 GET /api/ohlcv-db/tickers ohlcv_db.tickers
+GET /api/quant/data-quality quant.data_quality
 GET /api/quant/factor-analysis quant.factor_analysis
 GET /api/quant/market-data quant.market_data
 GET /api/quant/overview quant.overview

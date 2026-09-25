@@ -384,3 +384,38 @@ def factor_analysis():
         return error_response("팩터 분석 실패: 요청 값을 확인하세요.", exc, 400, key="message")
     except SQLAlchemyError as exc:
         return error_response("팩터 분석 실패: 데이터베이스 오류", exc, 503, key="message")
+
+
+@quant_bp.get("/data-quality")
+def data_quality():
+    """Re-run the quality checks on the stored bars of one symbol."""
+    from datetime import date, timedelta
+
+    from marketdata import quality, store
+
+    symbol = request.args.get("symbol", "005930").upper().strip()
+    try:
+        days = max(1, min(int(request.args.get("days", 365)), 3650))
+    except ValueError:
+        return jsonify({"message": "days must be an integer"}), 400
+    start = date.today() - timedelta(days=days)
+    try:
+        with _db().connect() as conn:
+            bars = store.load_bars(conn, symbol, start=start)
+            run = conn.execute(text(
+                "SELECT run_id, source, status, row_count, checksum, finished_at FROM ingestion_runs "
+                "WHERE :symbol = ANY(symbols) ORDER BY run_id DESC LIMIT 1"
+            ), {"symbol": symbol}).mappings().first()
+    except SQLAlchemyError as exc:
+        return error_response("데이터 품질 조회 실패: 데이터베이스 오류", exc, 503, key="message")
+    findings = quality.check(bars, as_of=datetime.now(timezone.utc))
+    return jsonify({
+        "symbol": symbol,
+        "bars": len(bars),
+        "sources": sorted({bar.source for bar in bars}),
+        "errors": sum(1 for f in findings if f.severity == "error"),
+        "warnings": sum(1 for f in findings if f.severity == "warn"),
+        "findings": [f.as_dict() for f in findings],
+        "lastIngestion": ({**run, "finished_at": run["finished_at"].isoformat() if run["finished_at"] else None}
+                          if run else None),
+    })
