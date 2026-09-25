@@ -55,7 +55,7 @@ CSS = """<style id="curriculum-embed-style">
 .cur-body ol{list-style:decimal}
 .cur-body li::marker{color:var(--accent)}
 .cur-body li{margin:2px 0}
-.cur-body code{padding:0 4px;border-radius:2px;background:var(--warn-bg);font:12px var(--font-mono);color:var(--warn)}
+.cur-body code{padding:0 4px;border-radius:var(--radius-xs);background:var(--warn-bg);font:12px var(--font-mono);color:var(--warn)}
 .cur-body a{color:var(--accent-dark);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
 .cur-code{margin:8px 0;padding:8px 10px;border:1px solid var(--border);border-radius:0;overflow:auto;background:var(--bg);color:var(--fg-2);font:12px/1.6 var(--font-mono);white-space:pre}
 .cur-code code{padding:0;background:none;color:inherit;font:inherit}

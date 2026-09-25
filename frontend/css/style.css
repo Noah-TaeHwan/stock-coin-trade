@@ -559,6 +559,8 @@ body.app-shell-layout > footer:not(#site-footer) { padding: 6px clamp(8px, 1vw, 
 /* TWS Mosaic처럼 같은 종목에 연결된 패널을 색 칩으로 표시한다. */
 .term-link { width: 8px; height: 8px; border-radius: var(--radius-xs); background: var(--info); box-shadow: 0 0 0 1px var(--border-strong); }
 .term-panel__body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+/* 명령줄 화면번호로 들어온 패널을 잠깐 표시한다. */
+.term-flash { box-shadow: 0 0 0 1px var(--accent), inset 0 0 0 1px var(--accent); transition: box-shadow .3s; }
 .term-panel__body--pad { padding: 8px 10px; }
 
 .term-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }

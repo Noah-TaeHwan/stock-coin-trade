@@ -483,6 +483,7 @@ async function selectStock(symbol) {
   closeStockPicker();
   updateWatchBtn(symbol);
   renderStockMarketList();
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol } }));
   await Promise.all([loadQuote(symbol), loadChart(symbol, currentPeriod)]);
 }
 
@@ -776,6 +777,7 @@ document.getElementById('stockSymbol')?.addEventListener('change', async () => {
   const sym = document.getElementById('stockSymbol')?.value;
   if (!sym) return;
   updateStockPickerSelected(sym);
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol: sym } }));
   await Promise.all([loadQuote(sym), loadChart(sym, currentPeriod)]);
 });
 
@@ -861,6 +863,31 @@ function setEl(id, val, color) {
   if (color) el.style.color = color;
 }
 
+/* ── 화면번호 진입 ──────────────────────────────────────────────────────── */
+// 명령줄의 HTS 화면번호(0130·0101·0400·0600/4990)나 ?dock= 으로 들어오면 해당 패널을 연다.
+function applyScreenFocus() {
+  const params = new URLSearchParams(window.location.search);
+  const dock = params.get('dock');
+  if (dock) document.querySelector(`.term-dock-tab[data-dock="${dock}"]`)?.click();
+  const focus = params.get('focus');
+  if (focus === 'watch') document.querySelector('.wl-tab[data-wl="WATCH"]')?.click();
+  const targets = {
+    watch: ['#stockWatchListBody', null],
+    book: ['#askBody', null],
+    chart: ['#stockChart', '#stockPickerInput'],
+    order: ['#orderPanel', '#orderQty'],
+    broker: ['#dock-broker', null],
+    memo: ['#dock-memo', '#memoText'],
+  };
+  const [panelSel, inputSel] = targets[focus] || targets[dock] || [];
+  const panel = panelSel && document.querySelector(panelSel)?.closest('.term-panel');
+  if (!panel) return;
+  panel.scrollIntoView({ block: 'nearest' });
+  panel.classList.add('term-flash');
+  setTimeout(() => panel.classList.remove('term-flash'), 1600);
+  if (inputSel) document.querySelector(inputSel)?.focus({ preventScroll: true });
+}
+
 /* ── 부트 ────────────────────────────────────────────────────────────────── */
 (async () => {
   await initPage();
@@ -870,6 +897,8 @@ function setEl(id, val, color) {
   await loadStockList();
 
   const sym = document.getElementById('stockSymbol')?.value;
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol: sym } }));
+  applyScreenFocus();
   await Promise.all([loadMarket(), loadQuote(sym), loadAccount(), loadPositions()]);
   await Promise.all([loadChart(sym, currentPeriod), loadHistory(), loadBatchPrices()]);
 

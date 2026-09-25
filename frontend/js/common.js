@@ -227,7 +227,6 @@ function renderHeader(user) {
       { href: '/ohlcv-db.html', label: 'OHLCV DB', icon: 'fa-brands fa-docker' },
     ]},
     { type: 'group', label: '분석 · 도구', items: [
-      { href: '/hts.html', label: 'HTS 시뮬레이션', icon: 'fa-solid fa-desktop' },
       { href: '/analysis.html', label: '투자 분석 학습', icon: 'fa-solid fa-graduation-cap' },
       { href: '/ai-sheet.html', label: 'AI Sheet',       icon: 'fa-solid fa-table-cells-large' },
       { href: '/openapi.html',  label: 'Open API',       icon: 'fa-solid fa-key' },
@@ -396,7 +395,7 @@ const TERMINAL_FKEYS = [
   { key: '5', code: 'HOLD', label: '보유자산', href: '/trade/hold.html' },
   { key: '6', code: 'HIST', label: '거래이력', href: '/trade/history.html' },
   { key: '7', code: 'QNT',  label: '퀀트',     href: '/quant.html' },
-  { key: '8', code: 'HTS',  label: 'HTS',      href: '/hts.html' },
+  { key: '8', code: 'KIS',  label: 'KIS 실습', href: '/learning/kis-regist.html' },
   { key: '9', code: 'AI',   label: 'AI 분석',  href: '/ai-analysis.html' },
 ];
 const TERMINAL_SHORTCUTS = [
@@ -419,7 +418,6 @@ const TERMINAL_COMMANDS = [
   { codes: ['SHEET'], label: 'AI Sheet', href: '/ai-sheet.html' },
   { codes: ['ANL'], label: '투자 분석 학습', href: '/analysis.html' },
   { codes: ['API', 'OPENAPI'], label: '플랫폼 Open API', href: '/openapi.html' },
-  { codes: ['KIS'], label: 'KIS 모의투자 실습', href: '/learning/kis-regist.html' },
   { codes: ['KB'], label: 'KB증권 Open API 실습', href: '/learning/kb-securities.html' },
   { codes: ['ALP', 'ALPACA'], label: 'Alpaca 실전연습', href: '/learning/alpaca-api.html' },
   { codes: ['BNB', 'BINANCE'], label: 'Binance 실전연습', href: '/learning/binance-api.html' },
@@ -429,6 +427,15 @@ const TERMINAL_COMMANDS = [
   { codes: ['ERR'], label: '에러분석', href: '/error-analysis.html' },
   { codes: ['KEYS'], label: '플랫폼 API 키', href: '/member/api-keys.html' },
   { codes: ['LOGIN'], label: '로그인', href: '/member/login.html' },
+  // 증권사 HTS 화면번호. 옛 HTS 시뮬레이터 대신 같은 기능이 있는 주식 화면 패널로 연결한다.
+  { codes: ['0130'], label: 'HTS 0130 관심종목', href: '/trade/stock.html?focus=watch' },
+  { codes: ['0101'], label: 'HTS 0101 주식현재가·호가', href: '/trade/stock.html?focus=book' },
+  { codes: ['0400'], label: 'HTS 0400 종합차트', href: '/trade/stock.html?focus=chart' },
+  { codes: ['0600', '4990'], label: 'HTS 0600·4990 주식주문', href: '/trade/stock.html?focus=order' },
+  { codes: ['0919'], label: 'HTS 0919 기업분석(재무제표 학습)', href: '/analysis.html?lesson=fundamental-financials' },
+  { codes: ['RAW', 'BRKR'], label: 'KIS·KB 원본 조회(주식 도크)', href: '/trade/stock.html?dock=broker' },
+  { codes: ['MEMO'], label: '종목 메모(주식 도크)', href: '/trade/stock.html?dock=memo' },
+  { codes: ['HTS'], label: 'HTS 화면번호 목록(0130·0101·0400·0600·0919)', action: 'hts' },
   { codes: ['CVD'], label: '색각이상 팔레트 전환(상승 파랑)', action: 'cvd' },
   { codes: ['HELP', '?'], label: '명령 목록', action: 'help' },
 ];
@@ -494,6 +501,7 @@ function runTerminalCommand(raw) {
 
   if (command) {
     if (command.action === 'help') { renderTerminalHelp(); return; }
+    if (command.action === 'hts') { renderTerminalHelp('HTS'); return; }
     if (command.action === 'cvd') {
       const on = toggleCvdPalette();
       const input = document.getElementById('term-cmd-input');

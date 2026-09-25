@@ -6,7 +6,7 @@
 
 | 저장소 | 용도 | 초기화 파일 | 민감정보 원칙 |
 | --- | --- | --- | --- |
-| MariaDB `mockinv` | 회원, 모의주문, 포지션, HTS 메모, 서비스 오류 | `database/db.sql` | 증권사 App Key/Secret·계좌 비밀번호는 저장하지 않음 |
+| MariaDB `mockinv` | 회원, 모의주문, 포지션, 관심종목 메모, 서비스 오류 | `database/db.sql` | 증권사 App Key/Secret·계좌 비밀번호는 저장하지 않음 |
 | PostgreSQL Quant | OHLCV, 전략, 백테스트 체결·성과, 팩터 | `database/quant-postgres.sql` | 연구 데이터 전용, 회원 DB와 직접 조인하지 않음 |
 | Qdrant `market_knowledge` | AI 검색용 문서·카테고리·벡터 | 앱의 `qdrant_service.py` | 원문은 교육/분석 문서만 적재, 비밀값 제외 |
 
@@ -20,7 +20,7 @@ member (1)
  ├──< hold_crypto >──(1) upbit_market
  ├──< alternative_position 파생·금속·부동산 현재 포지션
  ├──< alternative_order    파생·금속·부동산 주문 이력
- ├──< hts_watch_memo       HTS 관심종목 개인 메모
+ ├──< hts_watch_memo       관심종목 개인 메모(주식 화면 메모 탭, 옛 HTS 화면에서 이어 씀)
  ├──< api_key              이 웹앱 Open API용 해시된 키
  ├──< api_usage_log        외부 API 테스트 호출·결과 이력 (선택 관계)
  └──< system_error_log     서버·브라우저 오류 분석 로그 (선택 관계)
