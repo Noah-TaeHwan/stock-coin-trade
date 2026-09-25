@@ -41,7 +41,7 @@ flowchart LR
   - `PYTHONPATH=src python -m quantlab.research --symbol 005930 --start 2016-01-01 --end 2025-12-31`
   - `PYTHONPATH=src python -m deskagent.eval --mode oracle`
 - **MCP**: `PYTHONPATH=src python -m deskmcp.server` — [Noah Desk MCP](#noah-desk-mcp--모의계좌백테스트를-mcp-도구로)
-- **공개 데모**: 아직 없다. AWS 구성은 준비·검증을 마쳤고([ADR-0003](docs/adr/0003-aws-demo-topology.md)), 계정·도메인 승인 후 배포한다. AI 리서치는 배포 후 초대 코드로 연다.
+- **공개 데모**: <https://43-201-225-127.sslip.io> (AWS 서울, 2026-09-25 배포, [배포 기록](docs/evidence/aws-deploy-2026-09-25.md)). 도메인을 사기 전까지 sslip.io 호스트명을 쓴다. AI 리서치는 꺼 두었고 나중에 초대 코드로 연다.
 - **데이터**: 공개 화면과 리포트의 시세는 모두 합성 데이터다. 실제 시장 성과가 아니며, 소스별 약관 상태는 [데이터 소스](docs/data-sources.md)에 있다.
 
 ## Noah가 만든 것
@@ -68,7 +68,7 @@ flowchart LR
 - 백테스트 엔진 재작성(`src/quantlab`): 종가 신호 → 다음 봉 시가 체결, bp 단위 비용, 일별 자산곡선 기반 Sharpe·MDD·CAGR, 같은 비용의 매수 후 보유 비교, 입력 해시·파라미터·엔진 버전으로 만든 계산 영수증과 멱등 저장, 워크포워드 검증과 재현 가능한 리서치 리포트. 구 엔진의 계산 오류 7개를 회귀 테스트로 고정
 - 자체 MCP 서버(`src/deskmcp`): 모의계좌 조회·백테스트·영수증 조회를 MCP 도구로 제공, 주문 도구는 명시적으로 켤 때만 등록, Open API 키별 요청 제한을 공유 저장소(Redis)로 이동
 - 초대 코드 전용 AI 리서치(`src/deskagent`): 공식 Anthropic SDK 도구 루프, 답변의 숫자는 서버가 계산 영수증에서 채우고 영수증 없는 숫자는 차단, 초대 코드별 한도와 월 예산, 코드 채점 eval(완벽 모델 100%, 숫자를 지어내는 모델 3종 0%)
-- AWS 공개 데모 준비: CloudFormation(80·443만 열고 SSH 없음, IMDSv2, 암호화·스냅샷 데이터 볼륨, 예산 알림), Caddy 자동 HTTPS(클라이언트 IP 보존), OIDC 배포 역할, 헬스 체크 실패 시 자동 롤백하는 배포 스크립트 — 로컬 검증까지, 실제 배포는 계정·도메인 승인 후
+- AWS 공개 데모 준비: CloudFormation(80·443만 열고 SSH 없음, IMDSv2, 암호화·스냅샷 데이터 볼륨, 예산 알림), Caddy 자동 HTTPS(클라이언트 IP 보존), OIDC 배포 역할, 헬스 체크 실패 시 자동 롤백하는 배포 스크립트 — 2026-09-25 실제 배포(t3.small, 월 약 $28)
 
 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리한다. 모든 검증 기록은 [색인](docs/evidence/README.md)에 있고, 설계 결정은 [ADR-0001 앱 팩토리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock](docs/adr/0002-dependency-lock.md), [ADR-0003 AWS 구성](docs/adr/0003-aws-demo-topology.md)이다.
 
@@ -220,7 +220,7 @@ Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에�
 postgresql+psycopg://<QUANT_DB_USER>:<QUANT_DB_PASSWORD>@postgres:5432/<QUANT_DB_NAME>
 ```
 
-공개 데모는 `compose.public.yml` + `compose.edge.yml`(Caddy HTTPS) + `compose.aws.yml`(ECR 이미지·CloudWatch 로그)을 EC2 한 대에 올리는 구성입니다. 인프라는 `infra/cloudformation/stockdesk.yaml`, 배포는 GitHub OIDC → ECR → SSM Run Command → `scripts/ec2/deploy.sh`(헬스 체크 실패 시 자동 롤백)입니다([ADR-0003](docs/adr/0003-aws-demo-topology.md), [배포 절차](docs/deploy/aws.md)). 템플릿·스크립트는 로컬에서 검증했고, 실제 AWS 배포는 아직 하지 않았습니다. 예전 `docker-compose.prod.yml`은 키·socket 마운트를 물려받으므로 공개 배포에 쓰지 않습니다.
+공개 데모는 `compose.public.yml` + `compose.edge.yml`(Caddy HTTPS) + `compose.aws.yml`(ECR 이미지·CloudWatch 로그)을 EC2 한 대에 올리는 구성입니다. 인프라는 `infra/cloudformation/stockdesk.yaml`, 배포는 GitHub OIDC → ECR → SSM Run Command → `scripts/ec2/deploy.sh`(헬스 체크 실패 시 자동 롤백)입니다([ADR-0003](docs/adr/0003-aws-demo-topology.md), [배포 절차](docs/deploy/aws.md)). 2026-09-25에 실제로 배포했습니다(https://43-201-225-127.sslip.io, [배포 기록](docs/evidence/aws-deploy-2026-09-25.md)). 예전 `docker-compose.prod.yml`은 키·socket 마운트를 물려받으므로 공개 배포에 쓰지 않습니다.
 
 ### 세션 API
 
@@ -588,7 +588,7 @@ pytest -m "not integration"
 
 ### 로컬 실행 검증
 
-[PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md)의 전용 Compose 명령과 [브랜딩 후 로컬 검증](docs/evidence/portfolio-brand-2026-09-23.md)을 참고하세요. AWS 배포 절차는 [docs/deploy/aws.md](docs/deploy/aws.md)에 있습니다. 개인 AWS 배포는 아직 수행하지 않았습니다.
+[PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md)의 전용 Compose 명령과 [브랜딩 후 로컬 검증](docs/evidence/portfolio-brand-2026-09-23.md)을 참고하세요. AWS 배포 절차는 [docs/deploy/aws.md](docs/deploy/aws.md)에 있습니다.
 
 ## 운영 시 유의사항
 
