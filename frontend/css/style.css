@@ -959,7 +959,7 @@ body.app-shell-layout > main.term-page { padding: var(--gap) !important; }
     color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 800;
     letter-spacing: .06em; text-transform: uppercase;
 }
-:is(.term-page, .term-doc) :is(.notice, .danger, .warn, .ok-box) {
+:is(.term-page, .term-doc) :is(.notice, .note, .danger, .warn, .ok-box) {
     margin: 6px 0 0; padding: 6px var(--pad); border: 0; border-left: 2px solid var(--warn); border-radius: 0;
     background: var(--warn-bg); color: var(--warn); font-size: 12.5px; line-height: 1.6;
 }
@@ -988,7 +988,7 @@ body.app-shell-layout > main.term-page { padding: var(--gap) !important; }
     color: var(--fg-2); font: 12px/1.6 var(--font-mono); white-space: pre-wrap; word-break: break-word;
 }
 .term-page .result--sm { min-height: 0; max-height: 220px; margin: 0; padding: 6px 8px; font-size: 11.5px; }
-.term-page .result--error { color: var(--down); border-color: rgba(255,77,77,.45); background: var(--down-bg); }
+.term-page :is(.result--error, .result.error) { color: var(--down); border-color: rgba(255,77,77,.45); background: var(--down-bg); }
 /* 개별 테스트: 형제인 .test-row(라벨·버튼)와 .result를 한 줄 좌우로 놓는다. */
 .term-page .test-list {
     display: grid; grid-template-columns: minmax(200px, 280px) minmax(0, 1fr); gap: 0;
@@ -1004,7 +1004,45 @@ body.app-shell-layout > main.term-page { padding: var(--gap) !important; }
     width: 96px; height: 26px; padding: 0 6px; border: 1px solid var(--border-strong); border-radius: var(--radius-xs);
     background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: var(--fs-sm);
 }
-.term-page .test-list > .result { min-height: 36px; max-height: 220px; margin: 0; border: 0; border-bottom: 1px solid var(--border); }
+.term-page .test-list > .result, .term-page .test-list > .test-results > .result { min-height: 36px; max-height: 220px; margin: 0; border: 0; border-bottom: 1px solid var(--border); }
+/* 버튼 행 하나에 결과가 여럿이면 .test-results로 묶어 오른쪽 칸에 쌓는다. */
+.term-page .test-list > .test-results { display: grid; min-width: 0; border-bottom: 0; }
+.term-page .test-list > .test-results > .result:last-child { border-bottom: 1px solid var(--border); }
+:is(.term-page, .term-doc) :is(.status-grid, .alpaca-status-grid, .kb-status-grid) > * {
+    margin: 0; padding: 4px 8px; border: 0; border-radius: 0; background: var(--surface);
+    color: var(--muted); font-size: var(--fs-sm); font-weight: 700;
+}
+:is(.term-page, .term-doc) :is(.status-grid, .alpaca-status-grid, .kb-status-grid) > .ok { color: var(--up); }
+:is(.term-page, .term-doc) :is(.status-grid, .alpaca-status-grid, .kb-status-grid) > .bad { color: var(--down); }
+/* 입력 + 실행 버튼 한 줄 */
+.term-page .controls { display: flex; gap: 6px; margin: 0; }
+.term-page .controls :is(input, select) {
+    flex: 1; min-width: 0; height: 28px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-xs);
+    background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: 12.5px;
+}
+.term-page .controls .run { margin: 0; }
+.term-page .note ul { margin: 4px 0 0; padding-left: 16px; }
+.term-page .notice-grid { display: grid; gap: 6px; margin: 0; }
+/* 준비 순서: 레일 안에서는 한 열 목록으로 쌓는다. */
+.term-page .setup-grid { display: grid; grid-template-columns: 1fr; gap: 1px; margin: 6px 0 0; background: var(--border); border: 1px solid var(--border); }
+.term-page .setup-step { margin: 0; padding: 6px 8px; border: 0; border-radius: 0; background: var(--surface); color: var(--fg-2); font-size: var(--fs-sm); line-height: 1.55; }
+.term-page .setup-step b { display: block; margin-bottom: 2px; color: var(--fg); font-size: 12.5px; }
+.term-page .setup-step code { word-break: break-word; }
+.term-page .api-test-guide { margin-top: 0; }
+/* 실행 전 확인 체크 */
+.term-page :is(.check, .confirm) { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0 0; padding: 6px 8px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--fg-2); font-size: 12.5px; line-height: 1.55; cursor: pointer; }
+.term-page :is(.check, .confirm) input { margin-top: 3px; accent-color: var(--accent); }
+/* 단계 설명 목록(레일 안) */
+.term-page .steps { display: grid; gap: 0; margin: 0; border: 1px solid var(--border); }
+.term-page .steps .step { margin: 0; padding: 6px 8px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: var(--surface); color: var(--fg-2); font-size: var(--fs-sm); line-height: 1.55; }
+.term-page .steps .step:last-child { border-bottom: 0; }
+.term-page .steps .step b { display: block; color: var(--fg); font-size: 12.5px; }
+/* 증권사 안내 링크 */
+.term-page .guide-link { display: inline-block; margin-top: 6px; color: var(--accent); font-size: var(--fs-sm); font-weight: 800; text-decoration: none; }
+.term-page .guide-link:hover { text-decoration: underline; }
+/* 좁은 레일·2열 분할 안에서는 결과를 버튼 아래에 둔다. */
+.term-page :is(.term-rail, .term-layout--split) .test-list { grid-template-columns: minmax(0, 1fr); }
+.term-page :is(.term-rail, .term-layout--split) .test-list > .test-row { border-right: 0; }
 @media (max-width: 700px) {
     .term-page .test-list { grid-template-columns: minmax(0, 1fr); }
     .term-page .test-list > .test-row { border-right: 0; }

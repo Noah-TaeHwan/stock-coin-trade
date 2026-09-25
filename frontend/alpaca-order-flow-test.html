@@ -7,15 +7,28 @@
   <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
   <link rel="stylesheet" href="/css/alpaca-lab.css?v=20260924-terminal">
 
-  <style>.wrap{max-width:900px;margin:0 auto;padding:32px 20px 56px}.card{padding:24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.notice,.danger{margin-top:16px;padding:14px;border-radius:var(--radius);font-size:13px;line-height:1.7}.notice{background:var(--warn-bg);color:var(--warn)}.danger{background:var(--surface-2);color:var(--down)}.check{display:flex;gap:8px;align-items:flex-start;margin-top:16px;color:var(--fg-2);font-size:13px;line-height:1.6}.check input{margin-top:3px;accent-color:var(--accent)}.run{margin-top:16px;padding:10px 14px;border:0;border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:800;cursor:pointer}.run:disabled{opacity:.6;cursor:not-allowed}.result{min-height:130px;margin-top:16px;padding:15px;border-radius:var(--radius);background:var(--bg);color:var(--fg-2);font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}.result.error{background:var(--down-bg);color:var(--down)}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:900px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:12px}@media(max-width:680px){.wrap{padding:20px 12px 36px}.card{padding:17px}}</style>
+  
 </head>
-<body><div id="header-mount"></div><main class="wrap"><section class="card">
-  <div class="kicker">ALPACA · PAPER ONLY · CONTROLLED TEST</div><h1 style="margin:7px 0;font-size:28px;font-weight:900;color:var(--fg)">Paper 주문 → 취소 흐름 테스트</h1>
-  <p style="margin:0;color:var(--fg-2);line-height:1.7">실제 돈을 사용하지 않는 Alpaca Paper 계정에서만 실행됩니다. 서버가 AAPL 1주를 현재 매도호가보다 매우 낮은 고정 지정가($1.00)로 주문하고 즉시 취소해 주문 권한과 취소 흐름만 확인합니다.</p>
-  <nav class="alpaca-stage-nav" aria-label="Alpaca Paper 실습 단계"><a href="/learning/alpaca-signup.html">1 가입</a><a href="/learning/alpaca-key.html">2 Key</a><a href="/learning/alpaca-install.html">3 설치</a><a href="/learning/alpaca-setup.html">4 설정</a><a href="/alpaca-test.html">5 조회</a><a class="active" href="/alpaca-order-flow-test.html">6 주문</a><a href="/alpaca-api-history.html">7 이력</a></nav>
-  <div class="notice"><strong>안전장치:</strong> 로그인 필요 · 한 번에 한 작업만 실행 · AAPL 매도호가가 $2 초과일 때만 주문 · 종목·수량·가격 고정 · 주문 식별자와 키·토큰은 화면에 표시하지 않음 · 주문 뒤 자동 취소.</div>
-  <label class="check"><input id="confirm" type="checkbox"> 이 요청은 실제 거래가 아닌 Paper Trading 계정의 미체결 지정가 주문 1건을 만들고 바로 취소한다는 점을 이해했습니다.</label>
-  <button id="run" class="run" disabled>Paper 주문 흐름 실행</button><div id="result" class="result" role="status">실행 전 확인 대기 중</div>
-  <div class="danger"><strong>중요:</strong> 취소 요청이 실패하면 Paper 대시보드의 미체결 주문에서 직접 상태를 확인하세요. Live 키·Live 엔드포인트로 전환하는 기능은 이 페이지에 없습니다.</div>
-</section></main><footer class="footer"><div>Noah Trading Desk · Alpaca Paper Trading 주문 흐름 점검</div></footer>
+<body><div id="header-mount"></div><main class="wrap term-page">
+    <header class="term-pagehead"><span class="term-code">ALP 6</span><h1>Paper 주문 → 취소 흐름 테스트</h1><p>실제 돈을 사용하지 않는 Alpaca Paper 계정에서만 실행됩니다. 서버가 AAPL 1주를 현재 매도호가보다 매우 낮은 고정 지정가($1.00)로 주문하고 즉시 취소해 주문 권한과 취소 흐름만 확인합니다.</p><span class="term-right"><span class="badge badge-red">PAPER ONLY</span></span></header>
+    <nav class="term-steps" aria-label="Alpaca Paper 실습 단계"><a href="/learning/alpaca-signup.html">1 가입</a><a href="/learning/alpaca-key.html">2 Key</a><a href="/learning/alpaca-install.html">3 설치</a><a href="/learning/alpaca-setup.html">4 설정</a><a href="/alpaca-test.html">5 조회</a><a class="active" href="/alpaca-order-flow-test.html">6 주문</a><a href="/alpaca-api-history.html">7 이력</a></nav>
+    <div class="term-layout term-layout--tool">
+      <section class="term-panel term-rail">
+        <div class="term-panel__bar"><span class="term-code">SAFE</span>안전장치</div>
+        <div class="term-panel__body term-panel__body--pad">
+          <div class="notice"><strong>안전장치:</strong> 로그인 필요 · 한 번에 한 작업만 실행 · AAPL 매도호가가 $2 초과일 때만 주문 · 종목·수량·가격 고정 · 주문 식별자와 키·토큰은 화면에 표시하지 않음 · 주문 뒤 자동 취소.</div>
+          <div class="danger"><strong>중요:</strong> 취소 요청이 실패하면 Paper 대시보드의 미체결 주문에서 직접 상태를 확인하세요. Live 키·Live 엔드포인트로 전환하는 기능은 이 페이지에 없습니다.</div>
+        </div>
+      </section>
+      <section class="term-panel">
+        <div class="term-panel__bar"><span class="term-code">RUN</span>실행<span class="term-sub">AAPL 1주 · $1.00 지정가 → 즉시 취소</span></div>
+        <div class="term-panel__body term-panel__body--pad">
+          <label class="check"><input id="confirm" type="checkbox"> 이 요청은 실제 거래가 아닌 Paper Trading 계정의 미체결 지정가 주문 1건을 만들고 바로 취소한다는 점을 이해했습니다.</label>
+          <button id="run" class="run" disabled>Paper 주문 흐름 실행</button>
+          <div id="result" class="result" role="status" style="min-height:260px;">실행 전 확인 대기 중</div>
+        </div>
+      </section>
+      <div class="term-span" data-api-guide-host></div>
+    </div>
+  </main><footer class="footer"><div>Noah Trading Desk · Alpaca Paper Trading 주문 흐름 점검</div></footer>
 <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script src="/js/alpaca-order-flow-test.js?v=20260920-lab"></script></body></html>

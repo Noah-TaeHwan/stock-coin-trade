@@ -8,30 +8,26 @@
   <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
   <link rel="stylesheet" href="/css/alpaca-lab.css?v=20260924-terminal">
 
-  <style>
-    .test-wrap{max-width:none;margin:0;padding:32px 20px 56px}.card{margin-top:18px;padding:24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-sm)}.kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}.result{display:block;min-height:158px;margin-top:16px;padding:15px;border-radius:var(--radius);background:var(--bg);color:var(--fg-2);font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}.result--error{background:var(--down-bg);color:var(--down)}.run{margin-top:16px;padding:10px 14px;border:0;border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font-weight:800;cursor:pointer}.run:disabled{opacity:.65;cursor:wait}.notice{margin-top:14px;padding:13px 14px;border-radius:var(--radius);background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.65}.footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:none;margin:0;padding:14px 20px;color:var(--muted);font-size:12px}
-    .test-list{margin-top:18px;padding-top:16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
-    .test-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .test-row label{font-size:13px;font-weight:800;color:var(--fg-2);flex:1;min-width:140px}
-    .test-row input{padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);font:inherit;font-size:12px;width:110px}
-    .run-sm{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);font-weight:800;font-size:12px;cursor:pointer}
-    .run-sm:disabled{opacity:.6;cursor:wait}
-    .result--sm{min-height:0;max-height:240px;overflow:auto;margin-top:0;padding:12px;font-size:11.5px}
-  </style>
+  
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="test-wrap"><section class="card">
-    <div class="kicker">READ-ONLY · ALPACA PAPER API</div>
-    <h1 style="margin:7px 0;font-size:28px;font-weight:900;color:var(--fg)">Alpaca Test</h1>
-    <p style="margin:0;color:var(--fg-2);line-height:1.7">서버가 <code>al.key</code> 또는 환경변수에서만 키를 읽어 Alpaca Paper 계정의 읽기 전용 상태 조회를 수행합니다. API Key·Secret·계정번호·잔고는 응답과 화면에 표시하지 않습니다.</p>
-    <nav class="alpaca-stage-nav" aria-label="Alpaca Paper 실습 단계"><a href="/learning/alpaca-signup.html">1 가입</a><a href="/learning/alpaca-key.html">2 Key</a><a href="/learning/alpaca-install.html">3 설치</a><a href="/learning/alpaca-setup.html">4 설정</a><a class="active" href="/alpaca-test.html">5 조회</a><a href="/alpaca-order-flow-test.html">6 주문</a><a href="/alpaca-api-history.html">7 이력</a></nav>
-    <div class="alpaca-status-grid"><div id="alpacaConfig" class="alpaca-status">○ 서버 설정</div><div id="alpacaMode" class="alpaca-status">○ Paper 고정</div><div class="alpaca-status ok">✓ 조회 5종</div><div class="alpaca-status ok">✓ 호출 이력 기록</div></div>
-    <div class="notice"><strong>테스트 범위:</strong> 계정·포지션·주문내역·시장상태·시세를 모두 조회 전용으로만 확인합니다. 주문, 취소, 포지션 변경 등 거래 API는 호출하지 않습니다.</div>
-    <button id="run-test" class="run">Paper API 연결 테스트</button>
-    <div id="result" class="result" role="status">테스트 대기 중</div>
-
-    <div class="test-list">
+  <main class="test-wrap term-page">
+    <header class="term-pagehead"><span class="term-code">ALP 5</span><h1>Alpaca Test</h1><p>서버가 <code>al.key</code> 또는 환경변수에서만 키를 읽어 Alpaca Paper 계정의 읽기 전용 상태 조회를 수행합니다. API Key·Secret·계정번호·잔고는 응답과 화면에 표시하지 않습니다.</p><span class="term-right"><span class="badge badge-muted">READ-ONLY · PAPER</span></span></header>
+    <nav class="term-steps" aria-label="Alpaca Paper 실습 단계"><a href="/learning/alpaca-signup.html">1 가입</a><a href="/learning/alpaca-key.html">2 Key</a><a href="/learning/alpaca-install.html">3 설치</a><a href="/learning/alpaca-setup.html">4 설정</a><a class="active" href="/alpaca-test.html">5 조회</a><a href="/alpaca-order-flow-test.html">6 주문</a><a href="/alpaca-api-history.html">7 이력</a></nav>
+    <div class="term-layout term-layout--tool">
+      <section class="term-panel term-rail">
+        <div class="term-panel__bar"><span class="term-code">SET</span>연결 점검<span class="term-sub">서버 키 · Paper 계정</span></div>
+        <div class="term-panel__body term-panel__body--pad">
+          <div class="alpaca-status-grid"><div id="alpacaConfig" class="alpaca-status">○ 서버 설정</div><div id="alpacaMode" class="alpaca-status">○ Paper 고정</div><div class="alpaca-status ok">✓ 조회 5종</div><div class="alpaca-status ok">✓ 호출 이력 기록</div></div>
+          <div class="notice"><strong>테스트 범위:</strong> 계정·포지션·주문내역·시장상태·시세를 모두 조회 전용으로만 확인합니다. 주문, 취소, 포지션 변경 등 거래 API는 호출하지 않습니다.</div>
+          <button id="run-test" class="run">Paper API 연결 테스트</button>
+          <div id="result" class="result" role="status">테스트 대기 중</div>
+        </div>
+      </section>
+      <section class="term-panel">
+        <div class="term-panel__bar"><span class="term-code">TST</span>개별 조회<span class="term-sub">조회 전용 · 버튼 | 결과</span></div>
+        <div class="test-list">
       <div class="test-row"><label>보유 포지션</label><button class="run-sm" data-test="positions">포지션 조회</button></div>
       <div id="positions-result" class="result result--sm" role="status">조회 대기 중</div>
 
@@ -44,7 +40,11 @@
       <div class="test-row"><label for="quote-symbol">시세(최근 호가·체결)</label><input id="quote-symbol" value="AAPL" maxlength="5" aria-label="Alpaca 티커"><button class="run-sm" data-test="quote">시세 조회</button></div>
       <div id="quote-result" class="result result--sm" role="status">조회 대기 중</div>
     </div>
-  </section></main>
+
+      </section>
+      <div class="term-span" data-api-guide-host></div>
+    </div>
+  </main>
   <footer class="footer"><div>Noah Trading Desk · Alpaca Paper API 읽기 전용 연결 점검</div></footer>
   <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script src="/js/alpaca-test.js?v=20260920-lab"></script>
 </body>

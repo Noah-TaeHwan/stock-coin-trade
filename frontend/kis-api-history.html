@@ -9,33 +9,28 @@
   <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36.0.2/dist/ag-grid-community.min.js"></script>
   <style>
-    .kis-history{max-width:1600px;margin:0 auto;padding:24px 18px 48px}.history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px;border-bottom:1px solid var(--border)}.history-head h1{margin:4px 0;font-size:24px;font-weight:900;color:var(--fg)}.history-head p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}.kicker{color:var(--accent-dark);font-size:11px;font-weight:900;letter-spacing:.09em}.history-refresh{padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);font-size:12px;font-weight:800;white-space:nowrap}.summary-grid{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px;padding:16px 20px}.summary-card{padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-2)}.summary-card small{display:block;color:var(--muted);font-size:11px}.summary-card b{display:block;margin-top:4px;color:var(--fg);font-size:21px}.summary-card.fail b{color:var(--down)}.summary-card.ok b{color:var(--up)}.history-tools{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:0 20px 14px}.history-tools input,.history-tools select{height:38px;padding:0 11px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);font-size:13px}.history-tools input{min-width:300px}.history-tools span{color:var(--muted);font-size:12px}.kis-grid{--ag-font-size:12px;}.kis-grid .ag-header-cell-label{font-weight:800}.kis-grid .ag-cell{display:flex;align-items:center}.grid-wrap{padding:0 20px 18px}.detail-wrap{padding:0 20px 20px}.detail-wrap h2{margin:0 0 8px;color:var(--fg);font-size:14px;font-weight:900}.detail{min-height:180px;margin:0;padding:15px;border-radius:var(--radius);background:var(--bg);color:var(--fg-2);font:12px/1.65 ui-monospace,monospace;white-space:pre-wrap;word-break:break-word;max-height:430px;overflow:auto}@media(max-width:800px){.summary-grid{grid-template-columns:repeat(2,1fr)}.history-tools input{min-width:100%;width:100%}.history-head{padding:18px}.grid-wrap,.detail-wrap{padding-left:10px;padding-right:10px}}
+    .kis-grid{--ag-font-size:12px;}.kis-grid .ag-header-cell-label{font-weight:800}.kis-grid .ag-cell{display:flex;align-items:center}
   </style>
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="kis-history">
-    <section class="glass-card overflow-hidden">
-      <header class="history-head">
-        <div><div class="kicker">KIS 모의투자 실습 · 자체 API GATEWAY</div><h1>KIS API 호출·오류 이력</h1><p>브라우저가 호출한 자체 API와, 공통 게이트웨이가 KIS Testbed에 보낸 실제 TR 요청을 함께 표시합니다. 키·토큰·전체 계좌번호는 저장 전에 마스킹됩니다.</p></div>
-        <button id="refresh" class="history-refresh" type="button">↻ 새로고침</button>
-      </header>
-      <div class="summary-grid">
-        <div class="summary-card"><small>전체 기록</small><b id="total">0</b></div>
-        <div class="summary-card"><small>KIS 외부 호출</small><b id="outbound">0</b></div>
-        <div class="summary-card ok"><small>외부 호출 성공</small><b id="success">0</b></div>
-        <div class="summary-card fail"><small>외부 호출 실패</small><b id="failure">0</b></div>
-        <div class="summary-card"><small>평균 응답시간</small><b id="average">-</b></div>
-      </div>
-      <div class="history-tools">
-        <input id="filter" type="search" placeholder="TR ID · 경로 · 작업 · 오류 메시지 검색">
+  <main class="kis-history term-page">
+    <header class="term-pagehead"><span class="term-code">KIS</span><h1>KIS API 호출·오류 이력</h1><p>브라우저가 호출한 자체 API와, 공통 게이트웨이가 KIS Testbed에 보낸 실제 TR 요청을 함께 표시합니다. 키·토큰·전체 계좌번호는 저장 전에 마스킹됩니다.</p><span class="term-right"><button id="refresh" class="term-btn" type="button">↻ 새로고침</button></span></header>
+    <div class="term-kpis"><div><small>전체 기록</small><b id="total">0</b></div><div><small>KIS 외부 호출</small><b id="outbound">0</b></div><div class="ok"><small>외부 호출 성공</small><b id="success">0</b></div><div class="fail"><small>외부 호출 실패</small><b id="failure">0</b></div><div><small>평균 응답시간</small><b id="average">-</b></div></div>
+    <div class="term-toolbar"><input id="filter" type="search" placeholder="TR ID · 경로 · 작업 · 오류 메시지 검색">
         <select id="layer"><option value="">전체 계층</option><option value="내 API">내 API</option><option value="KIS 외부 호출">KIS 외부 호출</option></select>
         <select id="result"><option value="">전체 결과</option><option value="success">성공</option><option value="failure">실패</option></select>
-        <span id="status">불러오는 중…</span>
-      </div>
-      <div class="grid-wrap"><div id="grid" class="kis-grid" style="height:560px;width:100%"></div></div>
-      <div class="detail-wrap"><h2>선택한 호출 상세</h2><pre id="detail" class="detail">행을 선택하면 마스킹된 요청·응답을 표시합니다.</pre></div>
-    </section>
+        <span id="status">불러오는 중…</span></div>
+    <div class="term-layout term-layout--log">
+      <section class="term-panel">
+        <div class="term-panel__bar"><span class="term-code">LOG</span>호출 목록<span class="term-sub">행을 누르면 오른쪽에 상세 표시</span></div>
+        <div id="grid" class="kis-grid" style="flex:1 1 auto;min-height:420px;width:100%;"></div>
+      </section>
+      <section class="term-panel">
+        <div class="term-panel__bar"><span class="term-code">RAW</span>선택한 호출 상세</div>
+        <pre id="detail" class="term-console detail" style="flex:1 1 auto;border:0;">행을 선택하면 마스킹된 요청·응답을 표시합니다.</pre>
+      </section>
+    </div>
   </main>
   <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script src="/js/kis-api-history.js?v=20260924-terminal"></script>
 </body>
