@@ -277,9 +277,10 @@ Resources:
             sleep 5
           done
           [ -n "$DEV" ] || { echo "data volume ${DataVolume} not attached" >&2; exit 1; }
-          blkid "$DEV" >/dev/null || mkfs.xfs -L stockdesk-data "$DEV"
+          # XFS labels are at most 12 characters (mkfs.xfs rejects longer ones).
+          blkid "$DEV" >/dev/null || mkfs.xfs -L stockdesk "$DEV"
           install -d /var/lib/docker
-          grep -q stockdesk-data /etc/fstab || echo "LABEL=stockdesk-data /var/lib/docker xfs defaults,nofail 0 2" >> /etc/fstab
+          grep -q LABEL=stockdesk /etc/fstab || echo "LABEL=stockdesk /var/lib/docker xfs defaults,nofail 0 2" >> /etc/fstab
           mount -a
           systemctl enable --now docker
           # Docker Compose v2.40.3 plugin, verified against the release's checksums.txt.
