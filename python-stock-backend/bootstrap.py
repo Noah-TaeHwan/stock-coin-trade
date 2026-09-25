@@ -19,7 +19,7 @@ from market_bots import ensure_bot_accounts
 from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
 from models import Member
-from intent import ensure_jev_tables
+from jev_usage import ensure_jev_tables
 from research_agent import ensure_ai_tables
 from stock_trading import ensure_stock_order_columns
 from settings import profile_from_env
