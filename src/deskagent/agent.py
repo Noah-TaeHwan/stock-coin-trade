@@ -24,7 +24,7 @@ from deskagent import pricing
 from deskagent.numbers import OUTPUT_SCHEMA, Ledger, UnreceiptedAnswer, render
 from deskagent.tools import TOOLS, Backend, ToolFailed, execute
 
-DEFAULT_MODEL = "claude-opus-5"
+DEFAULT_MODEL = "claude-opus-5-5"
 
 SYSTEM_PROMPT = """당신은 Noah Trading Desk의 퀀트 리서치 보조입니다. 한국어로 답합니다.
 
@@ -106,7 +106,8 @@ def ask(
             tools=TOOLS,
             messages=messages,
             thinking={"type": "adaptive"},
-            output_config={"format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
+            # Opus 5.5의 기본 effort는 medium이다. 이전 모델(Opus 5)의 기본값 high를 유지한다.
+            output_config={"effort": "high", "format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
             cache_control={"type": "ephemeral"},
         ) as stream:
             message = stream.get_final_message()

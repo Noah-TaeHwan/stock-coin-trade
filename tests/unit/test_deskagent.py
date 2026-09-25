@@ -32,7 +32,9 @@ def test_request_shape_follows_the_sdk_docs():
     script = Script(call_backtest, answer(GOOD))
     ask(_client(script), LocalBackend(), "q")
     first, second = script.requests
-    assert first["model"] == "claude-opus-5" and first["thinking"] == {"type": "adaptive"}
+    assert first["model"] == "claude-opus-5-5" and first["thinking"] == {"type": "adaptive"}
+    # Opus 5.5의 기본 effort는 medium이라 Opus 5와 같은 high를 명시한다.
+    assert first["output_config"]["effort"] == "high"
     assert first["output_config"]["format"]["type"] == "json_schema" and first["stream"] is True
     assert {t["name"] for t in first["tools"]} == {"list_sources", "run_backtest", "get_backtest"}
     tool_result = second["messages"][-1]["content"][0]
@@ -125,9 +127,9 @@ def test_turn_limit_bounds_the_loop():
 
 def test_cost_adds_up_every_turn_from_the_pricing_file():
     result = ask(_client(Script(call_backtest, answer(GOOD))), LocalBackend(), "q")
-    per_turn = pricing.cost_usd("claude-opus-5", pricing.Usage(input_tokens=1000, output_tokens=200))
+    per_turn = pricing.cost_usd("claude-opus-5-5", pricing.Usage(input_tokens=1000, output_tokens=200))
     assert result.cost_usd == pytest.approx(2 * per_turn)
-    assert per_turn == pytest.approx((1000 * 5.00 + 200 * 25.00) / 1e6)
+    assert per_turn == pytest.approx((1000 * 4.00 + 200 * 20.00) / 1e6)
     assert result.usage.input_tokens == 2000 and result.usage.output_tokens == 400
 
 
@@ -199,7 +201,8 @@ def test_pricing_file_names_its_official_source():
 
     data = tomllib.loads(pricing.PRICING_FILE.read_text())
     assert data["source"].startswith("https://platform.claude.com/") and data["checked_on"]
-    assert set(data["models"]["claude-opus-5"]) == {"input", "cache_write_5m", "cache_read", "output"}
+    for model in ("claude-opus-5", "claude-opus-5-5"):
+        assert set(data["models"][model]) == {"input", "cache_write_5m", "cache_read", "output"}
 
 
 # ── eval baselines (offline, pinned) ─────────────────────────────────────────
@@ -242,5 +245,7 @@ def test_every_token_kind_is_priced_at_its_own_rate():
     )
     assert pricing.cost_usd("claude-opus-5", usage) == pytest.approx(5.00 + 25.00 + 6.25 + 0.50)
     assert pricing.cost_usd("claude-opus-5", pricing.Usage(cache_read_input_tokens=2_000_000)) == pytest.approx(1.00)
+    # claude-opus-5-5: input $4, 5m cache write $5, cache hit $0.20 (0.05x), output $20 per MTok.
+    assert pricing.cost_usd("claude-opus-5-5", usage) == pytest.approx(4.00 + 20.00 + 5.00 + 0.20)
     with pytest.raises(KeyError):
         pricing.cost_usd("gpt-4o", usage)

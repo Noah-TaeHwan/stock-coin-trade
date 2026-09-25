@@ -55,6 +55,7 @@ PYTHONPATH=src ANTHROPIC_API_KEY=... python -m deskagent.eval --mode live --max-
 **비용 추정**(측정값 아님)
 - 전제: 실행 1회에 2~3턴, 입력 약 6천 토큰, 출력 약 2천~3천 토큰
 - `claude-opus-5` 공식 가격: 입력 $5/MTok, 출력 $25/MTok(`config/llm_pricing.toml`, 2026-09-25 확인)
+- 2026-09-26부터 기본 모델은 `claude-opus-5-5`(입력 $4/MTok, 출력 $20/MTok, effort `high` 명시). 위 기준선 수치는 Opus 5에서 잰 것이다
 - 1회 약 $0.08~0.11, 60회 약 $5~7로 추정한다.
 - 프롬프트 캐시가 적중하면 입력 비용이 줄어든다. Opus 5의 최소 캐시 길이는 512토큰이다.
 - 실제 값은 live 결과의 `usage`·`costUsd`로 확인한다.

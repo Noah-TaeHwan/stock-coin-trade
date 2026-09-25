@@ -34,7 +34,7 @@ DEFAULT_ADMIN_EMAIL = "admin@admin.com"
 MEMORY_RATELIMIT_STORAGE = "memory://"
 # Research agent (src/deskagent). Off unless AI_ENABLED=true; then a monthly
 # USD budget is required, and public also needs a real invite-code pepper.
-DEFAULT_AI_MODEL = "claude-opus-5"
+DEFAULT_AI_MODEL = "claude-opus-5-5"
 DEV_AI_INVITE_PEPPER = "dev-invite-pepper-change-me"
 MIN_AI_INVITE_PEPPER_LENGTH = 32
 

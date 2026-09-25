@@ -1,9 +1,17 @@
 # USD per million tokens. Source: https://platform.claude.com/docs/en/about-claude/pricing
-# (checked 2026-09-25). Columns there: base input, 5m cache write, 1h cache write,
+# (checked 2026-09-26). Columns there: base input, 5m cache write, 1h cache write,
 # cache hit, output. Update this file, not the code, when prices change.
-checked_on = "2026-09-25"
+checked_on = "2026-09-26"
 source = "https://platform.claude.com/docs/en/about-claude/pricing"
 
+# Opus 5.5는 캐시 적중이 기본 입력가의 0.05배다(다른 모델은 0.1배).
+[models.claude-opus-5-5]
+input = 4.00
+cache_write_5m = 5.00
+cache_read = 0.20
+output = 20.00
+
+# 이전 기록(ai_usage, 재생 스크립트)의 비용 재계산용으로 남긴다.
 [models.claude-opus-5]
 input = 5.00
 cache_write_5m = 6.25

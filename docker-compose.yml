@@ -24,7 +24,7 @@ x-backend-environment: &backend-environment
   # AI 리서치(src/deskagent): 기본 꺼짐. 켜면 월 예산(USD)이 필요하고, public은 초대 코드 pepper(32자 이상)도 필요하다.
   AI_ENABLED: ${AI_ENABLED:-false}
   AI_MONTHLY_BUDGET_USD: ${AI_MONTHLY_BUDGET_USD:-0}
-  AI_MODEL: ${AI_MODEL:-claude-opus-5}
+  AI_MODEL: ${AI_MODEL:-claude-opus-5-5}
   AI_INVITE_PEPPER: ${AI_INVITE_PEPPER:-}
   # 증권사 키는 kis.key/kb.key/al.key 파일(/run/secrets)이 기본이며, 아래
   # 환경변수를 .env에 채우면 파일보다 우선 적용된다. KIS_ACCOUNT_NO는
