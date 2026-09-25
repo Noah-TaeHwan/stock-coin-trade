@@ -149,6 +149,8 @@ def test_flask_config_keeps_the_original_session_settings():
         "AI_MONTHLY_BUDGET_USD": 0.0,
         "AI_MODEL": "claude-opus-5-5",
         "AI_INVITE_PEPPER": "dev-invite-pepper-change-me",
+        "JEV_ENABLED": False,
+        "JEV_MONTHLY_BUDGET_USD": 0.0,
     }
 
 

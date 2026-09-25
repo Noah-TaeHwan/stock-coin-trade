@@ -15,6 +15,10 @@ x-portfolio-backend-environment: &portfolio-backend-environment
   QDRANT_URL: ":memory:"
   SESSION_COOKIE_SECURE: "false"
   TRUSTED_PROXY_COUNT: "1"
+  # 자연어 명령 라우터(TypeSafe Jev). 기본 꺼짐. 켤 때만 셸에서 JEV_ENABLED=true와 키를 넘긴다.
+  JEV_ENABLED: ${JEV_ENABLED:-false}
+  JEV_MONTHLY_BUDGET_USD: ${JEV_MONTHLY_BUDGET_USD:-0}
+  TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
 
 services:
   frontend:

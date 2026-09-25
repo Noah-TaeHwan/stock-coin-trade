@@ -47,6 +47,7 @@ from kis_practice import kis_practice_bp  # noqa: E402
 from kis_real import kis_real_bp  # noqa: E402
 from members import member_bp  # noqa: E402
 from ohlcv_db import ohlcv_db_bp  # noqa: E402
+from intent import intent_bp  # noqa: E402
 from openapi import open_api_bp  # noqa: E402
 import price_sources  # noqa: E402
 from marketdata import registry as data_registry  # noqa: E402
@@ -68,7 +69,7 @@ BLUEPRINTS = (
     member_bp, market_bp, trade_bp, crypto_exchange_test_bp, admin_bp, ai_bp, ai_sheet_bp,
     alpaca_test_bp, aws_alpaca_test_bp, stock_bp, api_key_bp, broker_test_bp, kis_explorer_bp,
     kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp, open_api_bp, ohlcv_db_bp,
-    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp, research_agent_bp,
+    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp, research_agent_bp, intent_bp,
 )
 
 # Classroom labs that need broker or cloud credentials, the host Docker socket,
