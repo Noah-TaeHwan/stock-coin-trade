@@ -1080,6 +1080,7 @@ body.app-shell-layout > main.term-doc { padding: 10px clamp(10px, 2vw, 28px) 32p
 .term-toc .term-toc-sub a { padding-left: 18px; font-size: var(--fs-xs); }
 @media (max-width: 1100px) {
     .term-doc { grid-template-columns: minmax(0, 1fr); }
+    .term-doc > * { grid-column: 1; }
     .term-doc > .term-toc { grid-column: 1; grid-row: auto; position: static; max-height: none; margin-bottom: 6px; border: 1px solid var(--border); background: var(--surface); }
 }
 
