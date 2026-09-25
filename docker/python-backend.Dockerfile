@@ -1,5 +1,10 @@
-FROM python:3.11-slim
+# 태그를 버전까지 고정한다(2026-09-25 기준 python:3.11-slim과 같은 3.11.16, Debian trixie).
+FROM python:3.11.16-slim-trixie
 WORKDIR /app
+
+# gunicorn을 root로 돌리지 않는다(Flask 배포 문서). 로컬 LEAN 실습처럼 호스트
+# docker.sock이 필요한 구성은 Compose의 group_add로 소켓 그룹을 준다.
+RUN useradd --system --uid 10001 --home-dir /app --shell /usr/sbin/nologin app
 
 # AI Sheet의 LEAN 백테스트 버튼이 호스트 Docker 데몬에 `docker` CLI로 직접
 # 명령을 보낸다(Docker-outside-of-Docker). 데몬은 필요 없고 클라이언트만
@@ -13,18 +18,20 @@ RUN apt-get update \
 COPY python-stock-backend/requirements.lock .
 RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 
-# Pre-download fastembed model (intfloat/multilingual-e5-small, ~118MB)
-# so the container starts instantly without network access at runtime
+# 임베딩 모델(qdrant_service.EMBED_MODEL)을 빌드 때 받아 두어, 실행 중에는 네트워크 없이 뜬다.
+# 캐시 경로를 고정해 비루트 사용자도 읽을 수 있게 한다.
+ENV FASTEMBED_CACHE_PATH=/opt/fastembed
 RUN python3 -c "\
-from qdrant_client import QdrantClient; \
-c = QdrantClient(':memory:'); \
-c.set_model('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'); \
-c.add('warmup', documents=['warmup']); \
-print('fastembed model ready')"
+from fastembed import TextEmbedding; \
+list(TextEmbedding('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2').embed(['warmup'])); \
+print('fastembed model ready')" \
+    && chown -R app:app /opt/fastembed
 
 COPY python-stock-backend/*.py .
 # KIS API 탐색기 카탈로그(공식 예제에서 생성한 JSON)
 COPY python-stock-backend/kis_api_catalog.json .
+
+USER app
 
 EXPOSE 8200
 # KIS 토큰·호출 제한은 프로세스 메모리에서 공유하므로 worker는 1개로 두고

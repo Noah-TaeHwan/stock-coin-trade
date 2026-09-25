@@ -14,6 +14,7 @@ Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령
 - 같은 회원의 동시 주식 주문이 옛 포지션을 읽어 초과 매도·이중 입금·500이 나던 문제 수정(MariaDB 재현 테스트), public 프로필에서 시뮬레이션 가격 체결 거부
 - 관리자 선점·시스템 계정 로그인·이메일 중복 차단, 로그인·가입·키 발급 레이트 리밋, 전역 CSRF 출처 검사, 예외 원문 대신 요청 ID
 - 저장형 XSS 차단(공용 이스케이프, Qdrant 추가 관리자 전용, 브라우저 검사), 크롤러 리디렉션 홉별 SSRF 검사, 공개 프로필에서 실습·외부 키 의존 기능 12개 제외, CORS 정확 일치
+- 의존성 취약점 0건(Flask·flask-cors·requests·python-dotenv·qdrant-client 업그레이드), 비루트 백엔드 컨테이너, nginx 보안 헤더·`/health` 실제 프록시, 공개 배포용 `compose.public.yml`(Redis 레이트 리밋, 키·socket 미전달)
 
 HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
 
@@ -26,6 +27,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [주식 주문 정합성(동시 주문·시뮬레이션 가격) 검증](docs/evidence/order-integrity-2026-09-24.md)
 - [인증·권한·남용 제한 검증](docs/evidence/auth-abuse-2026-09-25.md)
 - [XSS·SSRF·공개 프로필 검증](docs/evidence/xss-ssrf-public-profile-2026-09-25.md)
+- [컨테이너·nginx·의존성 취약점 검증](docs/evidence/containers-nginx-deps-2026-09-25.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.

@@ -1,6 +1,10 @@
 """
 Qdrant vector DB — Korean stock market knowledge base (RAG).
-Model: intfloat/multilingual-e5-small (Korean support, ~118 MB)
+
+Embeddings are computed locally by FastEmbed through qdrant-client's inference
+API (models.Document + upsert/query_points), as in the qdrant-client README.
+The older convenience methods (set_model/add/query) are gone in
+qdrant-client 1.19.
 """
 
 import os
@@ -11,7 +15,9 @@ from threading import Lock
 logger = logging.getLogger(__name__)
 
 QDRANT_URL  = os.getenv("QDRANT_URL", ":memory:")
-COLLECTION  = "market_knowledge"
+# v2: the old FastEmbed mixin stored a named vector; this layout uses one
+# unnamed vector. A new name leaves any existing server-side collection intact.
+COLLECTION  = "market_knowledge_v2"
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 _client = None
@@ -263,7 +269,6 @@ def _init():
         try:
             from qdrant_client import QdrantClient
             c = QdrantClient(QDRANT_URL if QDRANT_URL != ":memory:" else ":memory:")
-            c.set_model(EMBED_MODEL)
             _seed(c)
             _client = c
             logger.info("Qdrant ready — model=%s url=%s docs=%d", EMBED_MODEL, QDRANT_URL, len(SEED))
@@ -273,24 +278,38 @@ def _init():
     return _client
 
 
+def _point(text: str, title: str, category: str, point_id: str):
+    from qdrant_client import models
+    return models.PointStruct(
+        id=point_id,
+        vector=models.Document(text=text, model=EMBED_MODEL),
+        payload={"document": text, "title": title, "category": category},
+    )
+
+
 def _seed(c):
-    existing = [col.name for col in c.get_collections().collections]
-    if COLLECTION not in existing:
-        texts = [d["text"] for d in SEED]
-        metas = [{"title": d["title"], "category": d["category"]} for d in SEED]
-        ids   = [str(uuid.uuid4()) for _ in SEED]
-        c.add(collection_name=COLLECTION, documents=texts, metadata=metas, ids=ids)
+    from qdrant_client import models
+    if c.collection_exists(COLLECTION):
+        return
+    c.create_collection(
+        COLLECTION,
+        vectors_config=models.VectorParams(size=c.get_embedding_size(EMBED_MODEL), distance=models.Distance.COSINE),
+    )
+    c.upsert(COLLECTION, points=[_point(d["text"], d["title"], d["category"], str(uuid.uuid4())) for d in SEED])
 
 
 def search(query: str, limit: int = 5) -> list:
+    from qdrant_client import models
     c = _init()
-    hits = c.query(collection_name=COLLECTION, query_text=query, limit=limit)
+    hits = c.query_points(
+        collection_name=COLLECTION, query=models.Document(text=query, model=EMBED_MODEL), limit=limit,
+    ).points
     return [
         {
             "id":       str(h.id),
-            "title":    h.metadata.get("title", ""),
-            "category": h.metadata.get("category", ""),
-            "text":     h.document or "",
+            "title":    (h.payload or {}).get("title", ""),
+            "category": (h.payload or {}).get("category", ""),
+            "text":     (h.payload or {}).get("document", ""),
             "score":    round(h.score, 4),
         }
         for h in hits
@@ -329,10 +348,5 @@ def list_docs(limit: int = 30) -> list:
 def add_doc(text: str, title: str, category: str = "custom") -> str:
     c = _init()
     doc_id = str(uuid.uuid4())
-    c.add(
-        collection_name=COLLECTION,
-        documents=[text],
-        metadata=[{"title": title, "category": category}],
-        ids=[doc_id],
-    )
+    c.upsert(COLLECTION, points=[_point(text, title, category, doc_id)])
     return doc_id
