@@ -1,0 +1,7 @@
+# Test and lint tools for local runs and CI. Compile with:
+#   uv pip compile python-stock-backend/requirements.txt requirements-dev.in \
+#     --constraint python-stock-backend/requirements.lock \
+#     --universal --python-version 3.11 --generate-hashes --no-header -o requirements-dev.lock
+pytest==9.1.1
+ruff==0.16.8
+pip-audit==2.10.1

@@ -1,3 +1,57 @@
+# 백엔드 이미지를 쓰는 세 서비스(init·python-backend·worker)가 같은 빌드와
+# 환경변수를 공유한다.
+x-backend-build: &backend-build
+  context: .
+  dockerfile: docker/python-backend.Dockerfile
+
+x-backend-environment: &backend-environment
+  DB_HOST: ${DB_HOST:-mariadb}
+  DB_PORT: ${DB_PORT:-3306}
+  DB_NAME: ${MARIADB_DATABASE:-mockinv}
+  DB_USER: ${MARIADB_USER:-mockinv}
+  DB_PASSWORD: ${MARIADB_PASSWORD:-12345678!!}
+  QUANT_DATABASE_URL: ${QUANT_DATABASE_URL:-postgresql+psycopg://${QUANT_DB_USER:-quant}:${QUANT_DB_PASSWORD:-quant}@postgres:5432/${QUANT_DB_NAME:-quant_research}}
+  # docker-class의 pg-stock은 백테스트 데이터 집계 API에서 읽기 전용으로만 사용한다.
+  OHLCV_DATABASE_URL: ${OHLCV_DATABASE_URL:-postgresql+psycopg://admin:admin1234@host.docker.internal:5433/admin}
+  # local(기본): 교육용 기본값 허용. public: 기본 비밀값이면 기동 실패(settings.py).
+  APP_PROFILE: ${APP_PROFILE:-local}
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+  CMC_API_KEY: ${CMC_API_KEY:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  # 증권사 키는 kis.key/kb.key/al.key 파일(/run/secrets)이 기본이며, 아래
+  # 환경변수를 .env에 채우면 파일보다 우선 적용된다. KIS_ACCOUNT_NO는
+  # 'CANO-계좌상품코드'(예: 12345678-01) 형식이고 하이픈 뒤는 임의로 바꾸지 않는다.
+  KIS_APP_KEY: ${KIS_APP_KEY:-}
+  KIS_APP_SECRET: ${KIS_APP_SECRET:-}
+  KIS_ACCOUNT_NO: ${KIS_ACCOUNT_NO:-}
+  KIS_ENVIRONMENT: ${KIS_ENVIRONMENT:-paper}
+  KIS_PAPER_APP_KEY: ${KIS_PAPER_APP_KEY:-}
+  KIS_PAPER_APP_SECRET: ${KIS_PAPER_APP_SECRET:-}
+  KIS_PAPER_ACCOUNT_NO: ${KIS_PAPER_ACCOUNT_NO:-}
+  # 실전 잔고조회 전용. 모의 키와 절대 혼용하지 않으며 주문 API에서는 사용하지 않는다.
+  KIS_REAL_APP_KEY: ${KIS_REAL_APP_KEY:-}
+  KIS_REAL_APP_SECRET: ${KIS_REAL_APP_SECRET:-}
+  KIS_REAL_ACCOUNT_NO: ${KIS_REAL_ACCOUNT_NO:-}
+  KIS_REAL_OWNER_EMAIL: ${KIS_REAL_OWNER_EMAIL:-}
+  ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@admin.com}
+  SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+  KB_APP_KEY: ${KB_APP_KEY:-}
+  KB_APP_SECRET: ${KB_APP_SECRET:-}
+  ALPACA_API_KEY: ${ALPACA_API_KEY:-}
+  ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY:-}
+  # 비우면 qdrant_service.py가 인메모리 Qdrant를 사용한다.
+  QDRANT_URL: ${QDRANT_URL:-:memory:}
+  # AWS SSM Parameter Store 연동 트랙(aws_secret_store.py, *_aws.py)에서만
+  # 사용한다. kis.key/kb.key/al.key 기반 기존 모듈에는 영향이 없다. EC2에
+  # IAM 인스턴스 프로파일이 붙어 있으면 액세스 키 3종은 비워 둬도 된다.
+  AWS_REGION: ${AWS_REGION:-}
+  AWS_SSM_PARAMETER_PREFIX: ${AWS_SSM_PARAMETER_PREFIX:-/stock-coin-trade}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+  # 기존 회원·보유자산을 변경하지 않고 없는 샘플 투자자만 추가한다.
+  DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
+
 networks:
   internal:
     driver: bridge
@@ -62,61 +116,34 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # ── DB 초기화 (일회성) ──────────────────────────────────────────
+  # 테이블 생성과 샘플 데이터 시드를 한 번 실행하고 종료한다. 예전에는
+  # 백엔드가 import될 때마다 실행됐다(bootstrap.py 참고). 모두 멱등이다.
+  init:
+    build: *backend-build
+    networks:
+      - internal
+    command: ["sh", "-c", "flask --app app init-db && flask --app app seed-demo"]
+    environment: *backend-environment
+    depends_on:
+      # 운영처럼 외부 DB를 쓰면 local-db 프로필 서비스가 없으므로 경고만 한다.
+      mariadb:
+        condition: service_healthy
+        required: false
+    restart: "no"
+
   # ── Python 백엔드 (Flask REST API — 코인/주식/회원/관리자/AI 전부 처리) ──
   python-backend:
-    build:
-      context: .
-      dockerfile: docker/python-backend.Dockerfile
+    build: *backend-build
     container_name: crypto-mock-python
     networks:
       - internal
     expose:
       - "8200"
-    environment:
-      DB_HOST: ${DB_HOST:-mariadb}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${MARIADB_DATABASE:-mockinv}
-      DB_USER: ${MARIADB_USER:-mockinv}
-      DB_PASSWORD: ${MARIADB_PASSWORD:-12345678!!}
-      QUANT_DATABASE_URL: ${QUANT_DATABASE_URL:-postgresql+psycopg://${QUANT_DB_USER:-quant}:${QUANT_DB_PASSWORD:-quant}@postgres:5432/${QUANT_DB_NAME:-quant_research}}
-      # docker-class의 pg-stock은 백테스트 데이터 집계 API에서 읽기 전용으로만 사용한다.
-      OHLCV_DATABASE_URL: ${OHLCV_DATABASE_URL:-postgresql+psycopg://admin:admin1234@host.docker.internal:5433/admin}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
-      CMC_API_KEY: ${CMC_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      # 증권사 키는 kis.key/kb.key/al.key 파일(/run/secrets)이 기본이며, 아래
-      # 환경변수를 .env에 채우면 파일보다 우선 적용된다. KIS_ACCOUNT_NO는
-      # 'CANO-계좌상품코드'(예: 12345678-01) 형식이고 하이픈 뒤는 임의로 바꾸지 않는다.
-      KIS_APP_KEY: ${KIS_APP_KEY:-}
-      KIS_APP_SECRET: ${KIS_APP_SECRET:-}
-      KIS_ACCOUNT_NO: ${KIS_ACCOUNT_NO:-}
-      KIS_ENVIRONMENT: ${KIS_ENVIRONMENT:-paper}
-      KIS_PAPER_APP_KEY: ${KIS_PAPER_APP_KEY:-}
-      KIS_PAPER_APP_SECRET: ${KIS_PAPER_APP_SECRET:-}
-      KIS_PAPER_ACCOUNT_NO: ${KIS_PAPER_ACCOUNT_NO:-}
-      # 실전 잔고조회 전용. 모의 키와 절대 혼용하지 않으며 주문 API에서는 사용하지 않는다.
-      KIS_REAL_APP_KEY: ${KIS_REAL_APP_KEY:-}
-      KIS_REAL_APP_SECRET: ${KIS_REAL_APP_SECRET:-}
-      KIS_REAL_ACCOUNT_NO: ${KIS_REAL_ACCOUNT_NO:-}
-      KIS_REAL_OWNER_EMAIL: ${KIS_REAL_OWNER_EMAIL:-}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@admin.com}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
-      KB_APP_KEY: ${KB_APP_KEY:-}
-      KB_APP_SECRET: ${KB_APP_SECRET:-}
-      ALPACA_API_KEY: ${ALPACA_API_KEY:-}
-      ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY:-}
-      # 비우면 qdrant_service.py가 인메모리 Qdrant를 사용한다.
-      QDRANT_URL: ${QDRANT_URL:-:memory:}
-      # AWS SSM Parameter Store 연동 트랙(aws_secret_store.py, *_aws.py)에서만
-      # 사용한다. kis.key/kb.key/al.key 기반 기존 모듈에는 영향이 없다. EC2에
-      # IAM 인스턴스 프로파일이 붙어 있으면 액세스 키 3종은 비워 둬도 된다.
-      AWS_REGION: ${AWS_REGION:-}
-      AWS_SSM_PARAMETER_PREFIX: ${AWS_SSM_PARAMETER_PREFIX:-/stock-coin-trade}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
-      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
-      # 기존 회원·보유자산을 변경하지 않고 없는 샘플 투자자만 추가한다.
-      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
+    environment: *backend-environment
+    depends_on:
+      init:
+        condition: service_completed_successfully
     # 키 파일은 이미지에 복사하지 않고 읽기 전용으로만 전달한다.
     volumes:
       - ./al.key:/run/secrets/al.key:ro
@@ -130,6 +157,19 @@ services:
       - ./docker/lean:/lean-src:ro
       - lean-data:/lean-data
       - lean-results:/lean-results
+    restart: unless-stopped
+
+  # ── 주기 작업 (코인 랭킹·업비트 마켓 동기화, 시장 봇) ─────────────
+  # 웹 서버 프로세스와 분리해 몇 개의 gunicorn worker를 쓰든 한 번만 실행한다.
+  worker:
+    build: *backend-build
+    networks:
+      - internal
+    command: ["python", "worker.py"]
+    environment: *backend-environment
+    depends_on:
+      init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:

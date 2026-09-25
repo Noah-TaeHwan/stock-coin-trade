@@ -1,3 +1,20 @@
+# 백엔드 이미지를 쓰는 세 서비스(init·python-backend·worker)에 같은 로컬 전용
+# 환경변수만 넘긴다. 브로커·AWS 키와 Docker socket은 어느 서비스에도 전달하지 않는다.
+x-portfolio-backend-environment: &portfolio-backend-environment
+  APP_PROFILE: local
+  DB_HOST: mariadb
+  DB_PORT: "3306"
+  DB_NAME: mockinv
+  DB_USER: ${MARIADB_USER:?set MARIADB_USER in .env.portfolio}
+  DB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD in .env.portfolio}
+  QUANT_DATABASE_URL: postgresql+psycopg://${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}:${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}@postgres:5432/${QUANT_DB_NAME:?set QUANT_DB_NAME in .env.portfolio}
+  OHLCV_DATABASE_URL: postgresql+psycopg://${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}:${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}@postgres:5432/${QUANT_DB_NAME:?set QUANT_DB_NAME in .env.portfolio}
+  SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env.portfolio}
+  KIS_ENVIRONMENT: paper
+  DEMO_SEED_ENABLED: "true"
+  QDRANT_URL: ":memory:"
+  SESSION_COOKIE_SECURE: "false"
+
 services:
   frontend:
     container_name: !reset null
@@ -19,26 +36,30 @@ services:
       POSTGRES_USER: ${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}
       POSTGRES_PASSWORD: ${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}
 
+  init:
+    environment: !override
+      <<: *portfolio-backend-environment
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        required: true
+
   python-backend:
     container_name: !reset null
     volumes: !reset []
     environment: !override
-      DB_HOST: mariadb
-      DB_PORT: "3306"
-      DB_NAME: mockinv
-      DB_USER: ${MARIADB_USER:?set MARIADB_USER in .env.portfolio}
-      DB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD in .env.portfolio}
-      QUANT_DATABASE_URL: postgresql+psycopg://${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}:${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}@postgres:5432/${QUANT_DB_NAME:?set QUANT_DB_NAME in .env.portfolio}
-      OHLCV_DATABASE_URL: postgresql+psycopg://${QUANT_DB_USER:?set QUANT_DB_USER in .env.portfolio}:${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD in .env.portfolio}@postgres:5432/${QUANT_DB_NAME:?set QUANT_DB_NAME in .env.portfolio}
-      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env.portfolio}
-      KIS_ENVIRONMENT: paper
-      DEMO_SEED_ENABLED: "true"
-      QDRANT_URL: ":memory:"
-      SESSION_COOKIE_SECURE: "false"
+      <<: *portfolio-backend-environment
     depends_on:
       mariadb:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+
+  worker:
+    environment: !override
+      <<: *portfolio-backend-environment
+    depends_on:
+      mariadb:
         condition: service_healthy
 
 volumes:

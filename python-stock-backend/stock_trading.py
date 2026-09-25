@@ -1,7 +1,7 @@
 import time
 
 from models import StockOrder, StockPosition
-from stock_market import STOCKS, current_price, get_chart_cached, get_stock_info
+from stock_market import current_price, get_chart_cached, get_stock_info
 from volatility import annualized_volatility
 
 INITIAL_CASH = 100_000_000  # matches the seed deposit granted at registration (members.py)
