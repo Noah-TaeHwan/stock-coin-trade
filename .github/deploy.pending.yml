@@ -1,0 +1,98 @@
+# Deploy to the EC2 host created by infra/cloudformation/stockdesk.yaml.
+#
+# This file lives outside .github/workflows because the session that wrote it
+# cannot push workflow files. To enable it: move it to .github/workflows/deploy.yml,
+# create the GitHub environment "production" (required reviewers recommended) and set
+# these environment variables from the stack outputs:
+#   AWS_REGION, AWS_DEPLOY_ROLE_ARN, EC2_INSTANCE_ID, RELEASE_BUCKET, LOG_GROUP, SITE_ADDRESS
+# No AWS keys are stored in GitHub: the job exchanges its OIDC token for the deploy role,
+# which the stack only lets this repository's "production" environment assume.
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write # required to request the OIDC token
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      RELEASE_BUCKET: ${{ vars.RELEASE_BUCKET }}
+      LOG_GROUP: ${{ vars.LOG_GROUP }}
+      SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+
+      - name: Build and push images
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          docker build --build-arg GIT_SHA="$IMAGE_TAG" -f docker/python-backend.Dockerfile \
+            -t "$REGISTRY/stock-coin-trade-python-backend:$IMAGE_TAG" .
+          docker build -f docker/frontend.Dockerfile -t "$REGISTRY/stock-coin-trade-frontend:$IMAGE_TAG" .
+          docker push "$REGISTRY/stock-coin-trade-python-backend:$IMAGE_TAG"
+          docker push "$REGISTRY/stock-coin-trade-frontend:$IMAGE_TAG"
+
+      - name: Upload the release bundle
+        run: |
+          tar czf release.tgz docker-compose.yml compose.public.yml compose.edge.yml compose.aws.yml \
+            docker database scripts/ec2/deploy.sh
+          aws s3 cp release.tgz "s3://$RELEASE_BUCKET/releases/$IMAGE_TAG.tgz"
+
+      - name: Run deploy.sh on the host (SSM Run Command)
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          dir="/opt/stockdesk/releases/$IMAGE_TAG"
+          script=$(cat <<SCRIPT
+          set -euo pipefail
+          mkdir -p "$dir"
+          aws s3 cp "s3://$RELEASE_BUCKET/releases/$IMAGE_TAG.tgz" - | tar xz -C "$dir"
+          AWS_REGION="$AWS_REGION" ECR_REGISTRY="$REGISTRY" LOG_GROUP="$LOG_GROUP" SITE_ADDRESS="$SITE_ADDRESS" \
+            bash "$dir/scripts/ec2/deploy.sh" "$dir" "$IMAGE_TAG"
+          SCRIPT
+          )
+          params=$(jq -n --arg s "$script" '{commands: [$s], executionTimeout: ["1800"]}')
+          command_id=$(aws ssm send-command --instance-ids "$EC2_INSTANCE_ID" --document-name AWS-RunShellScript \
+            --comment "deploy $IMAGE_TAG" --parameters "$params" --query Command.CommandId --output text)
+          for _ in $(seq 1 180); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$EC2_INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$status" in
+              Pending|InProgress|Delayed) sleep 10 ;;
+              *) break ;;
+            esac
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$EC2_INSTANCE_ID" \
+            --query '[Status, StandardOutputContent, StandardErrorContent]' --output text
+          test "$status" = Success
+
+      - name: Smoke test over HTTPS
+        run: |
+          for _ in $(seq 1 30); do
+            curl -fsS "https://$SITE_ADDRESS/health" && exit 0
+            sleep 10
+          done
+          exit 1

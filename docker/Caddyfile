@@ -1,0 +1,11 @@
+# 공개 배포의 HTTPS 앞단(compose.edge.yml). SITE_ADDRESS가 도메인이면 Caddy가 인증서를
+# 자동으로 받고 갱신한다(80·443이 열려 있고 DNS가 이 서버를 가리켜야 한다).
+# 로컬 점검은 SITE_ADDRESS=localhost로 두면 Caddy 내부 CA 인증서를 쓴다.
+#
+# reverse_proxy는 기본으로 들어온 X-Forwarded-* 값을 무시하고 X-Forwarded-For를
+# 실제 클라이언트 IP로 설정한다(Caddy reverse_proxy 문서 "Defaults"). 뒤의 nginx는
+# docker/real-ip.edge.conf로 이 값을 클라이언트 IP로 쓴다.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy frontend:80
+}

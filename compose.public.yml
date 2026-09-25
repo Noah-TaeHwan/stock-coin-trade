@@ -34,6 +34,7 @@ services:
     container_name: !reset null
     volumes:
       - ./docker/nginx.public.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/real-ip.none.conf:/etc/nginx/snippets/real-ip.conf:ro
 
   mariadb:
     container_name: !reset null

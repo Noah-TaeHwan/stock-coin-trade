@@ -20,6 +20,7 @@ Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령
 - 백테스트 엔진 재작성(`src/quantlab`): 종가 신호 → 다음 봉 시가 체결, bp 단위 비용, 일별 자산곡선 기반 Sharpe·MDD·CAGR, 같은 비용의 매수 후 보유 비교, 입력 해시·파라미터·엔진 버전으로 만든 계산 영수증과 멱등 저장, 워크포워드 검증과 재현 가능한 리서치 리포트. 구 엔진의 계산 오류 7개를 회귀 테스트로 고정
 - 자체 MCP 서버(`src/deskmcp`): 모의계좌 조회·백테스트·영수증 조회를 MCP 도구로 제공, 주문 도구는 명시적으로 켤 때만 등록, Open API 키별 요청 제한을 공유 저장소(Redis)로 이동
 - 초대 코드 전용 AI 리서치(`src/deskagent`): 공식 Anthropic SDK 도구 루프, 답변의 숫자는 서버가 계산 영수증에서 채우고 영수증 없는 숫자는 차단, 초대 코드별 한도와 월 예산, 코드 채점 eval(완벽 모델 100%, 숫자를 지어내는 모델 3종 0%)
+- AWS 공개 데모 준비: CloudFormation(80·443만 열고 SSH 없음, IMDSv2, 암호화·스냅샷 데이터 볼륨, 예산 알림), Caddy 자동 HTTPS(클라이언트 IP 보존), OIDC 배포 역할, 헬스 체크 실패 시 자동 롤백하는 배포 스크립트 — 로컬 검증까지, 실제 배포는 계정·도메인 승인 후
 
 HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
 
@@ -38,6 +39,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [백테스트 엔진 교체(quantlab) 검증](docs/evidence/quant-engine-2026-09-25.md), [백테스트 방법론](docs/methodology/backtest.md), [리서치 리포트](docs/research/README.md)
 - [자체 MCP 서버 검증](docs/evidence/mcp-server-2026-09-25.md)
 - [AI 리서치 에이전트(숫자 영수증·초대·예산·eval) 검증](docs/evidence/ai-agent-eval-2026-09-25.md), [eval 사례와 기준선](evals/numeric_faithfulness/README.md)
+- [AWS 공개 데모 준비(IaC·HTTPS 앞단·배포·롤백) 검증](docs/evidence/aws-demo-prep-2026-09-25.md), [ADR-0003](docs/adr/0003-aws-demo-topology.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
@@ -184,7 +186,7 @@ Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에�
 postgresql+psycopg://<QUANT_DB_USER>:<QUANT_DB_PASSWORD>@postgres:5432/<QUANT_DB_NAME>
 ```
 
-운영 오버레이 `docker-compose.prod.yml`과 `scripts/ec2/deploy.sh`는 운영자가 자신의 `ECR_REGISTRY`와 실제 푸시한 `IMAGE_TAG`를 모두 명시해야 시작합니다. 개인 AWS 배포는 아직 수행하지 않았습니다.
+공개 데모는 `compose.public.yml` + `compose.edge.yml`(Caddy HTTPS) + `compose.aws.yml`(ECR 이미지·CloudWatch 로그)을 EC2 한 대에 올리는 구성입니다. 인프라는 `infra/cloudformation/stockdesk.yaml`, 배포는 GitHub OIDC → ECR → SSM Run Command → `scripts/ec2/deploy.sh`(헬스 체크 실패 시 자동 롤백)입니다([ADR-0003](docs/adr/0003-aws-demo-topology.md), [배포 절차](docs/deploy/aws.md)). 템플릿·스크립트는 로컬에서 검증했고, 실제 AWS 배포는 아직 하지 않았습니다. 예전 `docker-compose.prod.yml`은 키·socket 마운트를 물려받으므로 공개 배포에 쓰지 않습니다.
 
 ### 세션 API
 
@@ -529,7 +531,8 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 ├── docker-compose.yml                 # 로컬 실행 구성
 ├── .github/workflows/ci.yml           # CI: lint·unit·통합·의존성 감사·이미지 빌드
 ├── docs/                              # evidence(검증 기록)·adr(설계 결정)·provenance(허락 기록)·methodology·research
-├── scripts/ec2/deploy.sh              # 사용자 ECR 레지스트리의 이미지 배포 스크립트
+├── infra/cloudformation/stockdesk.yaml # AWS 공개 데모(EC2·ECR·S3·로그·예산·OIDC 배포 역할)
+├── scripts/ec2/deploy.sh              # EC2 배포: SSM 비밀값 → pull → up → 헬스 체크 → 실패 시 롤백
 ├── .env.example                       # 공유 가능한 환경 변수 예시
 └── mcp/                                # (Git 미추적) 한투 공식 KIS MCP 서버와 전용 실행 환경
 ```
@@ -551,7 +554,7 @@ pytest -m "not integration"
 
 ### 로컬 실행 검증
 
-[PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md)의 전용 Compose 명령과 [브랜딩 후 로컬 검증](docs/evidence/portfolio-brand-2026-09-23.md)을 참고하세요. `scripts/ec2/deploy.sh`는 운영자가 `ECR_REGISTRY`와 `IMAGE_TAG`를 명시한 뒤에만 이미지를 당겨 실행합니다. 개인 AWS 배포는 아직 수행하지 않았습니다.
+[PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md)의 전용 Compose 명령과 [브랜딩 후 로컬 검증](docs/evidence/portfolio-brand-2026-09-23.md)을 참고하세요. AWS 배포 절차는 [docs/deploy/aws.md](docs/deploy/aws.md)에 있습니다. 개인 AWS 배포는 아직 수행하지 않았습니다.
 
 ## 운영 시 유의사항
 
