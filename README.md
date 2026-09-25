@@ -1,14 +1,62 @@
-# Stock & Coin Trading Desk — Noah
+# Noah Trading Desk — 모든 숫자에 영수증이 있는 퀀트 리서치 데스크
 
-모의투자·OpenAPI 실습
+[![CI](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/workflows/ci.yml/badge.svg)](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/workflows/ci.yml)
 
-## 개인 포트폴리오 작업
+강사 원본(주식·코인 모의투자와 Open API 실습 플랫폼)을 포크했다. 그 위에 **데이터 출처, 백테스트 계산, AI 답변의 숫자를 모두 추적할 수 있는** 퀀트 리서치 데스크를 만든 개인 포트폴리오다. 원본 기능은 [아래 절](#원본-강의-기능-edumgt)에 따로 정리했다.
 
-**Noah Trading Desk**는 강사 원본을 기반으로 한 GitHub 포크를 정리한 개인 포트폴리오입니다. 화면·차트·모의거래·KIS·KB증권·Alpaca 연동·MCP 실습 기능은 원본에 이미 구현되어 있습니다.
+## 세 층의 영수증
 
-Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령줄·기능키·티커, 패널형 주식·코인 워크스페이스), 포트폴리오 브랜딩, 격리된 로컬 Compose 실행, 브로커·클라우드 키와 Docker socket 전달 제한, DB 준비 상태 대기, KIS MCP의 모의투자 키 입력 경계 보강, 자동 운영 배포 경로 제거와 배포 값의 명시적 설정 요구, 로컬 실행·검증 기록입니다. 개인 배포는 아직 수행하지 않았습니다.
+```mermaid
+flowchart LR
+  A["라이선스 영수증<br/>config/data_sources.toml<br/>약관 상태·재배포·출처 문구·프로필 on/off"] --> B["계산 영수증<br/>src/quantlab<br/>입력 봉 sha256 + 파라미터 + 엔진 버전 → receiptId"]
+  B --> C["인용 영수증<br/>src/deskagent<br/>AI 답변의 숫자 = receiptId + 경로, 서버가 채움"]
+```
 
-포트폴리오 개발 계획에 따라 다음을 더했습니다.
+1. **라이선스 영수증**: 약관을 확인한 소스만 공개 배포에 쓴다. 정책 테스트가 이를 강제한다. 지금 public에서 쓸 수 있는 소스는 결정적 합성 데이터뿐이다.
+2. **계산 영수증**
+   - 백테스트는 종가에 신호를 내고 다음 봉 시가에 체결한다. 비용을 반영하고, 지표는 일별 자산곡선으로 계산한다.
+   - 같은 입력이면 같은 `receiptId`가 나오고, 서버는 실행을 한 번만 저장한다.
+3. **인용 영수증**
+   - AI 에이전트는 숫자를 직접 쓰지 않고 `{{n1}}` 자리표시자와 (영수증, 경로)만 낸다. 서버가 값을 채운다.
+   - 영수증 없는 숫자가 들어간 답변은 보여 주지 않는다. "AI가 숫자를 지어내지 않는다"고 주장하는 대신, 구조로 막고 eval로 잰다.
+
+## 결과 한눈에
+
+| 항목 | 값 | 근거 |
+|---|---|---|
+| 테스트 | 302개 통과(MariaDB 11.4·PostgreSQL 16 통합 포함), 핵심 방어 코드마다 변형 테스트 | [검증 기록 색인](docs/evidence/README.md) |
+| 구 백테스트 엔진 오류 | 7개 수정(예: 005930 RSI 전략 Sharpe 587.39 → 6.72, MDD 0.00% → -0.50%) | [quant-engine](docs/evidence/quant-engine-2026-09-25.md) |
+| AI 숫자 영수증 eval(30사례 × 2회) | 완벽 모델 100%, 숫자를 지어내는 모델 3종(직접 입력·일부 위조·가짜 영수증) 0% | [eval](evals/numeric_faithfulness/README.md) |
+| 과최적화 측정(합성 데이터) | 005930 MA 교차: 사후 최적 +51.4% vs 워크포워드 +15.8% | [리서치](docs/research/README.md) |
+| 공개 배포 차단 요인 | 주문 lost update, 저장형 XSS(실행 5·7회 → 0회), SSRF, 관리자 선점, 의존성 취약점 0건 | [Phase 1 기록](docs/evidence/README.md) |
+| 라우트 | local 132개 / public 62개(실습·약관 미확인 기능 제외, 스냅샷으로 고정) | `tests/unit/snapshots/` |
+
+## 직접 확인하기
+
+- **로컬 실행**: [PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md). 공개 구성은 `compose.public.yml`(+ `compose.edge.yml` HTTPS)이다.
+- **화면**
+  - 퀀트 백테스트: `/quant.html` — 자산·낙폭 차트, 지표, 계산 영수증
+  - AI 리서치: `/research-agent.html` — 초대 코드 필요, 숫자마다 영수증 링크
+- **재현**
+  - `PYTHONPATH=src python -m quantlab.research --symbol 005930 --start 2016-01-01 --end 2025-12-31`
+  - `PYTHONPATH=src python -m deskagent.eval --mode oracle`
+- **MCP**: `PYTHONPATH=src python -m deskmcp.server` — [Noah Desk MCP](#noah-desk-mcp--모의계좌백테스트를-mcp-도구로)
+- **공개 데모**: 아직 없다. AWS 구성은 준비·검증을 마쳤고([ADR-0003](docs/adr/0003-aws-demo-topology.md)), 계정·도메인 승인 후 배포한다. AI 리서치는 배포 후 초대 코드로 연다.
+- **데이터**: 공개 화면과 리포트의 시세는 모두 합성 데이터다. 실제 시장 성과가 아니며, 소스별 약관 상태는 [데이터 소스](docs/data-sources.md)에 있다.
+
+## Noah가 만든 것
+
+| 위치 | 내용 |
+|---|---|
+| `src/marketdata` | 소스 레지스트리·합성/업비트 소스·품질 검사·수집 기록·파티션 |
+| `src/quantlab` | 백테스트 엔진·지표·계산 영수증·워크포워드·리서치 CLI |
+| `src/deskagent` | 숫자 영수증 AI 에이전트(공식 Anthropic SDK)·가격·eval |
+| `src/deskmcp` | 데스크 API를 MCP 도구로 노출하는 서버 |
+| `python-stock-backend/` | `create_app()`, 설정·권한·보안(CSRF·레이트 리밋·XSS·SSRF), 주문 정합성, 퀀트·에이전트 API(원본 모듈 수정분) |
+| `infra/`, `compose.*.yml`, `scripts/ec2/` | AWS 공개 데모(CloudFormation, Caddy, 배포·롤백) |
+| `tests/`, `docs/` | 테스트·검증 기록·ADR·방법론 |
+
+작업 목록(시간순):
 - pytest·ruff 설정, 해시로 고정한 의존성 lock, GitHub Actions CI(단위·MariaDB/PostgreSQL 통합·의존성 감사·이미지 빌드)
 - import 부작용을 없앤 `create_app()` 팩토리, `APP_PROFILE`별 기동 검사, 테이블·시드를 맡는 일회성 `init` 서비스, 주기 작업을 맡는 `worker` 서비스
 - 같은 회원의 동시 주식 주문이 옛 포지션을 읽어 초과 매도·이중 입금·500이 나던 문제 수정(MariaDB 재현 테스트), public 프로필에서 시뮬레이션 가격 체결 거부
@@ -22,26 +70,9 @@ Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령
 - 초대 코드 전용 AI 리서치(`src/deskagent`): 공식 Anthropic SDK 도구 루프, 답변의 숫자는 서버가 계산 영수증에서 채우고 영수증 없는 숫자는 차단, 초대 코드별 한도와 월 예산, 코드 채점 eval(완벽 모델 100%, 숫자를 지어내는 모델 3종 0%)
 - AWS 공개 데모 준비: CloudFormation(80·443만 열고 SSH 없음, IMDSv2, 암호화·스냅샷 데이터 볼륨, 예산 알림), Caddy 자동 HTTPS(클라이언트 IP 보존), OIDC 배포 역할, 헬스 체크 실패 시 자동 롤백하는 배포 스크립트 — 로컬 검증까지, 실제 배포는 계정·도메인 승인 후
 
-HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
+원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리한다. 모든 검증 기록은 [색인](docs/evidence/README.md)에 있고, 설계 결정은 [ADR-0001 앱 팩토리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock](docs/adr/0002-dependency-lock.md), [ADR-0003 AWS 구성](docs/adr/0003-aws-demo-topology.md)이다.
 
-- [포트폴리오용 로컬 실행](PORTFOLIO_LOCAL.md)
-- [브랜딩 전 가입·로그인·모의거래·DB 재시작 검증](docs/evidence/README.md)
-- [브랜딩 후 로컬 화면·모의거래 검증](docs/evidence/portfolio-brand-2026-09-23.md)
-- [터미널형 UI 전환 검증](docs/evidence/terminal-ui-2026-09-24.md)
-- [기반 작업(테스트·CI·앱 팩토리) 검증](docs/evidence/foundation-2026-09-24.md)
-- [코인 차익·김프 화면 검증](docs/evidence/arbitrage-2026-09-24.md)
-- [주식 주문 정합성(동시 주문·시뮬레이션 가격) 검증](docs/evidence/order-integrity-2026-09-24.md)
-- [인증·권한·남용 제한 검증](docs/evidence/auth-abuse-2026-09-25.md)
-- [XSS·SSRF·공개 프로필 검증](docs/evidence/xss-ssrf-public-profile-2026-09-25.md)
-- [컨테이너·nginx·의존성 취약점 검증](docs/evidence/containers-nginx-deps-2026-09-25.md)
-- [시세 데이터 파이프라인 검증](docs/evidence/data-pipeline-2026-09-25.md), [데이터 소스와 약관 상태](docs/data-sources.md)
-- [화면 시세의 출처 제어와 표시 검증](docs/evidence/price-sources-2026-09-25.md)
-- [백테스트 엔진 교체(quantlab) 검증](docs/evidence/quant-engine-2026-09-25.md), [백테스트 방법론](docs/methodology/backtest.md), [리서치 리포트](docs/research/README.md)
-- [자체 MCP 서버 검증](docs/evidence/mcp-server-2026-09-25.md)
-- [AI 리서치 에이전트(숫자 영수증·초대·예산·eval) 검증](docs/evidence/ai-agent-eval-2026-09-25.md), [eval 사례와 기준선](evals/numeric_faithfulness/README.md)
-- [AWS 공개 데모 준비(IaC·HTTPS 앞단·배포·롤백) 검증](docs/evidence/aws-demo-prep-2026-09-25.md), [ADR-0003](docs/adr/0003-aws-demo-topology.md)
-- 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
-- [터미널 UI 마감(모서리·색·화면 밀도·HTS 흡수) 검증](docs/evidence/terminal-ui-polish-2026-09-25.md)
+## 원본 강의 기능 (edumgt)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
 

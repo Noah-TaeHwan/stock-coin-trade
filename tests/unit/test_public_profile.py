@@ -175,3 +175,8 @@ def test_crawl_route_reports_an_unsafe_redirect(client):
     ):
         response = client.post("/api/ai-sheet/crawl", json={"url": "https://example.com"})
     assert response.status_code == 400
+
+
+def test_me_reports_the_profile_so_the_menu_can_hide_unregistered_screens(client, public_app):
+    assert client.get("/api/member/me").get_json()["profile"] == "local"
+    assert public_app.test_client().get("/api/member/me").get_json()["profile"] == "public"

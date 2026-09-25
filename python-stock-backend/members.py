@@ -44,16 +44,18 @@ def _check_password(password: str, hashed: str | None) -> bool:
 @member_bp.get("/me")
 def me():
     member_id = session.get("member_id")
+    # profile lets the menu hide screens whose APIs this deployment does not register.
+    profile = current_app.config.get("APP_PROFILE", "local")
     if not member_id:
-        return jsonify({"loggedIn": False, "csrfToken": csrf_token()})
+        return jsonify({"loggedIn": False, "csrfToken": csrf_token(), "profile": profile})
     with session_scope() as db:
         member = db.get(Member, member_id)
         if not member:
-            return jsonify({"loggedIn": False, "csrfToken": csrf_token()})
+            return jsonify({"loggedIn": False, "csrfToken": csrf_token(), "profile": profile})
         return jsonify({
             "loggedIn": True, "username": member.username, "asset": member.asset,
             "isAdmin": is_admin_member(member_id, db), "canUseKisAccount": can_use_kis_account(member_id, db),
-            "csrfToken": csrf_token(),
+            "csrfToken": csrf_token(), "profile": profile,
         })
 
 

@@ -189,6 +189,11 @@ async function logout() {
 function renderHeader(user) {
   const navGroups = [
     { type: 'single', href: '/index.html', label: '대시보드', icon: 'fa-solid fa-gauge-high' },
+    { type: 'group', label: 'NOAH 리서치', items: [
+      { href: '/quant.html?tab=simulation', label: '퀀트 백테스트·영수증', icon: 'fa-solid fa-receipt' },
+      { href: '/research-agent.html', label: 'AI 리서치(초대제)', icon: 'fa-solid fa-robot' },
+      { href: '/openapi.html', label: 'Open API·MCP', icon: 'fa-solid fa-plug' },
+    ]},
     { type: 'group', label: '거래', items: [
       { href: '/trade/order.html', label: '코인',          icon: 'fa-solid fa-coins' },
       { href: '/arbitrage.html', label: '코인 차익·김프', icon: 'fa-solid fa-scale-unbalanced' },
@@ -283,9 +288,10 @@ function renderHeader(user) {
   };
 
   // 좌측은 TR·브로커 실전연습, 우측은 대시보드·거래·자산·분석·관리 메뉴로 나눈다.
-  const rightMenuLabels = new Set(['대시보드', '거래', '자산관리', 'POSTGRESQL QUANT', '분석 · 도구', 'AWS SSM 연동 트랙']);
-  const leftNavGroups = navGroups.filter(group => !rightMenuLabels.has(group.label));
-  const rightPanelGroups = navGroups.filter(group => rightMenuLabels.has(group.label));
+  const rightMenuLabels = new Set(['대시보드', 'NOAH 리서치', '거래', '자산관리', 'POSTGRESQL QUANT', '분석 · 도구', 'AWS SSM 연동 트랙']);
+  const visibleGroups = isPublicProfile(user) ? publicNavGroups(navGroups) : navGroups;
+  const leftNavGroups = visibleGroups.filter(group => !rightMenuLabels.has(group.label));
+  const rightPanelGroups = visibleGroups.filter(group => rightMenuLabels.has(group.label));
   const practiceItems = navGroups.find(group => group.label === 'TR 실전연습')?.items || [];
 
   let ocGroupIdx = -1;
@@ -409,6 +415,43 @@ function renderHeader(user) {
   startTickerTape();
 }
 
+/* ── public 프로필 메뉴 ──────────────────────────────────────────────────
+   public 배포는 브로커 실습·코인 시세(업비트 약관 확인 전)·대체자산 등 일부 블루프린트를
+   등록하지 않는다(python-stock-backend/app.py). 그 화면은 메뉴·기능키·명령에서 뺀다. */
+const PUBLIC_HIDDEN_GROUPS = new Set([
+  'KIS 모의투자 실습', 'KB증권 Open API 실습', 'Alpaca 실전연습', 'Binance 실전연습', 'Korbit 실전연습', 'AWS SSM 연동 트랙',
+]);
+const PUBLIC_HIDDEN_HREFS = new Set([
+  '/trade/order.html', '/arbitrage.html', '/trade/alternatives.html', '/ohlcv-db.html', '/ai-sheet.html',
+  '/ai-analysis.html', '/learning/kis-regist.html',
+]);
+const _hrefPath = href => String(href ?? '').split('?')[0];
+
+function isPublicProfile(user) {
+  return user?.profile === 'public';
+}
+
+function publicNavGroups(groups) {
+  return groups
+    .filter(group => !PUBLIC_HIDDEN_GROUPS.has(group.label))
+    .map(group => group.type === 'group'
+      ? { ...group, items: group.items.filter(item => !PUBLIC_HIDDEN_HREFS.has(_hrefPath(item.href))) }
+      : group)
+    .filter(group => group.type !== 'group' || group.items.length);
+}
+
+// 기능키·명령 목록을 제자리에서 고친다(다른 코드가 같은 배열을 참조한다).
+function applyProfileToTerminal(user) {
+  if (!isPublicProfile(user)) return;
+  const keep = item => !PUBLIC_HIDDEN_HREFS.has(_hrefPath(item.href));
+  const ai = TERMINAL_FKEYS.find(f => f.code === 'AI');
+  if (ai) { ai.label = 'AI 리서치'; ai.href = '/research-agent.html'; }
+  for (const list of [TERMINAL_FKEYS, TERMINAL_COMMANDS]) {
+    const kept = list.filter(keep);
+    list.splice(0, list.length, ...kept);
+  }
+}
+
 /* ── Terminal: 기능키 · 명령줄 · 티커 ───────────────────────────────────── */
 const TERMINAL_FKEYS = [
   { key: '1', code: 'DASH', label: '대시보드', href: '/index.html' },
@@ -436,6 +479,7 @@ const TERMINAL_COMMANDS = [
   { codes: ['PORT', 'PRT'], label: '보유자산', href: '/trade/hold.html' },
   { codes: ['AVG'], label: '물타기 계산기', href: '/trade/avg-down.html' },
   { codes: ['QUANT'], label: '퀀트 랩', href: '/quant.html' },
+  { codes: ['RSCH', 'AGENT'], label: 'AI 리서치(영수증 답변)', href: '/research-agent.html' },
   { codes: ['OHLCV'], label: 'OHLCV DB', href: '/ohlcv-db.html' },
   { codes: ['SRCH', 'KNOW'], label: '지식 검색', href: '/knowledge-search.html' },
   { codes: ['DSET'], label: '지식 데이터셋', href: '/knowledge-dataset.html' },
@@ -1263,6 +1307,7 @@ async function initPage({ requireAuth = false } = {}) {
     location.href = '/member/login.html';
     return null;
   }
+  applyProfileToTerminal(user);
   renderHeader(user);
   mountDatasetComposerModal();
   mountApiTestGuide();

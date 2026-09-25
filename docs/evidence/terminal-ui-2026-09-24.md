@@ -15,7 +15,7 @@
 
 디자인 근거: [Bloomberg UX — Designing the Terminal for color accessibility](https://www.bloomberg.com/ux/2021/10/14/designing-the-terminal-for-color-accessibility/)에서 두 원칙을 가져왔다. 앰버는 비의미 정보에만 쓰고, 등락은 의미 색으로만 표시한다. [IBKR TWS Mosaic](https://www.ibkrguides.com/traderworkstation/mosaic-layout.htm)에서는 색으로 연결된 창과 하단 탭 구조를 가져왔다. [AG Grid 테마 모드](https://www.ag-grid.com/javascript-data-grid/theming-colors/)는 공식 방식 그대로 썼다. React 기반 디자인 시스템(Blueprint 등)은 정적 HTML 57개를 전부 다시 써야 해서 도입하지 않았다.
 
-이전 기록의 남은 문제도 이번 변경으로 해결했다. [로컬 실행 검증](README.md)에 적힌 주식 거래 내역 수량과 평균단가의 `rgba(255,255,255,0.7)` 글자색 문제다. 두 값은 토큰 색으로 바꿨고, 해당 문자열은 저장소에 남아 있지 않다.
+이전 기록의 남은 문제도 이번 변경으로 해결했다. [로컬 실행 검증](local-run-2026-09-23.md)에 적힌 주식 거래 내역 수량과 평균단가의 `rgba(255,255,255,0.7)` 글자색 문제다. 두 값은 토큰 색으로 바꿨고, 해당 문자열은 저장소에 남아 있지 않다.
 
 ## 실행 환경
 
