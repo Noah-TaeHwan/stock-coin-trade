@@ -7,6 +7,7 @@
 | Phase | 기록 | 핵심 결과 |
 |---|---|---|
 | 7 | [패키징](packaging-2026-09-25.md) | README 첫 화면(세 층의 영수증), 검증 기록 색인, public 메뉴에서 미등록 화면 숨김 |
+| 6 배포 | [AWS 공개 데모 배포](aws-deploy-2026-09-25.md) | 스택 생성·첫 배포 성공. 실제 환경에서만 드러난 결함 2건(XFS 라벨 길이, OIDC 불변 subject)을 고쳤다. Let's Encrypt HTTPS, 백테스트 영수증 201→200, 메모리 0.68 GiB/1.9 GiB |
 | 6 준비 | [AWS 공개 데모 준비](aws-demo-prep-2026-09-25.md) | CloudFormation `cfn-lint` 0건, Caddy HTTPS·클라이언트 IP 보존(대조 실험), `deploy.sh` 정상 배포·자동 롤백 실측. AWS 배포는 아직 안 함 |
 | 4 | [AI 리서치 에이전트](ai-agent-eval-2026-09-25.md) | 답변 숫자는 계산 영수증에서만. eval 30사례: 완벽 모델 100%, 숫자를 지어내는 모델 3종 0%. 실제 API는 호출하지 않음 |
 | 5 | [자체 MCP 서버](mcp-server-2026-09-25.md) | MCP SDK 2.2.0, 도구 7개, 실제 앱·DB 종단 간과 stdio 실행, 키별 제한의 Redis 공유 |
