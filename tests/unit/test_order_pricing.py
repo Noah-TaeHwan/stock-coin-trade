@@ -123,3 +123,16 @@ def test_one_failing_bot_does_not_stop_the_round(monkeypatch):
     market_bots.run_bot_trading_round()
     # One scope lists the bots, then one per bot; the failing bot's scope never commits.
     assert len(committed) == 1 + 2
+
+
+@pytest.mark.parametrize("simulated", [False, True])
+def test_order_record_keeps_whether_the_fill_used_a_simulated_price(simulated):
+    db = mock.MagicMock()
+    member = mock.Mock(member_id=7, asset=10**9)
+    with (
+        mock.patch.object(stock_trading, "order_quote", return_value=(70_000, simulated)),
+        mock.patch.object(stock_trading, "_get_position", return_value=None),
+    ):
+        stock_trading.execute_order(db, member, SYMBOL, "BUY", 1)
+    orders = [c.args[0] for c in db.add.call_args_list if isinstance(c.args[0], stock_trading.StockOrder)]
+    assert [o.simulated for o in orders] == [simulated]

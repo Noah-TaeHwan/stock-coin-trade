@@ -101,6 +101,7 @@ class StockOrder(Base):
     price = Column(BigInteger, nullable=False)
     amount = Column(BigInteger, nullable=False)
     source = Column(String(20), nullable=False, default="WEB")  # WEB | OPENAPI
+    simulated = Column(Boolean, nullable=False, default=False)  # 시뮬레이션 가격으로 체결했는지
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
 

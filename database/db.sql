@@ -276,6 +276,7 @@ CREATE TABLE IF NOT EXISTS `stock_order` (
   `price` bigint(20) NOT NULL,
   `amount` bigint(20) NOT NULL,
   `source` varchar(20) NOT NULL DEFAULT 'WEB',
+  `simulated` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`stock_order_id`),
   KEY `idx_stock_order_member_created` (`member_id`,`created_at`),

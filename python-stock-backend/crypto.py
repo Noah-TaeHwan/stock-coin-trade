@@ -295,7 +295,7 @@ def order_preview():
             executable = amount <= member.asset
         else:
             try:
-                quantity = float(body.get("sellCount", 0))
+                quantity = round(float(body.get("sellCount", 0)), 8)  # 체결과 같은 8자리 기준
             except (TypeError, ValueError):
                 return jsonify({"error": "sellCount는 숫자여야 합니다."}), 400
             if quantity <= 0:
@@ -311,6 +311,11 @@ def order_preview():
 
 def execute_crypto_sell(db, member: Member, market_code: str, sell_count: float, source: str = "WEB") -> dict:
     """매도 체결. 라우트와 봇 거래 스케줄러가 함께 사용하는 단일 진입점이다."""
+    # 보유 수량은 매수 때 소수 8자리로 저장된다. 요청 수량도 같은 자리로 맞춰야
+    # 8자리보다 긴 전량 매도가 "매도 가능 개수 초과"로 거절되지 않는다.
+    sell_count = round(sell_count, 8)
+    if sell_count <= 0:
+        raise ValueError("0보다 큰 수를 입력해주세요.")
     market = db.query(UpbitMarket).filter(UpbitMarket.market_code == market_code).first()
     if not market:
         raise ValueError("암호화폐를 보유중이지 않습니다.")

@@ -37,6 +37,8 @@ def test_create_tables_is_idempotent():
     assert MODULE_MANAGED_TABLES.issubset(tables), MODULE_MANAGED_TABLES - tables
     columns = {column["name"] for column in inspect(db.engine).get_columns("alternative_order")}
     assert "source" in columns  # added by ALTER TABLE in alternatives.ensure_tables()
+    order_columns = {column["name"] for column in inspect(db.engine).get_columns("stock_order")}
+    assert "simulated" in order_columns  # added by ALTER TABLE in stock_trading.ensure_stock_order_columns()
 
 
 def test_seed_demo_data_is_idempotent():
