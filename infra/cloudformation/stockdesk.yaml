@@ -32,8 +32,12 @@ Parameters:
     Description: Holds /var/lib/docker (images and the MariaDB/PostgreSQL/Caddy volumes).
   GitHubRepository:
     Type: String
-    Default: Noah-TaeHwan/stock-coin-trade
-    AllowedPattern: "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    Default: Noah-TaeHwan@153077902/stock-coin-trade@1372388177
+    AllowedPattern: "^[A-Za-z0-9_.-]+(@[0-9]+)?/[A-Za-z0-9_.-]+(@[0-9]+)?$"
+    Description: >-
+      The repository part of the OIDC "sub" claim. With GitHub's immutable subject claims it
+      carries the owner and repository ids: read sub_claim_prefix from
+      `gh api repos/OWNER/REPO/actions/oidc/customization/sub` and drop the leading "repo:".
   GitHubEnvironment:
     Type: String
     Default: production
