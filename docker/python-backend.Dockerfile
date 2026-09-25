@@ -35,6 +35,9 @@ COPY python-stock-backend/kis_api_catalog.json .
 COPY src/ ./src/
 COPY config/ ./config/
 ENV PYTHONPATH=/app/src
+# 백테스트 영수증(quantlab.receipts)에 남길 커밋. 이미지에는 .git이 없으므로 빌드 인자로 받는다.
+ARG GIT_SHA=unknown
+ENV GIT_SHA=${GIT_SHA}
 
 USER app
 

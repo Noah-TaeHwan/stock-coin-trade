@@ -3,6 +3,9 @@
 x-backend-build: &backend-build
   context: .
   dockerfile: docker/python-backend.Dockerfile
+  args:
+    # 예: GIT_SHA=$(git rev-parse HEAD) docker compose build
+    GIT_SHA: ${GIT_SHA:-unknown}
 
 x-backend-environment: &backend-environment
   DB_HOST: ${DB_HOST:-mariadb}
@@ -128,11 +131,15 @@ services:
     build: *backend-build
     networks:
       - internal
-    command: ["sh", "-c", "flask --app app init-db && flask --app app seed-demo"]
+    # 퀀트 PostgreSQL 스키마 업그레이드(init-quant-db)는 퀀트 DB가 없어도 나머지 기동을 막지 않는다.
+    command: ["sh", "-c", "flask --app app init-db && { flask --app app init-quant-db || echo 'init-quant-db skipped: quant PostgreSQL unreachable'; } && flask --app app seed-demo"]
     environment: *backend-environment
     depends_on:
       # 운영처럼 외부 DB를 쓰면 local-db 프로필 서비스가 없으므로 경고만 한다.
       mariadb:
+        condition: service_healthy
+        required: false
+      postgres:
         condition: service_healthy
         required: false
     restart: "no"

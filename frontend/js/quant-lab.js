@@ -35,9 +35,61 @@ async function load(kind) {
     $('[data-result]').innerHTML=kind==='market'?table(data.rows,[['symbol','종목'],['trade_time','시간'],['open','시가'],['high','고가'],['low','저가'],['close','종가'],['volume','거래량']]):kind==='signal'?table(data.rows,[['trade_time','시간'],['adjusted_close','수정종가'],['fast_ma','MA20'],['slow_ma','MA50'],['signal','신호']]):table(data.trades,[['trade_id','ID'],['strategy_id','전략'],['symbol','종목'],['trade_time','시간'],['side','구분'],['price','체결가'],['quantity','수량'],['pnl','손익']]);
   } catch (error) { $('[data-result]').innerHTML=`<p class="error">${esc(error.message)}. PostgreSQL 연결 설정을 확인하세요.</p>`; }
 }
+const pct = (value, digits=2) => value == null ? '—' : `${value >= 0 ? '+' : ''}${(value * 100).toFixed(digits)}%`;
+const num = (value, digits=2) => value == null ? '—' : Number(value).toLocaleString('ko-KR', { maximumFractionDigits: digits });
+const METRIC_ROWS = [
+  ['totalReturn','총수익률',pct], ['cagr','CAGR',pct], ['annualVolatility','연 변동성',v => pct(v).replace('+','')], ['sharpe','Sharpe',num],
+  ['sortino','Sortino',num], ['maxDrawdown','최대 낙폭(MDD)',pct], ['calmar','Calmar',num], ['exposure','보유 비중',v => pct(v,0).replace('+','')],
+  ['trades','체결 수',v => num(v,0)], ['winRate','승률(청산 기준)',v => v == null ? '—' : pct(v,0).replace('+','')], ['costs','총 비용(원)',v => num(v,0)], ['turnover','회전율(배)',num],
+];
+function metricsTable(metrics, benchmark) {
+  const rows = METRIC_ROWS.map(([key,label,format]) => `<tr><td>${esc(label)}</td><td>${esc(format(metrics[key]))}</td><td>${esc(format(benchmark[key]))}</td></tr>`).join('');
+  return `<div class="table-wrap"><table class="bt-metrics"><thead><tr><th>지표</th><th>전략</th><th>매수 후 보유</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function receiptBlock(data) {
+  const r = data.receipt, short = value => esc(String(value || '').slice(0, 12));
+  const costs = r.params.costs;
+  return `<details class="bt-receipt"><summary>계산 영수증 <code title="${esc(r.receiptId)}">${short(r.receiptId)}</code>${data.reused ? ' · 같은 입력의 기존 실행' : ''}</summary><dl>
+    <dt>영수증 ID</dt><dd><code>${esc(r.receiptId)}</code></dd>
+    <dt>엔진</dt><dd>${esc(r.engineVersion)} · git <code>${short(r.gitSha)}</code></dd>
+    <dt>입력 봉</dt><dd>${esc(r.barCount)}개 · ${esc(r.firstBar.slice(0,10))} ~ ${esc(r.lastBar.slice(0,10))} · sha256 <code title="${esc(r.inputSha256)}">${short(r.inputSha256)}</code></dd>
+    <dt>데이터 출처</dt><dd>${esc(r.sources.join(', '))}</dd>
+    <dt>파라미터</dt><dd>${esc(r.params.strategy)}${r.params.fast ? ` · fast ${esc(r.params.fast)}` : ''}${r.params.slow ? ` · slow ${esc(r.params.slow)}` : ''} · 수수료 ${esc(costs.fee_bps)}bp · 슬리피지 ${esc(costs.slippage_bps)}bp · 매도세 ${esc(costs.sell_tax_bps)}bp · 초기자본 ${esc(num(r.params.initialCapital,0))} · 연 ${esc(r.params.periodsPerYear)}봉</dd>
+  </dl><p>같은 입력 봉·파라미터·엔진 버전이면 영수증 ID가 같고, 서버는 실행을 한 번만 저장합니다.</p></details>`;
+}
+const charts = new WeakMap();
+function drawCharts(host, curve) {
+  if (typeof LightweightCharts === 'undefined' || !curve?.length) { host.innerHTML = '<p class="empty">차트 라이브러리를 불러오지 못했습니다.</p>'; return; }
+  (charts.get(host) || []).forEach(chart => chart.remove());
+  host.innerHTML = '<div class="bt-chart" data-equity></div><div class="bt-chart bt-chart-dd" data-drawdown></div><p class="bt-legend"><i class="eq"></i>전략 자산 <i class="bh"></i>매수 후 보유 <i class="dd"></i>전략 낙폭</p>';
+  const c = termColors();
+  const equityChart = LightweightCharts.createChart(host.querySelector('[data-equity]'), termChartOptions({ autoSize: true, height: 240, rightPriceScale: { minimumWidth: 96 } }));
+  equityChart.addLineSeries({ color: c.accent, lineWidth: 2, priceLineVisible: false }).setData(curve.map(p => ({ time: p.t, value: p.equity })));
+  equityChart.addLineSeries({ color: c.muted, lineWidth: 1, lineStyle: 2, priceLineVisible: false }).setData(curve.map(p => ({ time: p.t, value: p.benchmark })));
+  const ddChart = LightweightCharts.createChart(host.querySelector('[data-drawdown]'), termChartOptions({ autoSize: true, height: 130, rightPriceScale: { minimumWidth: 96 }, localization: { locale: 'ko-KR', priceFormatter: v => `${(v * 100).toFixed(1)}%` } }));
+  ddChart.addAreaSeries({ lineColor: c.down, topColor: 'rgba(255,77,77,0.05)', bottomColor: 'rgba(255,77,77,0.35)', lineWidth: 1, priceLineVisible: false, invertFilledArea: true }).setData(curve.map(p => ({ time: p.t, value: p.drawdown })));
+  equityChart.timeScale().fitContent(); ddChart.timeScale().fitContent();
+  // 두 차트의 시간축을 함께 움직인다.
+  equityChart.timeScale().subscribeVisibleLogicalRangeChange(range => range && ddChart.timeScale().setVisibleLogicalRange(range));
+  ddChart.timeScale().subscribeVisibleLogicalRangeChange(range => range && equityChart.timeScale().setVisibleLogicalRange(range));
+  charts.set(host, [equityChart, ddChart]);
+}
 async function run(strategy='ma2050', output=$('[data-backtest]'), detail=null) {
   const symbol=$('[data-symbol]').value.trim().toUpperCase() || '005930'; output.textContent='백테스트 실행 및 거래 로그 저장 중…';
-  try { const response=await fetch('/api/quant/backtests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol,strategy,fast:20,slow:50,quantity:10,feeRate:.00015,slippage:.0005})}), data=await response.json(); if (!response.ok) throw new Error(data.message || '실행 실패'); const positive=Number(data.totalReturn) > 0; const label=detail?.name || '이동평균 교차 MA 20/50'; const explanation=positive ? '이 샘플 기간·조건에서는 플러스 결과를 보였습니다. 다른 기간과 종목에서도 같은 결과가 나오는지 재검증하세요.' : '이 샘플 기간·조건에서는 좋은 결과가 아니었습니다. 실제 매수 추천이 아니라, 전략이 손실을 낼 수도 있음을 확인하는 백테스트 결과입니다.'; output.innerHTML=`<div class="strategy-result-head"><span>${label} · 실제 계산 결과</span><b>수익률 ${data.totalReturn}%</b><em>MDD ${data.maxDrawdown}%</em></div><p>전략 #${data.strategyId} 저장 · 체결 ${data.tradeCount}건 · 실현 손익 ${Number(data.realizedPnl).toLocaleString()} · Sharpe ${data.sharpeRatio ?? '계산 불가'}</p>${detail ? `<dl><dt>매매 규칙</dt><dd>${detail.rule}</dd><dt>주의할 점</dt><dd>${detail.risk}</dd></dl>` : ''}<p class="backtest-meaning"><b>결과 해석:</b> ${explanation}</p>`; } catch (error) { output.innerHTML=`<span class="error">${esc(error.message)}</span>`; }
+  // 전략 버튼은 각 전략의 기본 기간을 쓰고, 기본 실행만 MA 20/50을 명시한다.
+  const body={symbol,strategy,feeRate:.00015,slippage:.0005,...(detail ? {} : {fast:20,slow:50})};
+  try {
+    const response=await fetch('/api/quant/backtests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}), data=await response.json(); if (!response.ok) throw new Error(data.message || '실행 실패');
+    const m=data.metrics, b=data.benchmark, beat=m.totalReturn > b.totalReturn;
+    const label=data.strategy?.label || detail?.name || '이동평균 교차 MA 20/50';
+    const explanation=beat ? '이 기간·비용에서는 매수 후 보유보다 나았습니다. 표본 밖 기간(워크포워드)과 다른 종목에서도 유지되는지 확인하기 전에는 우연일 수 있습니다.' : '이 기간·비용에서는 매수 후 보유보다 못했습니다. 전략이 손실을 내거나 시장을 따라가지 못할 수 있음을 보여 주는 결과입니다.';
+    output.innerHTML=`<div class="strategy-result-head"><span>${esc(label)} · ${esc(symbol)}</span><b class="${m.totalReturn < 0 ? 'loss' : ''}">수익률 ${esc(pct(m.totalReturn))}</b><em>MDD ${esc(pct(m.maxDrawdown))}</em></div>
+      <p>전략 #${esc(data.strategyId)} · 체결 ${esc(data.tradeCount)}건 · 실현 손익 ${esc(num(data.realizedPnl,0))}원 · Sharpe ${esc(m.sharpe == null ? '계산 불가' : num(m.sharpe))} · 매수 후 보유 ${esc(pct(b.totalReturn))}</p>
+      <div class="bt-charts" data-bt-charts></div>${metricsTable(m, b)}
+      ${detail ? `<dl><dt>매매 규칙</dt><dd>${esc(data.strategy?.rule || detail.rule)}</dd><dt>주의할 점</dt><dd>${esc(detail.risk)}</dd></dl>` : ''}
+      <p class="backtest-meaning"><b>결과 해석:</b> ${esc(explanation)} 신호는 종가에 내고 다음 날 시가에 체결하며, 수수료·슬리피지를 매 체결에 반영했습니다.</p>${receiptBlock(data)}`;
+    drawCharts(output.querySelector('[data-bt-charts]'), data.equity);
+  } catch (error) { output.innerHTML=`<span class="error">${esc(error.message)}</span>`; }
 }
 document.addEventListener('DOMContentLoaded', async () => {
   await initPage();

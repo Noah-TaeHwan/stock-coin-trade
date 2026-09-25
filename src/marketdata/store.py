@@ -49,6 +49,24 @@ SCHEMA_STATEMENTS = (
         checked_at timestamptz NOT NULL DEFAULT now()
     )""",
     "CREATE INDEX IF NOT EXISTS idx_dq_results_symbol ON dq_results(symbol, checked_at DESC)",
+    # Crypto positions are fractional (quantlab sizes them to 8 decimals).
+    "ALTER TABLE trade_logs ALTER COLUMN quantity TYPE numeric(24, 8)",
+    # One row per calculation receipt: the same inputs and parameters map to the same run.
+    """CREATE TABLE IF NOT EXISTS backtest_runs (
+        receipt_id char(64) PRIMARY KEY,
+        strategy_id bigint REFERENCES strategies(strategy_id) ON DELETE SET NULL,
+        engine_version varchar(40) NOT NULL,
+        input_sha256 char(64) NOT NULL,
+        params jsonb NOT NULL,
+        sources text[] NOT NULL,
+        first_bar timestamptz NOT NULL,
+        last_bar timestamptz NOT NULL,
+        bar_count integer NOT NULL,
+        git_sha varchar(64) NOT NULL,
+        metrics jsonb NOT NULL,
+        benchmark jsonb NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
+    )""",
 )
 
 

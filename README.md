@@ -17,6 +17,7 @@ Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령
 - 의존성 취약점 0건(Flask·flask-cors·requests·python-dotenv·qdrant-client 업그레이드), 비루트 백엔드 컨테이너, nginx 보안 헤더·`/health` 실제 프록시, 공개 배포용 `compose.public.yml`(Redis 레이트 리밋, 키·socket 미전달)
 - 데이터 소스 레지스트리(약관 메타데이터·프로필별 on/off·공개 정책 테스트), 결정적 합성 시세, 업비트 캔들 어댑터, 품질 검사·수집 기록·파티션 관리(`src/marketdata`)
 - 화면 시세도 레지스트리가 허용한 소스만 사용(공개 프로필은 합성 시세 + "합성 데이터" 배지, 코인 기능은 업비트 약관 확인 전까지 비활성)
+- 백테스트 엔진 재작성(`src/quantlab`): 종가 신호 → 다음 봉 시가 체결, bp 단위 비용, 일별 자산곡선 기반 Sharpe·MDD·CAGR, 같은 비용의 매수 후 보유 비교, 입력 해시·파라미터·엔진 버전으로 만든 계산 영수증과 멱등 저장, 워크포워드 검증과 재현 가능한 리서치 리포트. 구 엔진의 계산 오류 7개를 회귀 테스트로 고정
 
 HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
 
@@ -32,6 +33,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [컨테이너·nginx·의존성 취약점 검증](docs/evidence/containers-nginx-deps-2026-09-25.md)
 - [시세 데이터 파이프라인 검증](docs/evidence/data-pipeline-2026-09-25.md), [데이터 소스와 약관 상태](docs/data-sources.md)
 - [화면 시세의 출처 제어와 표시 검증](docs/evidence/price-sources-2026-09-25.md)
+- [백테스트 엔진 교체(quantlab) 검증](docs/evidence/quant-engine-2026-09-25.md), [백테스트 방법론](docs/methodology/backtest.md), [리서치 리포트](docs/research/README.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
@@ -153,8 +155,9 @@ Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에�
 | `GET` | `/api/quant/overview` | 적재 건수·사용 가능 심볼 |
 | `GET` | `/api/quant/market-data?symbol=005930` | 파티션된 OHLCV 조회 |
 | `GET` | `/api/quant/signals?symbol=005930&fast=20&slow=50` | 윈도우 함수 기반 MA 시그널 |
-| `POST` | `/api/quant/backtests` | 전략·체결 로그·성과 지표 저장 |
-| `GET` | `/api/quant/results` | 저장된 전략과 거래 로그 |
+| `POST` | `/api/quant/backtests` | quantlab 백테스트: 지표·매수 후 보유 비교·일별 자산곡선·계산 영수증. 같은 입력은 한 번만 저장([방법론](docs/methodology/backtest.md)) |
+| `GET` | `/api/quant/results?strategyId=` | 저장된 전략과 거래 로그 |
+| `GET` | `/api/quant/data-quality?symbol=` | 저장된 봉의 품질 검사와 마지막 수집 기록 |
 
 웹 화면은 임의 SQL을 실행하지 않고, 파라미터 바인딩된 읽기 전용 SQL 템플릿만 보여주고 실행합니다. 이는 데이터 조회 편의성과 운영 DB 보호를 함께 고려한 방식입니다.
 
@@ -488,12 +491,15 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 │   ├── alpaca_test*.py                 # Alpaca Paper 조회·주문 흐름
 │   ├── stock_market.py                 # 국내 주식 시세·차트
 │   └── requirements.txt / .lock        # 직접 의존성, uv로 만든 해시 고정 lock
+├── src/marketdata/                    # 데이터 소스 레지스트리·합성/업비트 소스·품질 검사·저장
+├── src/quantlab/                      # 백테스트 엔진·지표·계산 영수증·워크포워드·리서치 CLI
+├── config/data_sources.toml           # 소스별 약관 메타데이터와 프로필별 on/off
 ├── tests/                             # unit·integration·labs(기존 실습 테스트) pytest
 ├── database/db.sql                    # MariaDB 초기 스키마·예제 데이터
 ├── docker/                            # Frontend·Backend 이미지와 Nginx 설정
 ├── docker-compose.yml                 # 로컬 실행 구성
 ├── .github/workflows/ci.yml           # CI: lint·unit·통합·의존성 감사·이미지 빌드
-├── docs/                              # evidence(검증 기록)·adr(설계 결정)·provenance(허락 기록)
+├── docs/                              # evidence(검증 기록)·adr(설계 결정)·provenance(허락 기록)·methodology·research
 ├── scripts/ec2/deploy.sh              # 사용자 ECR 레지스트리의 이미지 배포 스크립트
 ├── .env.example                       # 공유 가능한 환경 변수 예시
 └── mcp/                                # (Git 미추적) 한투 공식 KIS MCP 서버와 전용 실행 환경

@@ -64,6 +64,9 @@ services:
       mariadb:
         condition: service_healthy
         required: true
+      postgres:
+        condition: service_healthy
+        required: true
 
   python-backend:
     container_name: !reset null

@@ -141,6 +141,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.cli.add_command(init_db_command)
     app.cli.add_command(seed_demo_command)
     app.cli.add_command(create_admin_command)
+    app.cli.add_command(init_quant_db_command)
     return app
 
 
@@ -149,6 +150,15 @@ def init_db_command() -> None:
     """Create the MariaDB tables (idempotent)."""
     bootstrap.create_tables()
     click.echo("init-db: tables are ready")
+
+
+@click.command("init-quant-db")
+def init_quant_db_command() -> None:
+    """Upgrade the quant PostgreSQL schema (source column, receipts table; idempotent)."""
+    from marketdata import store
+
+    store.ensure_schema(store.engine_from_env())
+    click.echo("init-quant-db: schema is up to date")
 
 
 @click.command("seed-demo")
