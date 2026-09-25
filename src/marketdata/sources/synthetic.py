@@ -34,6 +34,9 @@ PROFILES = {
     "000660": Profile(95_000, 0.09, 0.40, 3_000_000),
     "KRW-BTC": Profile(9_000_000, 0.25, 0.65, 3_000),
     "KRW-ETH": Profile(160_000, 0.20, 0.80, 20_000),
+    # Index levels (the dashboard ticker shows them next to stock prices).
+    "^KS11": Profile(2_200, 0.05, 0.18, 400_000_000),
+    "^KQ11": Profile(670, 0.04, 0.24, 900_000_000),
 }
 DEFAULT_KRX = Profile(30_000, 0.05, 0.30, 1_000_000)
 DEFAULT_CRYPTO = Profile(1_000, 0.10, 0.90, 100_000)

@@ -4,7 +4,7 @@
 
 - **public에서 켤 수 있는 조건**: `verified` 상태, 재배포가 금지·미확인이 아님, 화면 출처 문구가 있음. `tests/policy/test_data_sources.py`가 이를 강제한다.
 - **약관 확인과 상태 변경은 Noah가 한다.** 원문을 읽고 `terms_url`, `checked_on`, `checked_by`를 채운다.
-- 현재 public에서 켜진 소스는 합성 데이터뿐이다. 공개 데모의 연구·백테스트 데이터는 합성 데이터로 동작한다.
+- 현재 public에서 켜진 소스는 합성 데이터뿐이다. 공개 데모의 연구·백테스트 데이터와 화면 시세(주식)는 합성 데이터로 동작하고, 업비트가 필요한 코인 기능은 등록되지 않는다(`python-stock-backend/price_sources.py`, `app.py`의 `SOURCE_DEPENDENT_BLUEPRINTS`).
 
 | id | 이름 | 종류 | 상태 | 재배포 | local | public | 비고 |
 |---|---|---|---|---|---|---|---|

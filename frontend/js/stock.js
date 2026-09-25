@@ -578,8 +578,14 @@ async function loadQuote(symbol) {
     setEl('quoteChangeRate',   (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%', color);
     setText('quoteVolume',     data.volume ? fmtVol(data.volume) : '-');
     setText('quoteMarket',     data.market ?? '-');
-    if (data.simulated) document.getElementById('dataSourceBadge')?.classList.remove('hidden');
-    else                document.getElementById('dataSourceBadge')?.classList.add('hidden');
+    // 실제 시세가 아닌 값(합성 데이터·시뮬레이션)이면 배지로 알리고, 출처 문구는 툴팁으로 보여 준다.
+    const sourceBadge = document.getElementById('dataSourceBadge');
+    if (sourceBadge) {
+      const label = { synthetic: '합성 데이터', simulated: '시뮬레이션' }[data.source] ?? (data.simulated ? '시뮬레이션' : '');
+      sourceBadge.textContent = label;
+      sourceBadge.title = data.attribution ?? '';
+      sourceBadge.classList.toggle('hidden', !label);
+    }
 
     renderOrderBook(data.price);
     updateBreakEven(lastPositions, symbol);

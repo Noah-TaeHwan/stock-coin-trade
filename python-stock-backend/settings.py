@@ -9,6 +9,7 @@ APP_PROFILE selects how strict startup is:
 from __future__ import annotations
 
 import os
+import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
@@ -33,6 +34,13 @@ DEFAULT_ADMIN_EMAIL = "admin@admin.com"
 MEMORY_RATELIMIT_STORAGE = "memory://"
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# Portfolio packages live in <repo>/src (marketdata, ...). The Docker image sets
+# PYTHONPATH=/app/src; direct runs (`python app.py`, `python worker.py`) from a
+# checkout find them here. Every entrypoint imports this module first.
+_SRC_DIR = REPO_ROOT / "src"
+if _SRC_DIR.is_dir() and str(_SRC_DIR) not in sys.path:
+    sys.path.append(str(_SRC_DIR))
 
 
 def load_env_file() -> None:

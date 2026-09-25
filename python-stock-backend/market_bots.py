@@ -14,6 +14,7 @@ alternatives의 execute_alternative_order를 실제 사용자와 완전히 동�
 import logging
 import random
 
+import price_sources
 import stock_trading
 from accounts import BOT_EMAIL_DOMAIN, UNUSABLE_PASSWORD
 from alternatives import CATALOG as ALT_CATALOG
@@ -64,6 +65,20 @@ def ensure_bot_accounts() -> int:
     except Exception:
         LOGGER.exception("Unable to ensure market-bot accounts")
         return 0
+
+
+def _tradable_asset_classes() -> dict[str, int]:
+    """Asset classes and their weights, limited to what the data sources allow.
+
+    Crypto is priced from Upbit and alternatives from Yahoo Finance; stocks fall
+    back to the labelled synthetic source, so they are always tradable.
+    """
+    classes = {"STOCK": 3}
+    if price_sources.allowed("upbit"):
+        classes["CRYPTO"] = 3
+    if price_sources.allowed("yfinance"):
+        classes["ALT"] = 2
+    return classes
 
 
 def _allow_simulated_price() -> bool:
@@ -139,7 +154,8 @@ def _trade_alternative(db, member: Member) -> str | None:
 
 def _random_action_for_bot(db, member: Member) -> str | None:
     db.refresh(member, with_for_update=True)
-    asset_class = random.choices(("STOCK", "CRYPTO", "ALT"), weights=(3, 3, 2))[0]
+    classes = _tradable_asset_classes()
+    asset_class = random.choices(list(classes), weights=list(classes.values()))[0]
     try:
         if asset_class == "STOCK":
             return _trade_stock(db, member)

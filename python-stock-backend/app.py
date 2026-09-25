@@ -48,11 +48,13 @@ from kis_real import kis_real_bp  # noqa: E402
 from members import member_bp  # noqa: E402
 from ohlcv_db import ohlcv_db_bp  # noqa: E402
 from openapi import open_api_bp  # noqa: E402
+import price_sources  # noqa: E402
+from marketdata import registry as data_registry  # noqa: E402
 from quant import quant_bp  # noqa: E402
 from security import cross_site_request_rejected  # noqa: E402
 from settings import Settings  # noqa: E402
 from stock_market import (  # noqa: E402
-    BASE_PRICES, get_chart_cached, get_dashboard_stock_quotes, get_index_cached, get_market_cap_rankings,
+    BASE_PRICES, get_chart_with_source, get_dashboard_stock_quotes, get_index_cached, get_market_cap_rankings,
     get_quote_cached, get_stock_info, list_krx_stocks, search_krx_stocks,
 )
 from stocks import stock_bp  # noqa: E402
@@ -77,6 +79,15 @@ LOCAL_ONLY_BLUEPRINTS = frozenset({
     ohlcv_db_bp,  # external OHLCV database with a hardcoded default DSN
     alternative_bp,  # futures/options P&L model not yet reviewed
 })
+
+# Features that exist only to show a given data source's prices. They are
+# registered only when config/data_sources.toml allows every source they need
+# in the running profile, so enabling a verified source there brings them back.
+SOURCE_DEPENDENT_BLUEPRINTS = {
+    market_bp: ("upbit",),  # crypto market list and quotes
+    trade_bp: ("upbit",),  # crypto paper trading priced from Upbit
+    arb_bp: ("upbit", "exchange_quotes"),  # cross-exchange arbitrage view
+}
 
 # Exact origins, not prefixes: flask-cors treats these strings as regular
 # expressions matched from the start, so "http://localhost:*" also matched
@@ -110,8 +121,12 @@ def create_app(settings: Settings | None = None) -> Flask:
         },
     )
 
+    sources = data_registry.load()
     for blueprint in BLUEPRINTS:
         if settings.is_public and blueprint in LOCAL_ONLY_BLUEPRINTS:
+            continue
+        needed = SOURCE_DEPENDENT_BLUEPRINTS.get(blueprint, ())
+        if not all(sources.get(source_id).allowed_in(settings.profile) for source_id in needed):
             continue
         app.register_blueprint(blueprint)
     app.register_blueprint(core_bp)
@@ -211,6 +226,12 @@ def _record_failed_response(response):
     return response
 
 
+def _stock_list_label() -> dict:
+    if price_sources.allowed("krx_kind"):
+        return price_sources.label("krx_kind")
+    return {"source": "builtin", "attribution": "내장 실습 종목 목록"}
+
+
 # ── Health ──────────────────────────────────────────────────────────────────
 @core_bp.get("/health")
 def health():
@@ -223,7 +244,7 @@ def stock_list():
     try:
         limit = max(1, min(int(request.args.get("limit", 30)), 100))
         market = request.args.get("market", "")
-        return jsonify({"stocks": list_krx_stocks(limit, market), "source": "KRX"})
+        return jsonify({"stocks": list_krx_stocks(limit, market), **_stock_list_label()})
     except Exception as exc:
         return error_response("KRX 종목 목록을 가져오지 못했습니다.", exc, 503, key="message")
 
@@ -233,7 +254,7 @@ def stock_search():
     query = request.args.get("q", "")
     try:
         limit = max(1, min(int(request.args.get("limit", 20)), 50))
-        return jsonify({"stocks": search_krx_stocks(query, limit), "source": "KRX"})
+        return jsonify({"stocks": search_krx_stocks(query, limit), **_stock_list_label()})
     except Exception as exc:
         return error_response("KRX 종목 검색을 사용할 수 없습니다.", exc, 503, key="message")
 
@@ -273,8 +294,9 @@ def chart():
     if not get_stock_info(symbol):
         return jsonify({"message": f"지원하지 않는 KRX 종목입니다: {symbol}"}), 404
     try:
-        ohlcv, visible_from = get_chart_cached(symbol, period, include_ma)
-        return jsonify({"symbol": symbol, "period": period, "data": ohlcv, "visibleFrom": visible_from})
+        ohlcv, visible_from, source = get_chart_with_source(symbol, period, include_ma)
+        return jsonify({"symbol": symbol, "period": period, "data": ohlcv, "visibleFrom": visible_from,
+                        **price_sources.label(source)})
     except RuntimeError as e:
         return jsonify({"message": str(e)}), 503
     except ValueError as e:
