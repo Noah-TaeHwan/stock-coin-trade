@@ -208,3 +208,25 @@ def test_exception_text_stays_in_the_log(client, caplog):
 
 def test_ai_analyze_requires_login(client):
     assert client.post("/api/ai/analyze", json={"context": "x"}).status_code == 401
+
+
+def test_openapi_key_limit_uses_the_shared_limiter_when_rate_limiting_is_on(public_client):
+    import openapi
+
+    with (
+        public_client.application.test_request_context(),
+        mock.patch.object(openapi, "_rate_buckets", {}) as local_buckets,
+    ):
+        results = [openapi._check_rate_limit(4242) for _ in range(openapi.RATE_LIMIT_MAX + 1)]
+        other_key = openapi._check_rate_limit(4243)
+    assert results[:-1] == [True] * openapi.RATE_LIMIT_MAX and results[-1] is False
+    assert other_key is True
+    assert local_buckets == {}  # counted in the limiter's storage, not the process-local window
+
+
+def test_openapi_key_limit_falls_back_to_a_local_window_when_rate_limiting_is_off(client):
+    import openapi
+
+    with client.application.test_request_context(), mock.patch.object(openapi, "_rate_buckets", {}) as local:
+        results = [openapi._check_rate_limit(7) for _ in range(openapi.RATE_LIMIT_MAX + 1)]
+    assert results[-1] is False and len(local[7]) == openapi.RATE_LIMIT_MAX

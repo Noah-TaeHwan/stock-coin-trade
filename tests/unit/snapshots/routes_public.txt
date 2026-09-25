@@ -13,12 +13,14 @@ GET /api/member/investor-rankings member.investor_rankings
 GET /api/member/me member.me
 GET /api/member/portfolio-analysis member.portfolio_analysis
 GET /api/member/trading-activity member.trading_activity
+GET /api/quant/backtests/<receipt_id> quant.get_backtest
 GET /api/quant/data-quality quant.data_quality
 GET /api/quant/factor-analysis quant.factor_analysis
 GET /api/quant/market-data quant.market_data
 GET /api/quant/overview quant.overview
 GET /api/quant/results quant.results
 GET /api/quant/signals quant.signals
+GET /api/quant/sources quant.data_sources
 GET /api/stocks/account stocks.account
 GET /api/stocks/ai/qdrant/list core.ai_qdrant_list
 GET /api/stocks/ai/qdrant/stats core.ai_qdrant_stats

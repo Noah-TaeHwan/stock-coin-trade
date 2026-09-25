@@ -281,6 +281,52 @@ def run_backtest():
         return error_response("백테스트 실행 실패: 데이터베이스 오류", exc, 503, key="message")
 
 
+@quant_bp.get("/backtests/<receipt_id>")
+def get_backtest(receipt_id):
+    """A stored run by its receipt id (the id a backtest response returned)."""
+    receipt_id = receipt_id.lower()
+    if len(receipt_id) != 64 or any(char not in "0123456789abcdef" for char in receipt_id):
+        return jsonify({"message": "receipt id는 64자리 16진수입니다."}), 400
+    try:
+        with _db().connect() as conn:
+            row = conn.execute(text("""
+                SELECT receipt_id, strategy_id, engine_version, input_sha256, params, sources, first_bar, last_bar,
+                       bar_count, git_sha, metrics, benchmark, created_at
+                FROM backtest_runs WHERE receipt_id = :id
+            """), {"id": receipt_id}).mappings().first()
+    except SQLAlchemyError as exc:
+        return error_response("백테스트 조회 실패: 데이터베이스 오류", exc, 503, key="message")
+    if row is None:
+        return jsonify({"message": "해당 영수증의 실행이 없습니다."}), 404
+    return jsonify({
+        "receiptId": row["receipt_id"],
+        "strategyId": row["strategy_id"],
+        "receipt": {
+            "receiptId": row["receipt_id"], "engineVersion": row["engine_version"], "inputSha256": row["input_sha256"],
+            "params": row["params"], "sources": list(row["sources"]), "firstBar": row["first_bar"].isoformat(),
+            "lastBar": row["last_bar"].isoformat(), "barCount": row["bar_count"], "gitSha": row["git_sha"],
+            "createdAt": row["created_at"].isoformat(),
+        },
+        "metrics": row["metrics"],
+        "benchmark": row["benchmark"],
+    })
+
+
+@quant_bp.get("/sources")
+def data_sources():
+    """The data source registry as this deployment applies it (config/data_sources.toml)."""
+    import price_sources
+
+    profile = price_sources.profile()
+    sources = price_sources._registry().sources.values()
+    return jsonify({"profile": profile, "sources": [
+        {"id": s.id, "name": s.name, "kind": s.kind, "status": s.status, "enabled": s.allowed_in(profile),
+         "redistribution": s.redistribution, "attribution": s.attribution, "termsUrl": s.terms_url,
+         "checkedOn": s.checked_on}
+        for s in sorted(sources, key=lambda s: s.id)
+    ]})
+
+
 @quant_bp.get("/results")
 def results():
     try:

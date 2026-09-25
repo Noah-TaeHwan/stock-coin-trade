@@ -1,14 +1,41 @@
 {
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "desk-api-key",
+      "description": "Noah Trading Desk API key (API 키 화면에서 발급)",
+      "password": true
+    }
+  ],
   "servers": {
     "kis-code-assistant": {
       "type": "stdio",
       "command": "python3",
-      "args": ["${workspaceFolder}/scripts/kis_mcp.py", "code"]
+      "args": [
+        "${workspaceFolder}/scripts/kis_mcp.py",
+        "code"
+      ]
     },
     "kis-trading-paper": {
       "type": "stdio",
       "command": "python3",
-      "args": ["${workspaceFolder}/scripts/kis_mcp.py", "trade"]
+      "args": [
+        "${workspaceFolder}/scripts/kis_mcp.py",
+        "trade"
+      ]
+    },
+    "noah-desk": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "-m",
+        "deskmcp.server"
+      ],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "DESK_BASE_URL": "http://127.0.0.1:3333",
+        "DESK_API_KEY": "${input:desk-api-key}"
+      }
     }
   }
 }

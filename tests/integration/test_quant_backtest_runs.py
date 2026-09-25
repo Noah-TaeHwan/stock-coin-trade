@@ -91,3 +91,19 @@ def test_bad_input_is_a_400_not_a_500(client, change):
 
 def test_unknown_symbol_is_a_404(client):
     assert client.post("/api/quant/backtests", json={**PAYLOAD, "symbol": "ZZZZ9"}).status_code == 404
+
+
+def test_a_stored_run_can_be_fetched_by_its_receipt(client):
+    created = client.post("/api/quant/backtests", json=PAYLOAD).get_json()
+    fetched = client.get(f"/api/quant/backtests/{created['receiptId']}").get_json()
+    assert fetched["metrics"] == created["metrics"] and fetched["strategyId"] == created["strategyId"]
+    assert fetched["receipt"]["inputSha256"] == created["receipt"]["inputSha256"]
+    assert client.get(f"/api/quant/backtests/{'0' * 64}").status_code == 404
+    assert client.get("/api/quant/backtests/not-a-receipt").status_code == 400
+
+
+def test_sources_endpoint_reports_the_registry_for_this_profile(client):
+    body = client.get("/api/quant/sources").get_json()
+    assert body["profile"] == "local"
+    by_id = {source["id"]: source for source in body["sources"]}
+    assert by_id["synthetic"]["enabled"] is True and by_id["synthetic"]["attribution"]

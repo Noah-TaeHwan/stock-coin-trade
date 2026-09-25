@@ -18,6 +18,7 @@ Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령
 - 데이터 소스 레지스트리(약관 메타데이터·프로필별 on/off·공개 정책 테스트), 결정적 합성 시세, 업비트 캔들 어댑터, 품질 검사·수집 기록·파티션 관리(`src/marketdata`)
 - 화면 시세도 레지스트리가 허용한 소스만 사용(공개 프로필은 합성 시세 + "합성 데이터" 배지, 코인 기능은 업비트 약관 확인 전까지 비활성)
 - 백테스트 엔진 재작성(`src/quantlab`): 종가 신호 → 다음 봉 시가 체결, bp 단위 비용, 일별 자산곡선 기반 Sharpe·MDD·CAGR, 같은 비용의 매수 후 보유 비교, 입력 해시·파라미터·엔진 버전으로 만든 계산 영수증과 멱등 저장, 워크포워드 검증과 재현 가능한 리서치 리포트. 구 엔진의 계산 오류 7개를 회귀 테스트로 고정
+- 자체 MCP 서버(`src/deskmcp`): 모의계좌 조회·백테스트·영수증 조회를 MCP 도구로 제공, 주문 도구는 명시적으로 켤 때만 등록, Open API 키별 요청 제한을 공유 저장소(Redis)로 이동
 
 HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
 
@@ -34,6 +35,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [시세 데이터 파이프라인 검증](docs/evidence/data-pipeline-2026-09-25.md), [데이터 소스와 약관 상태](docs/data-sources.md)
 - [화면 시세의 출처 제어와 표시 검증](docs/evidence/price-sources-2026-09-25.md)
 - [백테스트 엔진 교체(quantlab) 검증](docs/evidence/quant-engine-2026-09-25.md), [백테스트 방법론](docs/methodology/backtest.md), [리서치 리포트](docs/research/README.md)
+- [자체 MCP 서버 검증](docs/evidence/mcp-server-2026-09-25.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
@@ -158,6 +160,8 @@ Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에�
 | `POST` | `/api/quant/backtests` | quantlab 백테스트: 지표·매수 후 보유 비교·일별 자산곡선·계산 영수증. 같은 입력은 한 번만 저장([방법론](docs/methodology/backtest.md)) |
 | `GET` | `/api/quant/results?strategyId=` | 저장된 전략과 거래 로그 |
 | `GET` | `/api/quant/data-quality?symbol=` | 저장된 봉의 품질 검사와 마지막 수집 기록 |
+| `GET` | `/api/quant/backtests/<receiptId>` | 영수증으로 저장된 실행 조회 |
+| `GET` | `/api/quant/sources` | 데이터 소스 레지스트리(이 배포의 프로필 기준 사용 여부·출처 문구) |
 
 웹 화면은 임의 SQL을 실행하지 않고, 파라미터 바인딩된 읽기 전용 SQL 템플릿만 보여주고 실행합니다. 이는 데이터 조회 편의성과 운영 DB 보호를 함께 고려한 방식입니다.
 
@@ -395,9 +399,29 @@ aws ssm put-parameter --name "/stock-coin-trade/alpaca/secret_key" --type Secure
 
 파라미터가 없거나 IAM 권한이 부족하면 화면에 "SSM Parameter Store에 …이(가) 없습니다" 같은 안전한 오류 메시지만 표시되고, AWS 자격 증명이나 파라미터 값은 응답·로그에 노출되지 않습니다.
 
+## Noah Desk MCP — 모의계좌·백테스트를 MCP 도구로
+
+`src/deskmcp`는 이 데스크의 HTTP API를 MCP 도구로 노출하는 자체 서버입니다(MCP Python SDK 2.2.0, stdio). DB에 직접 붙지 않고 브라우저·스크립트와 같은 HTTP 경로를 쓰므로, API 키·키별 요청 제한·모의계좌 범위·데이터 소스 레지스트리가 MCP 호출에도 그대로 적용됩니다.
+
+| 도구 | 호출하는 API | 성격 |
+|---|---|---|
+| `list_sources` | `GET /api/quant/sources` | 읽기 |
+| `get_quote`, `get_account`, `get_positions`, `list_orders` | `/openapi/v1/*`(API 키) | 읽기 |
+| `run_backtest` | `POST /api/quant/backtests` | 저장하지만 멱등(같은 입력 → 같은 영수증) |
+| `get_backtest` | `GET /api/quant/backtests/<receiptId>` | 읽기 |
+| `place_paper_order` | `POST /openapi/v1/orders` | `DESK_MCP_ALLOW_ORDERS=1`일 때만 등록, 모의계좌 주문 |
+
+```bash
+pip install --require-hashes -r src/deskmcp/requirements.lock   # 또는 requirements-dev.lock
+export DESK_API_KEY=...   # 데스크의 "API 키" 화면에서 발급
+PYTHONPATH=src DESK_BASE_URL=http://127.0.0.1:3333 python3 -m deskmcp.server
+```
+
+`.vscode/mcp.json`(`noah-desk`, 키는 입력 창으로 받아 VS Code가 보관)과 `.codex/config.toml`(`env_vars`로 셸의 `DESK_API_KEY`를 전달)에 등록되어 있습니다. 도구 annotations(`read_only_hint` 등)는 클라이언트용 힌트이고, 실제 권한은 API 키의 회원과 모의계좌로 서버가 정합니다. 검증은 [검증 기록](docs/evidence/mcp-server-2026-09-25.md)을 참고하세요.
+
 ## KIS MCP — VS Code·Codex에서 자연어로 KIS API 사용하기
 
-`/broker-api-test.html`의 KIS 연결 테스트와는 별개로, 한국투자증권은 AI 도구로 **MCP(Model Context Protocol)** 를 제공합니다. MCP는 생성형 AI가 외부 도구와 데이터에 표준 방식으로 연결되도록 하는 규약입니다. 이 프로젝트는 MCP 서버를 자체 구현하거나 `broker_test.py`를 MCP로 감싼 것이 아니라, 아래의 한투 공식 MCP를 별도로 사용합니다.
+`/broker-api-test.html`의 KIS 연결 테스트와는 별개로, 한국투자증권은 AI 도구로 **MCP(Model Context Protocol)** 를 제공합니다. MCP는 생성형 AI가 외부 도구와 데이터에 표준 방식으로 연결되도록 하는 규약입니다. 이 절의 두 서버는 한투 공식 MCP이며, `broker_test.py`를 MCP로 감싼 것이 아닙니다. 이 데스크 자체의 MCP 서버는 위 "Noah Desk MCP" 절을 참고하세요.
 
 | 구분 | 용도 | 공식 안내 |
 |---|---|---|
@@ -493,6 +517,7 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 │   └── requirements.txt / .lock        # 직접 의존성, uv로 만든 해시 고정 lock
 ├── src/marketdata/                    # 데이터 소스 레지스트리·합성/업비트 소스·품질 검사·저장
 ├── src/quantlab/                      # 백테스트 엔진·지표·계산 영수증·워크포워드·리서치 CLI
+├── src/deskmcp/                       # 데스크 HTTP API를 MCP 도구로 노출하는 서버
 ├── config/data_sources.toml           # 소스별 약관 메타데이터와 프로필별 on/off
 ├── tests/                             # unit·integration·labs(기존 실습 테스트) pytest
 ├── database/db.sql                    # MariaDB 초기 스키마·예제 데이터
