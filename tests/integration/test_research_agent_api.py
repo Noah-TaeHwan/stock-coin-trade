@@ -124,7 +124,7 @@ def test_a_question_runs_the_agent_on_real_backtests_and_records_cost(scripted):
     assert {n["path"]: n["value"] for n in body["answer"]["numbers"]}["metrics.sharpe"] == pytest.approx(
         stored["metrics"]["sharpe"]
     )
-    assert script.requests[0]["model"] == "claude-opus-5"
+    assert script.requests[0]["model"] == "claude-opus-5-5"
     row = _invite_row(code)
     assert (
         row["used_requests"] == 1

@@ -24,7 +24,7 @@ def sse(blocks, stop_reason, output_tokens=200, stop_details=None):
                 "id": "msg",
                 "type": "message",
                 "role": "assistant",
-                "model": "claude-opus-5",
+                "model": "claude-opus-5-5",
                 "content": [],
                 "stop_reason": None,
                 "stop_sequence": None,

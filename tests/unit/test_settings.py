@@ -147,7 +147,7 @@ def test_flask_config_keeps_the_original_session_settings():
         "RATELIMIT_STORAGE_URI": "memory://",
         "AI_ENABLED": False,
         "AI_MONTHLY_BUDGET_USD": 0.0,
-        "AI_MODEL": "claude-opus-5",
+        "AI_MODEL": "claude-opus-5-5",
         "AI_INVITE_PEPPER": "dev-invite-pepper-change-me",
     }
 
@@ -159,7 +159,7 @@ def test_ai_is_off_by_default_and_needs_a_budget_when_on():
     with pytest.raises(SettingsError, match="no price"):
         Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5", "AI_MODEL": "gpt-4o"})
     on = Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5"})
-    assert on.ai_enabled and on.ai_monthly_budget_usd == 5.0 and on.ai_model == "claude-opus-5"
+    assert on.ai_enabled and on.ai_monthly_budget_usd == 5.0 and on.ai_model == "claude-opus-5-5"
 
 
 def test_public_ai_needs_a_real_invite_pepper():
