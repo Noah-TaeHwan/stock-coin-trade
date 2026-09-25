@@ -36,23 +36,26 @@ Phase 0~7 이후 남은 후속 과제 다섯 가지를 처리한 기록이다. P
 | 확인 | 결과 |
 |---|---|
 | 배포 워크플로 | success |
-| `/health`, 화면 6개, `/api/quant/sources`, `/api/agent/status` | 모두 200 |
+| `/health`, 화면 6개(`/`, `/login.html`, `/quant.html`, `/arbitrage.html`, `/trade/stock.html`, `/research-agent.html`), `/api/quant/sources`, `/api/agent/status` | 모두 200 |
 | 같은 백테스트 두 번(`005930`, `ma2050`) | 201 → 200, 같은 receiptId `a73bec97…` |
 | 컨테이너 | 7개 실행 중(DB 2개 healthy) |
 
 ## 5. DB 백업과 복구 리허설 (이 PR)
 
-- `scripts/ec2/backup-db.sh`: MariaDB(`mariadb-dump --single-transaction`)와 PostgreSQL(`pg_dump -Fc`)을 임시 폴더에 덤프하고, **둘 다 성공해야** `s3://<ReleaseBucket>/backups/<UTC>/`에 올린다. 비밀번호는 컨테이너 안의 환경변수에서만 쓴다.
-- `scripts/ec2/restore-check.sh`: 백업을 같은 이미지의 임시 컨테이너에 복구하고 테이블별 행 수를 실DB와 대조한다. 실DB에는 `COUNT(*)`만 보낸다.
+- `scripts/ec2/backup-db.sh`: 덤프 직전·직후 테이블별 행 수를 세고(`counts.tsv`), MariaDB(`mariadb-dump --single-transaction`)와 PostgreSQL(`pg_dump -Fc`)을 임시 폴더에 덤프한다. **모든 단계가 성공해야** `s3://<ReleaseBucket>/backups/<UTC>/`에 올리고, `counts.tsv`를 맨 마지막에 올려 완료 표지로 쓴다. 비밀번호는 컨테이너 안의 환경변수에서만 쓴다.
+- `scripts/ec2/restore-check.sh`: 같은 이미지의 임시 컨테이너에 복구하고 행 수를 `counts.tsv`와 대조한다. 덤프 중 바뀌지 않은 테이블은 **정확히 일치**해야 하고, 바뀐 테이블은 전후 값 사이여야 한다. `counts.tsv`가 없으면(업로드 중단) 거절한다. 임시 컨테이너는 볼륨까지(`rm -fv`) 지운다. 실DB는 조회하지 않는다.
+- `scripts/ec2/db-counts.sh`: 두 스크립트가 함께 쓰는 행 수 세기·비교 함수.
 - 배포 묶음에 `scripts/ec2` 전체를 싣도록 워크플로를 고쳤다(전에는 `deploy.sh`만 실렸다).
 
 | 리허설 | 결과 |
 |---|---|
-| 단위 테스트(가짜 docker·aws) | 덤프 실패 시 S3 호출 0회, 성공 시 `backups/` 업로드 |
-| 로컬 스택(Amazon Linux 2023 컨테이너에서 실행) | MariaDB 18개·PostgreSQL 12개 테이블 행 수 모두 일치, 복구 1초 |
-| AWS 1차 | 백업 성공, **복구 확인 실패**: 호스트 역할에 `s3:ListBucket`이 없어 `--recursive` 다운로드가 막혔고 `--quiet`가 오류를 숨겼다 |
-| 수정 | 권한을 넓히지 않고 파일 이름으로 하나씩 받는다. `--quiet` → `--only-show-errors` |
-| AWS 2차 | 덤프 11 KB + 74 KB, MariaDB 18개·PostgreSQL 12개 테이블 **행 수 전부 일치**, 복구 1초·전체 13초, 임시 컨테이너 잔여 0 |
+| 단위 테스트(가짜 docker·aws) | 덤프 실패 시 S3 호출 0회, 성공 시 덤프 2개 → `counts.tsv` 순서로 업로드. 비교 판정 6가지(정확 일치·빈 복구·덤프 중 변동·범위 밖·누락·추가 테이블) |
+| AWS 1차 | 백업 성공, **복구 확인 실패**: 호스트 역할에 `s3:ListBucket`이 없어 `--recursive` 다운로드가 막혔고 `--quiet`가 오류를 숨겼다 → 권한은 그대로 두고 파일 이름으로 받기, `--only-show-errors` |
+| AWS 2차 | 통과했지만 독립 검증(Reality Checker)에서 결함 2건 발견: ① 임시 DB 볼륨(운영 DB 사본 163 MB + 47 MB)이 호스트에 남음 ② 판정이 "복구본 ≤ 실DB"라 빈 복구본도 통과할 수 있었음 → 남은 볼륨을 ID로 지우고(로컬 2개, AWS 2개) 위 설계로 고쳤다 |
+| 로컬 스택(Amazon Linux 2023 컨테이너) | 30개 테이블 모두 `exact`, 볼륨 수 8 → 8, 임시 컨테이너 0 |
+| AWS 3차 | 덤프 11 KB + 74 KB, MariaDB 18개·PostgreSQL 12개 테이블 **모두 `exact`**, 복구 1초·전체 13초, 볼륨 수 5 → 5(떨어진 볼륨 0), 임시 컨테이너 0, 메모리 사용 767 MiB / 1,909 MiB |
+
+- AWS 1·2차 백업(`backups/20260925T154152Z`, `…154225Z`)에는 `counts.tsv`가 없어 새 확인 스크립트가 거절한다. 35일 수명 주기로 지워진다.
 
 ## 하지 않은 것
 

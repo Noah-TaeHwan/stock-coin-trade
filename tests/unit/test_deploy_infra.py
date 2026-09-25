@@ -204,7 +204,8 @@ def test_first_release_that_fails_does_not_invent_a_rollback(run_deploy):
 STUB_BACKUP_DOCKER = """#!/usr/bin/env bash
 case "$1" in
   ps) [[ "$*" == *service=mariadb* ]] && echo maria-id || echo pg-id ;;
-  exec) if [[ -n "${DUMP_FAILS:-}" && "$2" == maria-id ]]; then exit 1; fi; echo dump ;;
+  exec) if [[ -n "${DUMP_FAILS:-}" && "$*" == *maria-id*mariadb-dump* ]]; then exit 1; fi
+        cat >/dev/null; echo "t 1" ;;
 esac
 """
 STUB_BACKUP_AWS = """#!/usr/bin/env bash
@@ -237,4 +238,37 @@ def test_backup_uploads_only_after_every_dump_succeeded(tmp_path, dump_fails):
         assert result.returncode != 0 and not calls.exists()
     else:
         assert result.returncode == 0, result.stderr
-        assert "s3://demo-bucket/backups/" in calls.read_text()
+        uploads = calls.read_text().splitlines()
+        assert [line.split("/")[-1] for line in uploads] == [
+            "mariadb-mockinv.sql.gz",
+            "postgres-quant.dump",
+            "counts.tsv",
+        ]
+        assert all("s3://demo-bucket/backups/" in line for line in uploads)
+
+
+# ── compare_counts (db-counts.sh): restored row counts against counts.tsv ─────
+
+
+@pytest.mark.parametrize(
+    ("restored", "manifest", "ok"),
+    [
+        ("a 5\nb 0\n", "a 5 5\nb 0 0\n", True),  # unchanged tables restored exactly
+        ("a 0\n", "a 5 5\n", False),  # empty restore of an unchanged table
+        ("a 6\n", "a 5 7\n", True),  # changed during the dump: anything between before and after
+        ("a 4\n", "a 7 5\n", False),  # outside the range, also when the table shrank (bots sell out)
+        ("a 5\n", "a 5 5\nb 3 3\n", False),  # table missing from the restore
+        ("a 5\nx 1\n", "a 5 5\n", False),  # table the backup did not have
+    ],
+)
+def test_restored_counts_must_match_the_backup_manifest(tmp_path, restored, manifest, ok):
+    (tmp_path / "restored").write_text(restored)
+    (tmp_path / "counts.tsv").write_text(manifest)
+    result = subprocess.run(
+        ["bash", "-c", f'source "{ROOT}/scripts/ec2/db-counts.sh"; compare_counts restored counts.tsv'],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert (result.returncode == 0) is ok, result.stdout
