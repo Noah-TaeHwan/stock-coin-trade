@@ -196,6 +196,29 @@ class NotEnoughBars(LookupError):
     """The requested symbol and period have fewer than two stored bars."""
 
 
+class SourceBlocked(PermissionError):
+    """Stored bars come from a source the registry does not allow in this profile."""
+
+
+def _require_allowed_sources(bars) -> None:
+    """Backtests only use bars whose source config/data_sources.toml enables for this profile.
+
+    Ingestion already checks the registry, but market_data can also hold rows loaded
+    another way (the SQL seed, a restored dump), so the check also runs where data is served.
+    """
+    import price_sources
+    from marketdata import registry
+
+    reg, profile = registry.load(), price_sources.profile()
+    for source_id in sorted({bar.source for bar in bars}):
+        try:
+            allowed = reg.get(source_id).allowed_in(profile)
+        except registry.RegistryError:
+            allowed = False
+        if not allowed:
+            raise SourceBlocked(f"데이터 소스 {source_id!r}는 이 배포({profile})에서 사용할 수 없습니다.")
+
+
 def execute_backtest(data: dict) -> tuple[dict, bool]:
     """Run and store one backtest; returns (response body, reused).
 
@@ -213,6 +236,7 @@ def execute_backtest(data: dict) -> tuple[dict, bool]:
         bars = store.load_bars(conn, symbol, start=start, end=end)
         if len(bars) < 2:
             raise NotEnoughBars(f"{symbol}의 {start}~{end} 시세가 부족합니다.")
+        _require_allowed_sources(bars)
         result = backtest(bars, strategy, fast, slow, costs, capital)
         receipt, summary, bench = result["receipt"], result["metrics"], result["benchmark"]
         inserted = conn.execute(text("""
@@ -287,11 +311,16 @@ def execute_backtest(data: dict) -> tuple[dict, bool]:
 @quant_bp.post("/backtests")
 def run_backtest():
     """Run a quantlab backtest on stored bars and keep one receipted run per input."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"message": "JSON 객체 본문이 필요합니다."}), 400
     try:
-        body, reused = execute_backtest(request.get_json(silent=True) or {})
+        body, reused = execute_backtest(data)
         return jsonify(body), (200 if reused else 201)
     except NotEnoughBars as exc:
         return jsonify({"message": str(exc)}), 404
+    except SourceBlocked as exc:
+        return jsonify({"message": str(exc)}), 403
     except (ValueError, TypeError, KeyError) as exc:
         return error_response("백테스트 실행 실패: 요청 값을 확인하세요.", exc, 400, key="message")
     except SQLAlchemyError as exc:

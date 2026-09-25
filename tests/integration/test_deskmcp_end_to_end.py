@@ -87,7 +87,7 @@ async def test_research_flow_run_then_resolve_the_receipt(desk):
         again = await client.call_tool("run_backtest", {"symbol": "005930", "strategy": "rsi", "start": "2025-01-01"})
         stored = await client.call_tool("get_backtest", {"receipt_id": run.structured_content["receiptId"]})
     assert sources["profile"] == "public"
-    assert [s["id"] for s in sources["sources"] if s["enabled"]] == ["synthetic"]
+    assert [s["id"] for s in sources["sources"] if s["enabled"]] == ["synthetic", "synthetic_sql"]
     assert not run.is_error, run.content
     assert again.structured_content["reused"] is True
     assert again.structured_content["receiptId"] == run.structured_content["receiptId"]

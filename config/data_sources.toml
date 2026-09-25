@@ -23,6 +23,20 @@ attribution = "합성 데이터 — 실제 시세가 아닙니다"
 notes = "src/marketdata/sources/synthetic.py. 같은 종목·기간이면 항상 같은 값을 만든다."
 enabled = { local = true, public = true }
 
+[sources.synthetic_sql]
+name = "SQL 학습용 샘플 시세(사인파)"
+kind = "synthetic"
+status = "verified"
+terms_url = ""
+checked_on = "2026-09-25"
+checked_by = "저장소 SQL 생성식(외부 데이터 아님)"
+commercial_use = "allowed"
+redistribution = "allowed"
+modification = "allowed"
+attribution = "학습용 샘플 데이터 — 실제 시세가 아닙니다"
+notes = "database/quant-postgres.sql이 생성식으로 채우는 원본 샘플(005930·000660·KRW-BTC). market_data.source의 기본값이다."
+enabled = { local = true, public = true }
+
 [sources.upbit]
 name = "업비트 시세(Quotation) REST API"
 kind = "api"

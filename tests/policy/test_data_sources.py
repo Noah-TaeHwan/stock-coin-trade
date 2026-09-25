@@ -13,6 +13,7 @@ def reg():
 def test_registry_loads_and_names_every_source_in_use(reg):
     expected = {
         "synthetic",
+        "synthetic_sql",
         "upbit",
         "krx_openapi",
         "datagokr_stock",
@@ -36,7 +37,9 @@ def test_unofficial_and_unverified_sources_are_off_in_public(reg):
 
 
 def test_only_synthetic_data_is_public_until_terms_are_checked(reg):
-    assert [source.id for source in reg.enabled("public")] == ["synthetic"]
+    public = reg.enabled("public")
+    assert sorted(source.id for source in public) == ["synthetic", "synthetic_sql"]
+    assert {source.kind for source in public} == {"synthetic"}
 
 
 def test_every_source_has_an_attribution_text(reg):

@@ -2,6 +2,16 @@
 
 `POST /api/quant/backtests`와 `python -m quantlab.research`가 쓰는 계산 규칙이다. 코드는 Flask·DB에 의존하지 않는 `src/quantlab`에 있고, 규칙마다 아래 표의 테스트가 고정한다.
 
+## 0. 입력 데이터
+
+- 백테스트는 PostgreSQL `market_data`에 저장된 일봉을 읽는다.
+- 봉마다 `source`가 있다. `config/data_sources.toml`이 현재 프로필에서 켜 둔 소스의 봉만 쓴다.
+  - 켜지지 않았거나 레지스트리에 없는 소스가 섞이면 403으로 거절한다.
+  - 수집 CLI도 같은 레지스트리를 확인한다. 그래도 SQL 시드나 복원한 덤프처럼 다른 경로로 들어온 행이 있을 수 있어서, 데이터를 쓰는 지점에서도 한 번 더 확인한다.
+- public에서 켜진 소스는 합성 데이터 두 가지뿐이다.
+  - `synthetic`: 결정적 GBM
+  - `synthetic_sql`: `database/quant-postgres.sql`의 학습용 사인파 샘플
+
 ## 1. 시간 순서
 
 봉 t마다 다음 순서로 계산한다(`engine.py`).

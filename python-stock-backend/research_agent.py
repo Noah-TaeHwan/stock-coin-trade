@@ -136,7 +136,7 @@ class DeskBackend:
 
         try:
             body, _ = quant.execute_backtest(payload)
-        except quant.NotEnoughBars as exc:
+        except (quant.NotEnoughBars, quant.SourceBlocked) as exc:
             raise ToolFailed(str(exc)) from None
         except (ValueError, TypeError, KeyError) as exc:
             raise ToolFailed(f"invalid backtest request: {exc}") from None

@@ -4,11 +4,12 @@
 
 - **public에서 켤 수 있는 조건**: `verified` 상태, 재배포가 금지·미확인이 아님, 화면 출처 문구가 있음. `tests/policy/test_data_sources.py`가 이를 강제한다.
 - **약관 확인과 상태 변경은 Noah가 한다.** 원문을 읽고 `terms_url`, `checked_on`, `checked_by`를 채운다.
-- 현재 public에서 켜진 소스는 합성 데이터뿐이다. 공개 데모의 연구·백테스트 데이터와 화면 시세(주식)는 합성 데이터로 동작하고, 업비트가 필요한 코인 기능은 등록되지 않는다(`python-stock-backend/price_sources.py`, `app.py`의 `SOURCE_DEPENDENT_BLUEPRINTS`).
+- 현재 public에서 켜진 소스는 합성 데이터 두 가지(`synthetic`, `synthetic_sql`)뿐이다. 백테스트는 저장된 봉의 `source`가 이 레지스트리에서 현재 프로필에 켜져 있을 때만 실행된다. 공개 데모의 연구·백테스트 데이터와 화면 시세(주식)는 합성 데이터로 동작하고, 업비트가 필요한 코인 기능은 등록되지 않는다(`python-stock-backend/price_sources.py`, `app.py`의 `SOURCE_DEPENDENT_BLUEPRINTS`).
 
 | id | 이름 | 종류 | 상태 | 재배포 | local | public | 비고 |
 |---|---|---|---|---|---|---|---|
 | `synthetic` | 합성 시세(결정적 GBM) | synthetic | verified | allowed | 켜짐 | 켜짐 | src/marketdata/sources/synthetic.py. 같은 종목·기간이면 항상 같은 값을 만든다. |
+| `synthetic_sql` | SQL 학습용 샘플 시세(사인파) | synthetic | verified | allowed | 켜짐 | 켜짐 | database/quant-postgres.sql이 생성식으로 채우는 원본 샘플. `market_data.source`의 기본값이다. |
 | `upbit` | 업비트 시세(Quotation) REST API | api | unverified | unknown | 켜짐 | 꺼짐 | 약관 페이지가 JS로 렌더링돼 계획 단계에서 자동 확인하지 못했다. 캔들 어댑터는 src/marketdata/sources/upbit.py. |
 | `krx_openapi` | KRX 정보데이터시스템 OPEN API | api | unverified | forbidden | 꺼짐 | 꺼짐 | 계획 단계(2026-09-24) 조사에서 이용약관 제11조②의 제3자 제공 금지 조항을 근거로 공개 표시 불가로 판단했다. Noah가 원문을 다시 확인할 것. 어댑터 없음. |
 | `datagokr_stock` | 공공데이터포털 금융위원회 주식시세정보(15094808) | api | unverified | unknown | 꺼짐 | 꺼짐 | 계획 단계 조사에서 공공누리 제4유형(출처표시·상업적 이용금지·변경금지)으로 확인했다. 가공 데이터 공개가 '변경'에 해당하는지 해석이 필요하다. 어댑터 없음. |
