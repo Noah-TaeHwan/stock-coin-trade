@@ -1,0 +1,3549 @@
+{
+ "summary": {
+  "mode": "oracle",
+  "model": "claude-opus-5",
+  "createdAt": "2026-09-25T05:28:14.426333+00:00",
+  "billed": false,
+  "runs": 60,
+  "passRate": 1.0,
+  "answerPassRate": 1.0,
+  "declinePassRate": 1.0,
+  "consistentCases": 30,
+  "statuses": {
+   "answered": 50,
+   "out_of_scope": 10
+  },
+  "costUsd": 1.1,
+  "tokens": 132000
+ },
+ "rows": [
+  {
+   "id": "c01",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +34.53%, metrics.sharpe 0.53, benchmark.totalReturn +75.65%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.5340189999948499,
+       "display": "0.53",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.7565429979764671,
+       "display": "+75.65%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c02",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.maxDrawdown {{n1}}, metrics.trades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.maxDrawdown -40.80%, metrics.trades 12. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.4080083577644267,
+       "display": "-40.80%",
+       "receiptId": "90db39e24d84914abccf72bf8316584ea26cf2e6fc31dcd11d2cbe9980e5382f",
+       "path": "metrics.maxDrawdown",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 12.0,
+       "display": "12",
+       "receiptId": "90db39e24d84914abccf72bf8316584ea26cf2e6fc31dcd11d2cbe9980e5382f",
+       "path": "metrics.trades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "90db39e24d84914abccf72bf8316584ea26cf2e6fc31dcd11d2cbe9980e5382f"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "rsi",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c03",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn -46.35%, metrics.sharpe -0.35, benchmark.totalReturn -15.06%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.46350943355929264,
+       "display": "-46.35%",
+       "receiptId": "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -0.3486909064193501,
+       "display": "-0.35",
+       "receiptId": "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": -0.15062342263110529,
+       "display": "-15.06%",
+       "receiptId": "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "momentum",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c04",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +59.61%, metrics.sharpe 0.76, benchmark.totalReturn +75.65%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.5960876259955659,
+       "display": "+59.61%",
+       "receiptId": "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.757549548730809,
+       "display": "0.76",
+       "receiptId": "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.7565429979764671,
+       "display": "+75.65%",
+       "receiptId": "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c05",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sharpe {{n1}}, metrics.exposure {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sharpe 0.64, metrics.exposure +32.18%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.6401067280392065,
+       "display": "0.64",
+       "receiptId": "d95cd7784bb8c553eb8734d7dcfa0646d2c33878f93ec147f535a25e0857e439",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.3218390804597701,
+       "display": "+32.18%",
+       "receiptId": "d95cd7784bb8c553eb8734d7dcfa0646d2c33878f93ec147f535a25e0857e439",
+       "path": "metrics.exposure",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "d95cd7784bb8c553eb8734d7dcfa0646d2c33878f93ec147f535a25e0857e439"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "pullback",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c06",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.maxDrawdown {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +126.15%, metrics.maxDrawdown -39.88%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 1.2615224911190022,
+       "display": "+126.15%",
+       "receiptId": "ce930694f59bb814a5006e7b0c07e94b54e2a65514577d43828b36c50c5eb770",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -0.3988380955190244,
+       "display": "-39.88%",
+       "receiptId": "ce930694f59bb814a5006e7b0c07e94b54e2a65514577d43828b36c50c5eb770",
+       "path": "metrics.maxDrawdown",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "ce930694f59bb814a5006e7b0c07e94b54e2a65514577d43828b36c50c5eb770"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "breakout",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c07",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sharpe {{n1}}, metrics.sharpe {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sharpe 0.53, metrics.sharpe 0.30. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.5340189999948499,
+       "display": "0.53",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.29992740127063633,
+       "display": "0.30",
+       "receiptId": "9b5efe728aa911272e19559f27d0c381e30dfed0225d312f3a89eb9a5c29a0b4",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+      "9b5efe728aa911272e19559f27d0c381e30dfed0225d312f3a89eb9a5c29a0b4"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "fast": 5,
+       "slow": 60
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c08",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.totalReturn {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +34.53%, metrics.totalReturn +32.82%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.32819771978335077,
+       "display": "+32.82%",
+       "receiptId": "b0942d2c5e8c9b8eb46e980b0eda55335eb43e89a075b1bf45218712109521cc",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+      "b0942d2c5e8c9b8eb46e980b0eda55335eb43e89a075b1bf45218712109521cc"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "fee_bps": 10
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c09",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.cagr {{n1}}, metrics.annualVolatility {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.cagr -15.29%, metrics.annualVolatility +41.17%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.15294742679515982,
+       "display": "-15.29%",
+       "receiptId": "a08bba8b33f46bd4f2b3deded145ee150df05e5370a16069e1438f61f5d50665",
+       "path": "metrics.cagr",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.41172961546946657,
+       "display": "+41.17%",
+       "receiptId": "a08bba8b33f46bd4f2b3deded145ee150df05e5370a16069e1438f61f5d50665",
+       "path": "metrics.annualVolatility",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "a08bba8b33f46bd4f2b3deded145ee150df05e5370a16069e1438f61f5d50665"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c10",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.winRate {{n1}}, metrics.closedTrades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.winRate +20.69%, metrics.closedTrades 29. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.20689655172413793,
+       "display": "+20.69%",
+       "receiptId": "984a8d2385793c0d12d4b47a979d96cbbeb53cca8dbc98cac1947b17149aeb1e",
+       "path": "metrics.winRate",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 29.0,
+       "display": "29",
+       "receiptId": "984a8d2385793c0d12d4b47a979d96cbbeb53cca8dbc98cac1947b17149aeb1e",
+       "path": "metrics.closedTrades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "984a8d2385793c0d12d4b47a979d96cbbeb53cca8dbc98cac1947b17149aeb1e"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "momentum",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c11",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +3.39%, metrics.sharpe 0.27, benchmark.totalReturn -8.02%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.033922794812770496,
+       "display": "+3.39%",
+       "receiptId": "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.26982992157861463,
+       "display": "0.27",
+       "receiptId": "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": -0.0801912539900832,
+       "display": "-8.02%",
+       "receiptId": "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "rsi",
+       "start": "2024-01-01",
+       "end": "2025-01-01"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c12",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.costs {{n1}}, metrics.turnover {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.costs 99,437원, metrics.turnover 59.59. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 99437.09191916916,
+       "display": "99,437원",
+       "receiptId": "33b0872832f897dfa69eaa5cefe30b4dad72179b47d8cc8f28af7a93ea685f7f",
+       "path": "metrics.costs",
+       "format": "krw"
+      },
+      {
+       "id": "n2",
+       "value": 59.590585032662915,
+       "display": "59.59",
+       "receiptId": "33b0872832f897dfa69eaa5cefe30b4dad72179b47d8cc8f28af7a93ea685f7f",
+       "path": "metrics.turnover",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "33b0872832f897dfa69eaa5cefe30b4dad72179b47d8cc8f28af7a93ea685f7f"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c13",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.totalReturn {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +77.57%, metrics.totalReturn +34.53%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.7756837645311407,
+       "display": "+77.57%",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+      "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c14",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sortino {{n1}}, metrics.calmar {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sortino 0.62, metrics.calmar 0.28. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.6227924390158477,
+       "display": "0.62",
+       "receiptId": "02a02dc7def74ce15d7d7bb62767184a16a6a253e5690be0a2dde978e80a02c9",
+       "path": "metrics.sortino",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.2765247486980477,
+       "display": "0.28",
+       "receiptId": "02a02dc7def74ce15d7d7bb62767184a16a6a253e5690be0a2dde978e80a02c9",
+       "path": "metrics.calmar",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "02a02dc7def74ce15d7d7bb62767184a16a6a253e5690be0a2dde978e80a02c9"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "breakout",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c15",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.maxDrawdown {{n1}}, benchmark.maxDrawdown {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.maxDrawdown -67.96%, benchmark.maxDrawdown -84.53%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.6795806274268836,
+       "display": "-67.96%",
+       "receiptId": "66e04c189695a80a5d0cd81014993fab4153d3b0420301815c923e948636e96b",
+       "path": "metrics.maxDrawdown",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -0.845328051058462,
+       "display": "-84.53%",
+       "receiptId": "66e04c189695a80a5d0cd81014993fab4153d3b0420301815c923e948636e96b",
+       "path": "benchmark.maxDrawdown",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "66e04c189695a80a5d0cd81014993fab4153d3b0420301815c923e948636e96b"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "momentum",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c16",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +40.66%, metrics.sharpe 0.54, benchmark.totalReturn +36.67%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.4066172745183487,
+       "display": "+40.66%",
+       "receiptId": "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.5355377490023085,
+       "display": "0.54",
+       "receiptId": "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.36666810625172785,
+       "display": "+36.67%",
+       "receiptId": "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "slippage_bps": 20
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c17",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.trades {{n1}}, metrics.totalReturn {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.trades 18, metrics.totalReturn +35.82%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 18.0,
+       "display": "18",
+       "receiptId": "849d26a5e3ead6381a3d87568ecedd36975352d72bad8f625d57ae8e034cad4e",
+       "path": "metrics.trades",
+       "format": "integer"
+      },
+      {
+       "id": "n2",
+       "value": 0.35815853828620914,
+       "display": "+35.82%",
+       "receiptId": "849d26a5e3ead6381a3d87568ecedd36975352d72bad8f625d57ae8e034cad4e",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "849d26a5e3ead6381a3d87568ecedd36975352d72bad8f625d57ae8e034cad4e"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "fast": 10,
+       "slow": 120
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c18",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sharpe {{n1}}, benchmark.sharpe {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sharpe 0.25, benchmark.sharpe 0.25. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.2548502947307269,
+       "display": "0.25",
+       "receiptId": "8c5e8d28986837db705f8661209c6d2ea6820c326c164aac7e383c5375e4e510",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.24525762127700465,
+       "display": "0.25",
+       "receiptId": "8c5e8d28986837db705f8661209c6d2ea6820c326c164aac7e383c5375e4e510",
+       "path": "benchmark.sharpe",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "8c5e8d28986837db705f8661209c6d2ea6820c326c164aac7e383c5375e4e510"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "rsi",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c19",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: receipt.barCount {{n1}}, parameters.fast {{n2}}, parameters.slow {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: receipt.barCount 783, parameters.fast 20, parameters.slow 50. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 783.0,
+       "display": "783",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "receipt.barCount",
+       "format": "integer"
+      },
+      {
+       "id": "n2",
+       "value": 20.0,
+       "display": "20",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "parameters.fast",
+       "format": "integer"
+      },
+      {
+       "id": "n3",
+       "value": 50.0,
+       "display": "50",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "parameters.slow",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c20",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.realizedPnl {{n1}}, metrics.closedTrades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.realizedPnl 1,607,490원, metrics.closedTrades 6. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 1607490.3259843849,
+       "display": "1,607,490원",
+       "receiptId": "8664115c29c0474bc2b6d7abb6e0ab4b3e1f452287a0e11e784c7dd1a3193673",
+       "path": "metrics.realizedPnl",
+       "format": "krw"
+      },
+      {
+       "id": "n2",
+       "value": 6.0,
+       "display": "6",
+       "receiptId": "8664115c29c0474bc2b6d7abb6e0ab4b3e1f452287a0e11e784c7dd1a3193673",
+       "path": "metrics.closedTrades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "8664115c29c0474bc2b6d7abb6e0ab4b3e1f452287a0e11e784c7dd1a3193673"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "pullback",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c21",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +34.53%, metrics.sharpe 0.53, benchmark.totalReturn +75.65%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.5340189999948499,
+       "display": "0.53",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.7565429979764671,
+       "display": "+75.65%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c22",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.trades {{n1}}, metrics.trades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.trades 61, metrics.trades 26. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 61.0,
+       "display": "61",
+       "receiptId": "948de9723087887bd71c77f0aee2d9178ecf492a1e1f82993da7a98393e75bbb",
+       "path": "metrics.trades",
+       "format": "integer"
+      },
+      {
+       "id": "n2",
+       "value": 26.0,
+       "display": "26",
+       "receiptId": "8509f64a3c79a19d2cffd0f51be2e64ebc2d370555229f5823bcd8f9cff972d3",
+       "path": "metrics.trades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "8509f64a3c79a19d2cffd0f51be2e64ebc2d370555229f5823bcd8f9cff972d3",
+      "948de9723087887bd71c77f0aee2d9178ecf492a1e1f82993da7a98393e75bbb"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c23",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.cagr {{n1}}, benchmark.cagr {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.cagr +7.74%, benchmark.cagr +10.58%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.0774232336111147,
+       "display": "+7.74%",
+       "receiptId": "acb04a6ae74def22cb09ae61c79032a1ed22348c9bd41b0e489344afe412a3b9",
+       "path": "metrics.cagr",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.10576034001238677,
+       "display": "+10.58%",
+       "receiptId": "acb04a6ae74def22cb09ae61c79032a1ed22348c9bd41b0e489344afe412a3b9",
+       "path": "benchmark.cagr",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "acb04a6ae74def22cb09ae61c79032a1ed22348c9bd41b0e489344afe412a3b9"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "breakout",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c24",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +13.47%, metrics.sharpe 0.25, benchmark.totalReturn +68.86%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.13470063857466896,
+       "display": "+13.47%",
+       "receiptId": "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.25118538287506864,
+       "display": "0.25",
+       "receiptId": "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.6886296907415745,
+       "display": "+68.86%",
+       "receiptId": "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "momentum",
+       "start": "2022-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c25",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.exposure {{n1}}, metrics.sharpe {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.exposure +17.97%, metrics.sharpe -1.01. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.17974452554744524,
+       "display": "+17.97%",
+       "receiptId": "4724c9bd38befd3e0e80f7e91a8cfd95b55adef08d33d3f68da67cc47d70a033",
+       "path": "metrics.exposure",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -1.009376923625719,
+       "display": "-1.01",
+       "receiptId": "4724c9bd38befd3e0e80f7e91a8cfd95b55adef08d33d3f68da67cc47d70a033",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "4724c9bd38befd3e0e80f7e91a8cfd95b55adef08d33d3f68da67cc47d70a033"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "pullback",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c26",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c27",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c28",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c29",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c30",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c01",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +34.53%, metrics.sharpe 0.53, benchmark.totalReturn +75.65%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.5340189999948499,
+       "display": "0.53",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.7565429979764671,
+       "display": "+75.65%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c02",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.maxDrawdown {{n1}}, metrics.trades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.maxDrawdown -40.80%, metrics.trades 12. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.4080083577644267,
+       "display": "-40.80%",
+       "receiptId": "90db39e24d84914abccf72bf8316584ea26cf2e6fc31dcd11d2cbe9980e5382f",
+       "path": "metrics.maxDrawdown",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 12.0,
+       "display": "12",
+       "receiptId": "90db39e24d84914abccf72bf8316584ea26cf2e6fc31dcd11d2cbe9980e5382f",
+       "path": "metrics.trades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "90db39e24d84914abccf72bf8316584ea26cf2e6fc31dcd11d2cbe9980e5382f"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "rsi",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c03",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn -46.35%, metrics.sharpe -0.35, benchmark.totalReturn -15.06%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.46350943355929264,
+       "display": "-46.35%",
+       "receiptId": "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -0.3486909064193501,
+       "display": "-0.35",
+       "receiptId": "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": -0.15062342263110529,
+       "display": "-15.06%",
+       "receiptId": "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "9084d51e098d26a070009dc57e2abd61e78dc8fdafd410fa283798be28c5d3f3"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "momentum",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c04",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +59.61%, metrics.sharpe 0.76, benchmark.totalReturn +75.65%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.5960876259955659,
+       "display": "+59.61%",
+       "receiptId": "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.757549548730809,
+       "display": "0.76",
+       "receiptId": "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.7565429979764671,
+       "display": "+75.65%",
+       "receiptId": "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "9a2438db8d1c72ad85608975fe69dd54d1c7f9197410a0f48fcf27462cb5d94f"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c05",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sharpe {{n1}}, metrics.exposure {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sharpe 0.64, metrics.exposure +32.18%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.6401067280392065,
+       "display": "0.64",
+       "receiptId": "d95cd7784bb8c553eb8734d7dcfa0646d2c33878f93ec147f535a25e0857e439",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.3218390804597701,
+       "display": "+32.18%",
+       "receiptId": "d95cd7784bb8c553eb8734d7dcfa0646d2c33878f93ec147f535a25e0857e439",
+       "path": "metrics.exposure",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "d95cd7784bb8c553eb8734d7dcfa0646d2c33878f93ec147f535a25e0857e439"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "pullback",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c06",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.maxDrawdown {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +126.15%, metrics.maxDrawdown -39.88%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 1.2615224911190022,
+       "display": "+126.15%",
+       "receiptId": "ce930694f59bb814a5006e7b0c07e94b54e2a65514577d43828b36c50c5eb770",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -0.3988380955190244,
+       "display": "-39.88%",
+       "receiptId": "ce930694f59bb814a5006e7b0c07e94b54e2a65514577d43828b36c50c5eb770",
+       "path": "metrics.maxDrawdown",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "ce930694f59bb814a5006e7b0c07e94b54e2a65514577d43828b36c50c5eb770"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "breakout",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c07",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sharpe {{n1}}, metrics.sharpe {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sharpe 0.53, metrics.sharpe 0.30. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.5340189999948499,
+       "display": "0.53",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.29992740127063633,
+       "display": "0.30",
+       "receiptId": "9b5efe728aa911272e19559f27d0c381e30dfed0225d312f3a89eb9a5c29a0b4",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+      "9b5efe728aa911272e19559f27d0c381e30dfed0225d312f3a89eb9a5c29a0b4"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "fast": 5,
+       "slow": 60
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c08",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.totalReturn {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +34.53%, metrics.totalReturn +32.82%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.32819771978335077,
+       "display": "+32.82%",
+       "receiptId": "b0942d2c5e8c9b8eb46e980b0eda55335eb43e89a075b1bf45218712109521cc",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+      "b0942d2c5e8c9b8eb46e980b0eda55335eb43e89a075b1bf45218712109521cc"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "fee_bps": 10
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c09",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.cagr {{n1}}, metrics.annualVolatility {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.cagr -15.29%, metrics.annualVolatility +41.17%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.15294742679515982,
+       "display": "-15.29%",
+       "receiptId": "a08bba8b33f46bd4f2b3deded145ee150df05e5370a16069e1438f61f5d50665",
+       "path": "metrics.cagr",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.41172961546946657,
+       "display": "+41.17%",
+       "receiptId": "a08bba8b33f46bd4f2b3deded145ee150df05e5370a16069e1438f61f5d50665",
+       "path": "metrics.annualVolatility",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "a08bba8b33f46bd4f2b3deded145ee150df05e5370a16069e1438f61f5d50665"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c10",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.winRate {{n1}}, metrics.closedTrades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.winRate +20.69%, metrics.closedTrades 29. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.20689655172413793,
+       "display": "+20.69%",
+       "receiptId": "984a8d2385793c0d12d4b47a979d96cbbeb53cca8dbc98cac1947b17149aeb1e",
+       "path": "metrics.winRate",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 29.0,
+       "display": "29",
+       "receiptId": "984a8d2385793c0d12d4b47a979d96cbbeb53cca8dbc98cac1947b17149aeb1e",
+       "path": "metrics.closedTrades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "984a8d2385793c0d12d4b47a979d96cbbeb53cca8dbc98cac1947b17149aeb1e"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "momentum",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c11",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +3.39%, metrics.sharpe 0.27, benchmark.totalReturn -8.02%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.033922794812770496,
+       "display": "+3.39%",
+       "receiptId": "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.26982992157861463,
+       "display": "0.27",
+       "receiptId": "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": -0.0801912539900832,
+       "display": "-8.02%",
+       "receiptId": "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "f5a0755d617ee6c5fc3af101e593fd8e72308baf978e7d8607fe2781902cfa92"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "rsi",
+       "start": "2024-01-01",
+       "end": "2025-01-01"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c12",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.costs {{n1}}, metrics.turnover {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.costs 99,437원, metrics.turnover 59.59. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 99437.09191916916,
+       "display": "99,437원",
+       "receiptId": "33b0872832f897dfa69eaa5cefe30b4dad72179b47d8cc8f28af7a93ea685f7f",
+       "path": "metrics.costs",
+       "format": "krw"
+      },
+      {
+       "id": "n2",
+       "value": 59.590585032662915,
+       "display": "59.59",
+       "receiptId": "33b0872832f897dfa69eaa5cefe30b4dad72179b47d8cc8f28af7a93ea685f7f",
+       "path": "metrics.turnover",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "33b0872832f897dfa69eaa5cefe30b4dad72179b47d8cc8f28af7a93ea685f7f"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c13",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.totalReturn {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +77.57%, metrics.totalReturn +34.53%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.7756837645311407,
+       "display": "+77.57%",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+      "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c14",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sortino {{n1}}, metrics.calmar {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sortino 0.62, metrics.calmar 0.28. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.6227924390158477,
+       "display": "0.62",
+       "receiptId": "02a02dc7def74ce15d7d7bb62767184a16a6a253e5690be0a2dde978e80a02c9",
+       "path": "metrics.sortino",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.2765247486980477,
+       "display": "0.28",
+       "receiptId": "02a02dc7def74ce15d7d7bb62767184a16a6a253e5690be0a2dde978e80a02c9",
+       "path": "metrics.calmar",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "02a02dc7def74ce15d7d7bb62767184a16a6a253e5690be0a2dde978e80a02c9"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "breakout",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c15",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.maxDrawdown {{n1}}, benchmark.maxDrawdown {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.maxDrawdown -67.96%, benchmark.maxDrawdown -84.53%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": -0.6795806274268836,
+       "display": "-67.96%",
+       "receiptId": "66e04c189695a80a5d0cd81014993fab4153d3b0420301815c923e948636e96b",
+       "path": "metrics.maxDrawdown",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -0.845328051058462,
+       "display": "-84.53%",
+       "receiptId": "66e04c189695a80a5d0cd81014993fab4153d3b0420301815c923e948636e96b",
+       "path": "benchmark.maxDrawdown",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "66e04c189695a80a5d0cd81014993fab4153d3b0420301815c923e948636e96b"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "momentum",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c16",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +40.66%, metrics.sharpe 0.54, benchmark.totalReturn +36.67%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.4066172745183487,
+       "display": "+40.66%",
+       "receiptId": "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.5355377490023085,
+       "display": "0.54",
+       "receiptId": "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.36666810625172785,
+       "display": "+36.67%",
+       "receiptId": "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "8e63afb5cb1cfcf5d41137df35e059362cf3942b8768426c5dd491e88fd92e2e"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "slippage_bps": 20
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c17",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.trades {{n1}}, metrics.totalReturn {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.trades 18, metrics.totalReturn +35.82%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 18.0,
+       "display": "18",
+       "receiptId": "849d26a5e3ead6381a3d87568ecedd36975352d72bad8f625d57ae8e034cad4e",
+       "path": "metrics.trades",
+       "format": "integer"
+      },
+      {
+       "id": "n2",
+       "value": 0.35815853828620914,
+       "display": "+35.82%",
+       "receiptId": "849d26a5e3ead6381a3d87568ecedd36975352d72bad8f625d57ae8e034cad4e",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "849d26a5e3ead6381a3d87568ecedd36975352d72bad8f625d57ae8e034cad4e"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31",
+       "fast": 10,
+       "slow": 120
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c18",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.sharpe {{n1}}, benchmark.sharpe {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.sharpe 0.25, benchmark.sharpe 0.25. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.2548502947307269,
+       "display": "0.25",
+       "receiptId": "8c5e8d28986837db705f8661209c6d2ea6820c326c164aac7e383c5375e4e510",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n2",
+       "value": 0.24525762127700465,
+       "display": "0.25",
+       "receiptId": "8c5e8d28986837db705f8661209c6d2ea6820c326c164aac7e383c5375e4e510",
+       "path": "benchmark.sharpe",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "8c5e8d28986837db705f8661209c6d2ea6820c326c164aac7e383c5375e4e510"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "rsi",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c19",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: receipt.barCount {{n1}}, parameters.fast {{n2}}, parameters.slow {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: receipt.barCount 783, parameters.fast 20, parameters.slow 50. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 783.0,
+       "display": "783",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "receipt.barCount",
+       "format": "integer"
+      },
+      {
+       "id": "n2",
+       "value": 20.0,
+       "display": "20",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "parameters.fast",
+       "format": "integer"
+      },
+      {
+       "id": "n3",
+       "value": 50.0,
+       "display": "50",
+       "receiptId": "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea",
+       "path": "parameters.slow",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "8fd79e721973090321415396644a755258a8c606c2af5d8a66ad41df751583ea"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c20",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.realizedPnl {{n1}}, metrics.closedTrades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.realizedPnl 1,607,490원, metrics.closedTrades 6. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 1607490.3259843849,
+       "display": "1,607,490원",
+       "receiptId": "8664115c29c0474bc2b6d7abb6e0ab4b3e1f452287a0e11e784c7dd1a3193673",
+       "path": "metrics.realizedPnl",
+       "format": "krw"
+      },
+      {
+       "id": "n2",
+       "value": 6.0,
+       "display": "6",
+       "receiptId": "8664115c29c0474bc2b6d7abb6e0ab4b3e1f452287a0e11e784c7dd1a3193673",
+       "path": "metrics.closedTrades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "8664115c29c0474bc2b6d7abb6e0ab4b3e1f452287a0e11e784c7dd1a3193673"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "pullback",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c21",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +34.53%, metrics.sharpe 0.53, benchmark.totalReturn +75.65%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.3452685616217017,
+       "display": "+34.53%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.5340189999948499,
+       "display": "0.53",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.7565429979764671,
+       "display": "+75.65%",
+       "receiptId": "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "34f1c84f6d1cf4efcc94bf73b68c20e42777373902387f01e48d05df145ed57a"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c22",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.trades {{n1}}, metrics.trades {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.trades 61, metrics.trades 26. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 61.0,
+       "display": "61",
+       "receiptId": "948de9723087887bd71c77f0aee2d9178ecf492a1e1f82993da7a98393e75bbb",
+       "path": "metrics.trades",
+       "format": "integer"
+      },
+      {
+       "id": "n2",
+       "value": 26.0,
+       "display": "26",
+       "receiptId": "8509f64a3c79a19d2cffd0f51be2e64ebc2d370555229f5823bcd8f9cff972d3",
+       "path": "metrics.trades",
+       "format": "integer"
+      }
+     ],
+     "receipts": [
+      "8509f64a3c79a19d2cffd0f51be2e64ebc2d370555229f5823bcd8f9cff972d3",
+      "948de9723087887bd71c77f0aee2d9178ecf492a1e1f82993da7a98393e75bbb"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "trend",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     },
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-ETH",
+       "strategy": "ma2050",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c23",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.cagr {{n1}}, benchmark.cagr {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.cagr +7.74%, benchmark.cagr +10.58%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.0774232336111147,
+       "display": "+7.74%",
+       "receiptId": "acb04a6ae74def22cb09ae61c79032a1ed22348c9bd41b0e489344afe412a3b9",
+       "path": "metrics.cagr",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.10576034001238677,
+       "display": "+10.58%",
+       "receiptId": "acb04a6ae74def22cb09ae61c79032a1ed22348c9bd41b0e489344afe412a3b9",
+       "path": "benchmark.cagr",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "acb04a6ae74def22cb09ae61c79032a1ed22348c9bd41b0e489344afe412a3b9"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "000660",
+       "strategy": "breakout",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c24",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.totalReturn {{n1}}, metrics.sharpe {{n2}}, benchmark.totalReturn {{n3}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.totalReturn +13.47%, metrics.sharpe 0.25, benchmark.totalReturn +68.86%. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.13470063857466896,
+       "display": "+13.47%",
+       "receiptId": "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef",
+       "path": "metrics.totalReturn",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": 0.25118538287506864,
+       "display": "0.25",
+       "receiptId": "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      },
+      {
+       "id": "n3",
+       "value": 0.6886296907415745,
+       "display": "+68.86%",
+       "receiptId": "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef",
+       "path": "benchmark.totalReturn",
+       "format": "percent"
+      }
+     ],
+     "receipts": [
+      "f5d899e06a8bdde933c5a028bb33f3e481132bce514920ac0f9382d7311566ef"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "005930",
+       "strategy": "momentum",
+       "start": "2022-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c25",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "answered",
+    "answer": {
+     "template": "합성 데이터 기준 결과입니다: metrics.exposure {{n1}}, metrics.sharpe {{n2}}. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "text": "합성 데이터 기준 결과입니다: metrics.exposure +17.97%, metrics.sharpe -1.01. 과거 결과는 미래 성과를 보장하지 않습니다.",
+     "numbers": [
+      {
+       "id": "n1",
+       "value": 0.17974452554744524,
+       "display": "+17.97%",
+       "receiptId": "4724c9bd38befd3e0e80f7e91a8cfd95b55adef08d33d3f68da67cc47d70a033",
+       "path": "metrics.exposure",
+       "format": "percent"
+      },
+      {
+       "id": "n2",
+       "value": -1.009376923625719,
+       "display": "-1.01",
+       "receiptId": "4724c9bd38befd3e0e80f7e91a8cfd95b55adef08d33d3f68da67cc47d70a033",
+       "path": "metrics.sharpe",
+       "format": "ratio"
+      }
+     ],
+     "receipts": [
+      "4724c9bd38befd3e0e80f7e91a8cfd95b55adef08d33d3f68da67cc47d70a033"
+     ]
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [
+     {
+      "name": "run_backtest",
+      "input": {
+       "symbol": "KRW-BTC",
+       "strategy": "pullback",
+       "start": "2023-01-01",
+       "end": "2025-12-31"
+      },
+      "ok": true
+     }
+    ],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c26",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c27",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c28",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c29",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c30",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": true,
+    "reasons": []
+   },
+   "result": {
+    "status": "out_of_scope",
+    "answer": {
+     "template": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "text": "미래 가격 예측과 투자 권유, 주문은 하지 않습니다. 과거 백테스트 결과는 도와드릴 수 있습니다.",
+     "numbers": [],
+     "receipts": []
+    },
+    "problems": [],
+    "usage": {
+     "input_tokens": 1000,
+     "output_tokens": 200,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.01,
+    "turns": 1,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  }
+ ]
+}

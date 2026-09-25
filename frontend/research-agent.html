@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 리서치 — 영수증 기반 답변 — Noah Trading Desk</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <style>
+    .ra-wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+    .ra-card { margin-top: 14px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .ra-card h2 { margin: 0 0 8px; font-size: 16px; }
+    .ra-muted { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .ra-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .ra-row input, .ra-row textarea { flex: 1 1 320px; padding: 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+    .ra-row textarea { min-height: 84px; resize: vertical; }
+    .ra-btn { padding: 10px 16px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink, #000); font-weight: 800; cursor: pointer; }
+    .ra-btn[disabled] { opacity: .5; cursor: wait; }
+    .ra-examples button { padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--fg-2); font-size: 12px; cursor: pointer; }
+    .ra-answer { line-height: 1.8; white-space: pre-wrap; }
+    .ra-num { padding: 1px 6px; border-radius: 5px; background: rgba(255,159,26,.14); color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none; }
+    .ra-num:hover { text-decoration: underline; }
+    .ra-receipts code { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .ra-status { margin-top: 8px; font-size: 13px; }
+    .ra-error { color: var(--down); }
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+  <main class="ra-wrap">
+    <section class="ra-card">
+      <div class="ra-muted">AI RESEARCH · 숫자 영수증</div>
+      <h1 style="margin:6px 0;font-size:24px">백테스트에 묻고, 숫자는 영수증으로 받기</h1>
+      <p class="ra-muted">
+        답변의 숫자는 AI가 쓰지 않습니다. AI가 백테스트 도구를 호출하면 서버가 계산 영수증에서 값을 채워 넣고,
+        영수증에 없는 숫자가 들어간 답변은 보여 주지 않습니다. 각 숫자를 누르면 그 값이 나온 실행을 볼 수 있습니다.
+        초대 코드가 있는 회원만 쓸 수 있고, 월 예산을 넘으면 자동으로 멈춥니다.
+      </p>
+      <div class="ra-status" data-status>상태를 확인하는 중…</div>
+    </section>
+
+    <section class="ra-card" data-redeem hidden>
+      <h2>초대 코드 등록</h2>
+      <div class="ra-row"><input data-code placeholder="inv_..." maxlength="100" autocomplete="off"><button class="ra-btn" data-redeem-btn>등록</button></div>
+      <div class="ra-status" data-redeem-status></div>
+    </section>
+
+    <section class="ra-card" data-ask hidden>
+      <h2>질문</h2>
+      <div class="ra-row ra-examples">
+        <button type="button" data-example>005930에 MA 20/50 전략을 2023~2025년에 돌리면 수익률과 Sharpe는?</button>
+        <button type="button" data-example>수수료를 10bp로 올리면 000660 추세추종 결과가 어떻게 바뀌어?</button>
+        <button type="button" data-example>KRW-BTC 모멘텀 전략이 보유보다 나았어?</button>
+      </div>
+      <div class="ra-row"><textarea data-question maxlength="1000" placeholder="백테스트·데이터 출처에 관한 질문 (미래 예측·매매 추천은 하지 않습니다)"></textarea></div>
+      <div class="ra-row"><button class="ra-btn" data-ask-btn>질문하기</button></div>
+      <div class="ra-status" data-ask-status></div>
+    </section>
+
+    <section class="ra-card" data-result hidden>
+      <h2>답변</h2>
+      <div class="ra-answer" data-answer></div>
+      <div class="ra-receipts ra-muted" data-receipts></div>
+    </section>
+  </main>
+  <script src="/js/config.js"></script>
+  <script src="/js/common.js?v=20260924-terminal"></script>
+  <script src="/js/research-agent.js?v=20260925-agent"></script>
+</body>
+</html>

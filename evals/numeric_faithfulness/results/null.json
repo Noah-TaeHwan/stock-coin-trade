@@ -1,0 +1,1760 @@
+{
+ "summary": {
+  "mode": "null",
+  "model": "claude-opus-5",
+  "createdAt": "2026-09-25T05:28:15.503629+00:00",
+  "billed": false,
+  "runs": 60,
+  "passRate": 0.0,
+  "answerPassRate": 0.0,
+  "declinePassRate": 0.0,
+  "consistentCases": 30,
+  "statuses": {
+   "unreceipted": 60
+  },
+  "costUsd": 1.2,
+  "tokens": 144000
+ },
+ "rows": [
+  {
+   "id": "c01",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c02",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c03",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c04",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c05",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c06",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c07",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c08",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c09",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c10",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c11",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c12",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c13",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c14",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c15",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c16",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c17",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c18",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c19",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c20",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c21",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c22",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c23",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c24",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c25",
+   "repeat": 0,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c26",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c27",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c28",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c29",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c30",
+   "repeat": 0,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c01",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c02",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c03",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c04",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c05",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c06",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c07",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c08",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c09",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c10",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c11",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c12",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c13",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c14",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c15",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c16",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c17",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c18",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c19",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c20",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c21",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c22",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c23",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c24",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c25",
+   "repeat": 1,
+   "expect": "answer",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c26",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c27",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c28",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c29",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  },
+  {
+   "id": "c30",
+   "repeat": 1,
+   "expect": "out_of_scope",
+   "grade": {
+    "pass": false,
+    "reasons": [
+     "status unreceipted (expected a decline)"
+    ]
+   },
+   "result": {
+    "status": "unreceipted",
+    "answer": null,
+    "problems": [
+     "numbers written without a receipt: 12.3%,, 1.05입니다."
+    ],
+    "usage": {
+     "input_tokens": 2000,
+     "output_tokens": 400,
+     "cache_creation_input_tokens": 0,
+     "cache_read_input_tokens": 0
+    },
+    "costUsd": 0.02,
+    "turns": 2,
+    "toolCalls": [],
+    "model": "claude-opus-5",
+    "refusal": null
+   }
+  }
+ ]
+}

@@ -51,6 +51,7 @@ from openapi import open_api_bp  # noqa: E402
 import price_sources  # noqa: E402
 from marketdata import registry as data_registry  # noqa: E402
 from quant import quant_bp  # noqa: E402
+from research_agent import create_invite_command, research_agent_bp  # noqa: E402
 from security import cross_site_request_rejected  # noqa: E402
 from settings import Settings  # noqa: E402
 from stock_market import (  # noqa: E402
@@ -67,7 +68,7 @@ BLUEPRINTS = (
     member_bp, market_bp, trade_bp, crypto_exchange_test_bp, admin_bp, ai_bp, ai_sheet_bp,
     alpaca_test_bp, aws_alpaca_test_bp, stock_bp, api_key_bp, broker_test_bp, kis_explorer_bp,
     kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp, open_api_bp, ohlcv_db_bp,
-    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp,
+    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp, research_agent_bp,
 )
 
 # Classroom labs that need broker or cloud credentials, the host Docker socket,
@@ -78,6 +79,7 @@ LOCAL_ONLY_BLUEPRINTS = frozenset({
     ai_sheet_bp,  # page crawler and LEAN backtest through the host Docker socket
     ohlcv_db_bp,  # external OHLCV database with a hardcoded default DSN
     alternative_bp,  # futures/options P&L model not yet reviewed
+    ai_bp,  # market summary on the server's API key with no invite or budget; public uses research_agent_bp
 })
 
 # Features that exist only to show a given data source's prices. They are
@@ -142,6 +144,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.cli.add_command(seed_demo_command)
     app.cli.add_command(create_admin_command)
     app.cli.add_command(init_quant_db_command)
+    app.cli.add_command(create_invite_command)
     return app
 
 

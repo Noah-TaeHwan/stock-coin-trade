@@ -19,6 +19,7 @@ from market_bots import ensure_bot_accounts
 from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
 from models import Member
+from research_agent import ensure_ai_tables
 from settings import profile_from_env
 
 
@@ -30,6 +31,7 @@ def create_tables() -> None:
     ensure_crypto_tables()
     ensure_error_analysis_table()
     ensure_api_usage_table()
+    ensure_ai_tables()
 
 
 def seed_demo_data() -> None:

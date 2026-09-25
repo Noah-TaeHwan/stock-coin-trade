@@ -192,113 +192,126 @@ def _curve(result):
     ]
 
 
-@quant_bp.post("/backtests")
-def run_backtest():
-    """Run a quantlab backtest on stored bars and keep one receipted run per input."""
+class NotEnoughBars(LookupError):
+    """The requested symbol and period have fewer than two stored bars."""
+
+
+def execute_backtest(data: dict) -> tuple[dict, bool]:
+    """Run and store one backtest; returns (response body, reused).
+
+    Shared by POST /api/quant/backtests and the research agent (deskagent), so
+    both produce the same receipts. Raises ValueError/TypeError/KeyError for bad
+    input, NotEnoughBars, or SQLAlchemyError.
+    """
     import json
 
     from marketdata import store
     from quantlab.backtest import backtest
 
-    try:
-        data = request.get_json(silent=True) or {}
-        symbol, strategy, fast, slow, costs, capital, start, end = _backtest_request(data)
-        with _db().begin() as conn:
-            bars = store.load_bars(conn, symbol, start=start, end=end)
-            if len(bars) < 2:
-                return jsonify({"message": f"{symbol}의 {start}~{end} 시세가 부족합니다."}), 404
-            result = backtest(bars, strategy, fast, slow, costs, capital)
-            receipt, summary, bench = result["receipt"], result["metrics"], result["benchmark"]
-            inserted = conn.execute(text("""
-                INSERT INTO backtest_runs(receipt_id, engine_version, input_sha256, params, sources, first_bar,
-                                          last_bar, bar_count, git_sha, metrics, benchmark)
-                VALUES (:id, :engine, :input, CAST(:params AS jsonb), :sources, :first, :last, :count, :git,
-                        CAST(:metrics AS jsonb), CAST(:benchmark AS jsonb))
-                ON CONFLICT (receipt_id) DO NOTHING RETURNING receipt_id
-            """), {"id": receipt["receiptId"], "engine": receipt["engineVersion"], "input": receipt["inputSha256"],
-                   "params": json.dumps(receipt["params"]), "sources": receipt["sources"],
-                   "first": receipt["firstBar"], "last": receipt["lastBar"], "count": receipt["barCount"],
-                   "git": receipt["gitSha"], "metrics": json.dumps(summary),
-                   "benchmark": json.dumps(bench)}).scalar_one_or_none()
-            if inserted is None:
-                stored = conn.execute(text(
-                    "SELECT strategy_id, git_sha, created_at FROM backtest_runs WHERE receipt_id = :id"
-                ), {"id": receipt["receiptId"]}).mappings().one()
-                strategy_id = stored["strategy_id"]
-                receipt = {**receipt, "gitSha": stored["git_sha"], "createdAt": stored["created_at"].isoformat()}
-            else:
-                strategy_id = conn.execute(text("""
-                    INSERT INTO strategies(name, parameters) VALUES (:name, CAST(:params AS jsonb))
-                    RETURNING strategy_id
-                """), {"name": f"{result['strategy']['label']} {symbol}"[:100],
-                       "params": json.dumps({**receipt["params"], "receiptId": receipt["receiptId"]})}).scalar_one()
-                conn.execute(text("UPDATE backtest_runs SET strategy_id = :sid WHERE receipt_id = :id"),
-                             {"sid": strategy_id, "id": receipt["receiptId"]})
-                slip = costs.slippage_bps * 1e-4
-                for trade in result["trades"]:
-                    reference = trade.price / (1 + slip) if trade.side == "BUY" else trade.price / (1 - slip)
-                    conn.execute(text("""
-                        INSERT INTO trade_logs(strategy_id,symbol,trade_time,side,price,quantity,fee,slippage,pnl)
-                        VALUES(:id,:symbol,:time,:side,:price,:quantity,:fee,:slippage,:pnl)
-                    """), {"id": strategy_id, "symbol": symbol, "time": trade.ts.to_pydatetime(), "side": trade.side,
-                           "price": trade.price, "quantity": trade.units, "fee": trade.costs,
-                           "slippage": abs(trade.price - reference) * trade.units, "pnl": trade.pnl})
+    symbol, strategy, fast, slow, costs, capital, start, end = _backtest_request(data)
+    with _db().begin() as conn:
+        bars = store.load_bars(conn, symbol, start=start, end=end)
+        if len(bars) < 2:
+            raise NotEnoughBars(f"{symbol}의 {start}~{end} 시세가 부족합니다.")
+        result = backtest(bars, strategy, fast, slow, costs, capital)
+        receipt, summary, bench = result["receipt"], result["metrics"], result["benchmark"]
+        inserted = conn.execute(text("""
+            INSERT INTO backtest_runs(receipt_id, engine_version, input_sha256, params, sources, first_bar,
+                                      last_bar, bar_count, git_sha, metrics, benchmark)
+            VALUES (:id, :engine, :input, CAST(:params AS jsonb), :sources, :first, :last, :count, :git,
+                    CAST(:metrics AS jsonb), CAST(:benchmark AS jsonb))
+            ON CONFLICT (receipt_id) DO NOTHING RETURNING receipt_id
+        """), {"id": receipt["receiptId"], "engine": receipt["engineVersion"], "input": receipt["inputSha256"],
+               "params": json.dumps(receipt["params"]), "sources": receipt["sources"],
+               "first": receipt["firstBar"], "last": receipt["lastBar"], "count": receipt["barCount"],
+               "git": receipt["gitSha"], "metrics": json.dumps(summary),
+               "benchmark": json.dumps(bench)}).scalar_one_or_none()
+        if inserted is None:
+            stored = conn.execute(text(
+                "SELECT strategy_id, git_sha, created_at FROM backtest_runs WHERE receipt_id = :id"
+            ), {"id": receipt["receiptId"]}).mappings().one()
+            strategy_id = stored["strategy_id"]
+            receipt = {**receipt, "gitSha": stored["git_sha"], "createdAt": stored["created_at"].isoformat()}
+        else:
+            strategy_id = conn.execute(text("""
+                INSERT INTO strategies(name, parameters) VALUES (:name, CAST(:params AS jsonb))
+                RETURNING strategy_id
+            """), {"name": f"{result['strategy']['label']} {symbol}"[:100],
+                   "params": json.dumps({**receipt["params"], "receiptId": receipt["receiptId"]})}).scalar_one()
+            conn.execute(text("UPDATE backtest_runs SET strategy_id = :sid WHERE receipt_id = :id"),
+                         {"sid": strategy_id, "id": receipt["receiptId"]})
+            slip = costs.slippage_bps * 1e-4
+            for trade in result["trades"]:
+                reference = trade.price / (1 + slip) if trade.side == "BUY" else trade.price / (1 - slip)
                 conn.execute(text("""
-                    INSERT INTO performance_metrics(strategy_id,start_date,end_date,sharpe_ratio,max_drawdown,
-                                                    annual_return,total_return,trade_count)
-                    VALUES(:id,:start,:end,:sharpe,:mdd,:annual,:total,:count)
-                """), {"id": strategy_id, "start": receipt["firstBar"], "end": receipt["lastBar"],
-                       "sharpe": summary["sharpe"], "mdd": _pct(summary["maxDrawdown"]),
-                       "annual": _pct(summary["cagr"]), "total": _pct(summary["totalReturn"]),
-                       "count": summary["trades"]})
-        return jsonify({
-            # Keys the existing UI reads; percentages as before.
-            "strategyId": strategy_id,
-            "tradeCount": summary["trades"],
-            "realizedPnl": round(summary["realizedPnl"], 2),
-            "totalReturn": _pct(summary["totalReturn"]),
-            "sharpeRatio": round(summary["sharpe"], 4) if summary["sharpe"] is not None else None,
-            "maxDrawdown": _pct(summary["maxDrawdown"]),
-            "annualReturn": _pct(summary["cagr"]),
-            "message": ("같은 입력의 기존 실행을 돌려줍니다." if inserted is None
-                        else "백테스트 결과와 거래 로그를 PostgreSQL에 저장했습니다."),
-            # quantlab results; ratios are fractions here (0.1 = 10%).
-            "receiptId": receipt["receiptId"],
-            "receipt": receipt,
-            "reused": inserted is None,
-            "strategy": result["strategy"],
-            "parameters": receipt["params"],
-            "metrics": summary,
-            "benchmark": bench,
-            "equity": _curve(result),
-            "trades": [{"t": t.ts.isoformat(), "side": t.side, "price": round(t.price, 4), "units": t.units,
-                        "costs": round(t.costs, 4), "pnl": round(t.pnl, 4)} for t in result["trades"]],
-            "source": receipt["sources"],
-        }), (200 if inserted is None else 201)
+                    INSERT INTO trade_logs(strategy_id,symbol,trade_time,side,price,quantity,fee,slippage,pnl)
+                    VALUES(:id,:symbol,:time,:side,:price,:quantity,:fee,:slippage,:pnl)
+                """), {"id": strategy_id, "symbol": symbol, "time": trade.ts.to_pydatetime(), "side": trade.side,
+                       "price": trade.price, "quantity": trade.units, "fee": trade.costs,
+                       "slippage": abs(trade.price - reference) * trade.units, "pnl": trade.pnl})
+            conn.execute(text("""
+                INSERT INTO performance_metrics(strategy_id,start_date,end_date,sharpe_ratio,max_drawdown,
+                                                annual_return,total_return,trade_count)
+                VALUES(:id,:start,:end,:sharpe,:mdd,:annual,:total,:count)
+            """), {"id": strategy_id, "start": receipt["firstBar"], "end": receipt["lastBar"],
+                   "sharpe": summary["sharpe"], "mdd": _pct(summary["maxDrawdown"]),
+                   "annual": _pct(summary["cagr"]), "total": _pct(summary["totalReturn"]),
+                   "count": summary["trades"]})
+    body = {
+        # Keys the existing UI reads; percentages as before.
+        "strategyId": strategy_id,
+        "tradeCount": summary["trades"],
+        "realizedPnl": round(summary["realizedPnl"], 2),
+        "totalReturn": _pct(summary["totalReturn"]),
+        "sharpeRatio": round(summary["sharpe"], 4) if summary["sharpe"] is not None else None,
+        "maxDrawdown": _pct(summary["maxDrawdown"]),
+        "annualReturn": _pct(summary["cagr"]),
+        "message": ("같은 입력의 기존 실행을 돌려줍니다." if inserted is None
+                    else "백테스트 결과와 거래 로그를 PostgreSQL에 저장했습니다."),
+        # quantlab results; ratios are fractions here (0.1 = 10%).
+        "receiptId": receipt["receiptId"],
+        "receipt": receipt,
+        "reused": inserted is None,
+        "strategy": result["strategy"],
+        "parameters": receipt["params"],
+        "metrics": summary,
+        "benchmark": bench,
+        "equity": _curve(result),
+        "trades": [{"t": t.ts.isoformat(), "side": t.side, "price": round(t.price, 4), "units": t.units,
+                    "costs": round(t.costs, 4), "pnl": round(t.pnl, 4)} for t in result["trades"]],
+        "source": receipt["sources"],
+    }
+    return body, inserted is None
+
+
+@quant_bp.post("/backtests")
+def run_backtest():
+    """Run a quantlab backtest on stored bars and keep one receipted run per input."""
+    try:
+        body, reused = execute_backtest(request.get_json(silent=True) or {})
+        return jsonify(body), (200 if reused else 201)
+    except NotEnoughBars as exc:
+        return jsonify({"message": str(exc)}), 404
     except (ValueError, TypeError, KeyError) as exc:
         return error_response("백테스트 실행 실패: 요청 값을 확인하세요.", exc, 400, key="message")
     except SQLAlchemyError as exc:
         return error_response("백테스트 실행 실패: 데이터베이스 오류", exc, 503, key="message")
 
 
-@quant_bp.get("/backtests/<receipt_id>")
-def get_backtest(receipt_id):
-    """A stored run by its receipt id (the id a backtest response returned)."""
+def stored_backtest(receipt_id: str) -> dict | None:
+    """A stored run by receipt id, or None. Raises ValueError for a malformed id, SQLAlchemyError."""
     receipt_id = receipt_id.lower()
     if len(receipt_id) != 64 or any(char not in "0123456789abcdef" for char in receipt_id):
-        return jsonify({"message": "receipt id는 64자리 16진수입니다."}), 400
-    try:
-        with _db().connect() as conn:
-            row = conn.execute(text("""
-                SELECT receipt_id, strategy_id, engine_version, input_sha256, params, sources, first_bar, last_bar,
-                       bar_count, git_sha, metrics, benchmark, created_at
-                FROM backtest_runs WHERE receipt_id = :id
-            """), {"id": receipt_id}).mappings().first()
-    except SQLAlchemyError as exc:
-        return error_response("백테스트 조회 실패: 데이터베이스 오류", exc, 503, key="message")
+        raise ValueError("receipt id는 64자리 16진수입니다.")
+    with _db().connect() as conn:
+        row = conn.execute(text("""
+            SELECT receipt_id, strategy_id, engine_version, input_sha256, params, sources, first_bar, last_bar,
+                   bar_count, git_sha, metrics, benchmark, created_at
+            FROM backtest_runs WHERE receipt_id = :id
+        """), {"id": receipt_id}).mappings().first()
     if row is None:
-        return jsonify({"message": "해당 영수증의 실행이 없습니다."}), 404
-    return jsonify({
+        return None
+    return {
         "receiptId": row["receipt_id"],
         "strategyId": row["strategy_id"],
         "receipt": {
@@ -307,24 +320,43 @@ def get_backtest(receipt_id):
             "lastBar": row["last_bar"].isoformat(), "barCount": row["bar_count"], "gitSha": row["git_sha"],
             "createdAt": row["created_at"].isoformat(),
         },
+        "parameters": row["params"],
         "metrics": row["metrics"],
         "benchmark": row["benchmark"],
-    })
+    }
 
 
-@quant_bp.get("/sources")
-def data_sources():
+@quant_bp.get("/backtests/<receipt_id>")
+def get_backtest(receipt_id):
+    """A stored run by its receipt id (the id a backtest response returned)."""
+    try:
+        body = stored_backtest(receipt_id)
+    except ValueError as exc:
+        return jsonify({"message": str(exc)}), 400
+    except SQLAlchemyError as exc:
+        return error_response("백테스트 조회 실패: 데이터베이스 오류", exc, 503, key="message")
+    if body is None:
+        return jsonify({"message": "해당 영수증의 실행이 없습니다."}), 404
+    return jsonify(body)
+
+
+def sources_payload() -> dict:
     """The data source registry as this deployment applies it (config/data_sources.toml)."""
     import price_sources
 
     profile = price_sources.profile()
     sources = price_sources._registry().sources.values()
-    return jsonify({"profile": profile, "sources": [
+    return {"profile": profile, "sources": [
         {"id": s.id, "name": s.name, "kind": s.kind, "status": s.status, "enabled": s.allowed_in(profile),
          "redistribution": s.redistribution, "attribution": s.attribution, "termsUrl": s.terms_url,
          "checkedOn": s.checked_on}
         for s in sorted(sources, key=lambda s: s.id)
-    ]})
+    ]}
+
+
+@quant_bp.get("/sources")
+def data_sources():
+    return jsonify(sources_payload())
 
 
 @quant_bp.get("/results")

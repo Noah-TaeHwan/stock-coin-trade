@@ -7,6 +7,13 @@ from dotenv import dotenv_values
 from settings import DEV_DB_PASSWORD, DEV_SECRET_KEY, Settings, SettingsError
 
 STRONG_SECRET = "s" * 32
+PUBLIC_ENV = {
+    "APP_PROFILE": "public",
+    "SECRET_KEY": STRONG_SECRET,
+    "DB_PASSWORD": "a-real-db-password",
+    "ADMIN_EMAIL": "owner@example.com",
+    "RATELIMIT_STORAGE_URI": "redis://redis:6379/0",
+}
 ENV_EXAMPLE = Path(__file__).resolve().parents[2] / ".env.example"
 
 
@@ -138,4 +145,27 @@ def test_flask_config_keeps_the_original_session_settings():
         "ADMIN_EMAIL": "admin@admin.com",
         "RATELIMIT_ENABLED": False,
         "RATELIMIT_STORAGE_URI": "memory://",
+        "AI_ENABLED": False,
+        "AI_MONTHLY_BUDGET_USD": 0.0,
+        "AI_MODEL": "claude-opus-5",
+        "AI_INVITE_PEPPER": "dev-invite-pepper-change-me",
     }
+
+
+def test_ai_is_off_by_default_and_needs_a_budget_when_on():
+    assert Settings.from_env({"SECRET_KEY": STRONG_SECRET}).ai_enabled is False
+    with pytest.raises(SettingsError, match="AI_MONTHLY_BUDGET_USD"):
+        Settings.from_env({"SECRET_KEY": STRONG_SECRET, "AI_ENABLED": "true"})
+    with pytest.raises(SettingsError, match="no price"):
+        Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5", "AI_MODEL": "gpt-4o"})
+    on = Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5"})
+    assert on.ai_enabled and on.ai_monthly_budget_usd == 5.0 and on.ai_model == "claude-opus-5"
+
+
+def test_public_ai_needs_a_real_invite_pepper():
+    base = {**PUBLIC_ENV, "AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "10"}
+    with pytest.raises(SettingsError, match="AI_INVITE_PEPPER"):
+        Settings.from_env(base)
+    with pytest.raises(SettingsError, match="AI_INVITE_PEPPER"):
+        Settings.from_env({**base, "AI_INVITE_PEPPER": "short"})
+    assert Settings.from_env({**base, "AI_INVITE_PEPPER": "p" * 40}).ai_invite_pepper == "p" * 40

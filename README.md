@@ -19,6 +19,7 @@ Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령
 - 화면 시세도 레지스트리가 허용한 소스만 사용(공개 프로필은 합성 시세 + "합성 데이터" 배지, 코인 기능은 업비트 약관 확인 전까지 비활성)
 - 백테스트 엔진 재작성(`src/quantlab`): 종가 신호 → 다음 봉 시가 체결, bp 단위 비용, 일별 자산곡선 기반 Sharpe·MDD·CAGR, 같은 비용의 매수 후 보유 비교, 입력 해시·파라미터·엔진 버전으로 만든 계산 영수증과 멱등 저장, 워크포워드 검증과 재현 가능한 리서치 리포트. 구 엔진의 계산 오류 7개를 회귀 테스트로 고정
 - 자체 MCP 서버(`src/deskmcp`): 모의계좌 조회·백테스트·영수증 조회를 MCP 도구로 제공, 주문 도구는 명시적으로 켤 때만 등록, Open API 키별 요청 제한을 공유 저장소(Redis)로 이동
+- 초대 코드 전용 AI 리서치(`src/deskagent`): 공식 Anthropic SDK 도구 루프, 답변의 숫자는 서버가 계산 영수증에서 채우고 영수증 없는 숫자는 차단, 초대 코드별 한도와 월 예산, 코드 채점 eval(완벽 모델 100%, 숫자를 지어내는 모델 3종 0%)
 
 HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
 
@@ -36,6 +37,7 @@ HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고,
 - [화면 시세의 출처 제어와 표시 검증](docs/evidence/price-sources-2026-09-25.md)
 - [백테스트 엔진 교체(quantlab) 검증](docs/evidence/quant-engine-2026-09-25.md), [백테스트 방법론](docs/methodology/backtest.md), [리서치 리포트](docs/research/README.md)
 - [자체 MCP 서버 검증](docs/evidence/mcp-server-2026-09-25.md)
+- [AI 리서치 에이전트(숫자 영수증·초대·예산·eval) 검증](docs/evidence/ai-agent-eval-2026-09-25.md), [eval 사례와 기준선](evals/numeric_faithfulness/README.md)
 - 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
@@ -518,6 +520,8 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 ├── src/marketdata/                    # 데이터 소스 레지스트리·합성/업비트 소스·품질 검사·저장
 ├── src/quantlab/                      # 백테스트 엔진·지표·계산 영수증·워크포워드·리서치 CLI
 ├── src/deskmcp/                       # 데스크 HTTP API를 MCP 도구로 노출하는 서버
+├── src/deskagent/                     # 숫자 영수증 AI 리서치 에이전트·가격·eval
+├── evals/numeric_faithfulness/        # 에이전트 eval 사례·결과
 ├── config/data_sources.toml           # 소스별 약관 메타데이터와 프로필별 on/off
 ├── tests/                             # unit·integration·labs(기존 실습 테스트) pytest
 ├── database/db.sql                    # MariaDB 초기 스키마·예제 데이터
