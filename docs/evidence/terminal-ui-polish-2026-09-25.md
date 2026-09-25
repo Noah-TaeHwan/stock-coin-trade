@@ -83,6 +83,18 @@
 | KIS·KB 원본 탭 | `KIS 조회`, `KB 조회` | 키 파일이 없어 HTTP 502. 탭은 오류 상태와 원인(`kis.key`·`kb.key` 없음)을 보여주고 요청·응답 JSON을 로그로 쌓는다. |
 | 메모 탭 | 삼성전자 메모 저장 → 새로고침 | "저장했습니다." 새로고침 후 내용 유지, 메모 목록 1행 |
 
+### `main` 병합 후 재확인
+
+작업 중에 `main`이 `0ee5077`까지 진행됐다. 그 사이 들어온 변경은 앱 팩토리·CI 기반, 코인 차익·김프 화면, 비로그인 주식 화면의 401 수정이다. 이를 병합한 뒤 `init`·`worker` 서비스가 추가된 Compose 구성으로 스택을 다시 빌드하고 같은 검사를 반복했다.
+
+| 항목 | 결과 |
+|---|---|
+| CI와 같은 검사 | lock에 고정된 ruff 0.16.8로 `ruff check .`·`ruff format --check` 통과. `pytest -m "not integration"` 69 passed. `node --check` 통과 |
+| 57개 화면(`arbitrage.html` 포함) × 1440·390 | 4px 초과 모서리 0, 대비 3:1 미만 0, 가로 넘침 0, 스크립트 오류 0 |
+| 비로그인 주식 화면 | API 4xx·5xx 응답 0건. 계좌에 "로그인 필요" 표시, 메모 저장 버튼 비활성 |
+| `ARB ETH` 명령 | `/arbitrage.html?symbol=ETH`로 이동 |
+| 기능 재확인 | 위 기능 표의 항목을 모두 다시 통과했다. 이 시점 코인 매수의 매수 가능 KRW는 99,869,000 → 99,859,000이었다. |
+
 ## 화면
 
 - [테스트 화면 전](terminal-polish-test-before.png) → [후](terminal-polish-test.png) (alpaca-test)
