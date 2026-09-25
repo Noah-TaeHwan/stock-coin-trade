@@ -105,12 +105,44 @@
     .stk-kv span:last-child { font-family:var(--font-mono); font-weight:700; color:var(--fg); }
     #resetBtn { padding:1px 8px; border:1px solid rgba(255,77,77,.4); color:var(--down); background:transparent; font-size:11px; font-weight:700; cursor:pointer; }
     #resetBtn:hover { color:#000; background:var(--down); }
+    /* KIS·KB 원본 도크 */
+    #dock-broker.active, #dock-memo.active { display:flex; flex-direction:column; height:100%; }
+    .brk-bar { border:0; border-bottom:1px solid var(--border); }
+    .brk-bar #brokerStatus { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1 1 200px; }
+    .brk-grid { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:minmax(220px, 280px) minmax(0, 1fr); }
+    .brk-grid .term-kv { align-content:start; padding:6px 10px; border-right:1px solid var(--border); }
+    .brk-grid .term-kv small { color:var(--muted); font-size:10.5px; }
+    .brk-log { min-height:0; overflow:auto; background:var(--bg); }
+    .brk-empty { margin:0; padding:10px; color:var(--muted); font-size:12px; line-height:1.6; }
+    .brk-entry { border-bottom:1px solid var(--border); }
+    .brk-entry header { display:flex; align-items:center; gap:8px; padding:3px 8px; background:var(--surface-2); font-family:var(--font-mono); font-size:11px; }
+    .brk-entry header b { color:var(--accent); }
+    .brk-entry header span { color:var(--muted); }
+    .brk-entry header .ok { color:var(--up); } .brk-entry header .err { color:var(--down); }
+    .brk-entry header code { overflow:hidden; color:var(--fg-2); background:none; text-overflow:ellipsis; white-space:nowrap; }
+    .brk-entry pre { max-height:180px; margin:0; padding:6px 8px; overflow:auto; border:0; background:none; color:var(--fg-2); font:11px/1.5 var(--font-mono); white-space:pre-wrap; word-break:break-word; }
+    /* 종목 메모 도크 */
+    .memo-grid { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
+    .memo-edit { display:flex; flex-direction:column; gap:4px; min-height:0; padding:6px 8px; border-right:1px solid var(--border); }
+    .memo-head { display:flex; align-items:baseline; gap:8px; font-size:12px; }
+    .memo-head b { color:var(--fg); } .memo-head #memoCount { margin-left:auto; color:var(--muted); font-family:var(--font-mono); font-size:11px; }
+    #memoText { flex:1 1 auto; min-height:70px; padding:6px 8px; resize:none; border:1px solid var(--border-strong); background:var(--bg); color:var(--fg); font-size:12.5px; line-height:1.55; outline:none; }
+    #memoText:focus { border-color:var(--accent); }
+    .memo-foot { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:11.5px; }
+    .memo-list { min-height:0; overflow:auto; }
+    .memo-table tbody tr { cursor:pointer; }
+    .memo-table td small { color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
+    .memo-table .memo-preview { max-width:0; width:65%; overflow:hidden; text-overflow:ellipsis; color:var(--fg-2); }
+    @media (max-width: 900px) { .brk-grid, .memo-grid { grid-template-columns:1fr; } .brk-grid .term-kv, .memo-edit { border-right:0; border-bottom:1px solid var(--border); } }
 
     /* 종목 모니터 */
     .wl-tabs { display:flex; gap:1px; }
     .wl-tab { padding:1px 8px; border:1px solid var(--border-strong); color:var(--fg-2); background:transparent; font-family:var(--font-mono); font-size:10.5px; font-weight:800; cursor:pointer; }
     .wl-tab.active { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); }
-    .stk-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
+    /* 이름·코드 두 줄을 한 행 높이 안에 붙여 목록에 더 많은 종목이 보이게 한다. */
+    .stk-list td { padding-top:2px; padding-bottom:2px; }
+    .stk-list td.txt { line-height:1.2; }
+    .stk-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10px; line-height:1.15; }
     .stk-list tbody tr { cursor:pointer; }
 
     /* 물타기 계산기 모달 */
@@ -141,7 +173,7 @@
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','sans-serif']}}}}</script>
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
@@ -218,10 +250,10 @@
           </span>
         </div>
         <div class="ma-legend" aria-label="이동평균선 표시 선택">
-          <button type="button" class="ma-toggle active" data-ma-period="5" aria-pressed="true" style="--ma-color:#FFD60A;" onclick="toggleMovingAverage(5)">MA 5</button>
-          <button type="button" class="ma-toggle active" data-ma-period="20" aria-pressed="true" style="--ma-color:#4FC3F7;" onclick="toggleMovingAverage(20)">MA 20</button>
-          <button type="button" class="ma-toggle active" data-ma-period="60" aria-pressed="true" style="--ma-color:#B39DFF;" onclick="toggleMovingAverage(60)">MA 60</button>
-          <button type="button" class="ma-toggle active" data-ma-period="120" aria-pressed="true" style="--ma-color:#FF6FAE;" onclick="toggleMovingAverage(120)">MA 120</button>
+          <button type="button" class="ma-toggle active" data-ma-period="5" aria-pressed="true" style="--ma-color:var(--series-6);" onclick="toggleMovingAverage(5)">MA 5</button>
+          <button type="button" class="ma-toggle active" data-ma-period="20" aria-pressed="true" style="--ma-color:var(--series-2);" onclick="toggleMovingAverage(20)">MA 20</button>
+          <button type="button" class="ma-toggle active" data-ma-period="60" aria-pressed="true" style="--ma-color:var(--series-3);" onclick="toggleMovingAverage(60)">MA 60</button>
+          <button type="button" class="ma-toggle active" data-ma-period="120" aria-pressed="true" style="--ma-color:var(--series-5);" onclick="toggleMovingAverage(120)">MA 120</button>
         </div>
         <div id="stockChart"></div>
       </section>
@@ -231,6 +263,8 @@
           <button type="button" class="term-dock-tab active" data-dock="positions" role="tab" aria-selected="true">포지션</button>
           <button type="button" class="term-dock-tab" data-dock="history" role="tab" aria-selected="false">체결 내역</button>
           <button type="button" class="term-dock-tab" data-dock="overview" role="tab" aria-selected="false">시세·계좌</button>
+          <button type="button" class="term-dock-tab" data-dock="broker" role="tab" aria-selected="false" title="KIS Testbed·KB증권 조회 원본(주문 없음)">KIS·KB 원본</button>
+          <button type="button" class="term-dock-tab" data-dock="memo" role="tab" aria-selected="false">메모</button>
         </div>
         <div class="term-panel__body">
           <div class="stk-dock-pane active" id="dock-positions">
@@ -260,6 +294,33 @@
                 <div class="stk-kv"><span>총 자산</span><span id="accountAsset">-</span></div>
                 <div class="stk-kv"><span>수익률</span><span id="accountPnlRate">-</span></div>
                 <div id="portfolioChart"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stk-dock-pane" id="dock-broker">
+            <div class="term-toolbar brk-bar">
+              <button type="button" class="term-btn term-btn-primary" data-broker="kis">KIS 조회</button>
+              <button type="button" class="term-btn" data-broker="kb">KB 조회</button>
+              <span id="brokerStatus">선택 종목의 증권사 시세·호가·일봉을 원본 JSON으로 확인합니다. 주문은 하지 않습니다.</span>
+              <span class="term-right"><button type="button" class="term-btn" id="brokerClear">로그 비우기</button></span>
+            </div>
+            <div class="brk-grid">
+              <dl class="term-kv" id="brokerSummary"><dt>출처</dt><dd>-</dd><dt>현재가</dt><dd>-</dd><dt>최우선 호가</dt><dd>-</dd></dl>
+              <div class="brk-log" id="brokerLog" aria-live="polite"><p class="brk-empty">KIS 또는 KB 조회를 누르면 요청 경로·HTTP 상태·응답 JSON이 최신순으로 쌓입니다. KB는 로그인이 필요합니다.</p></div>
+            </div>
+          </div>
+          <div class="stk-dock-pane" id="dock-memo">
+            <div class="memo-grid">
+              <div class="memo-edit">
+                <div class="memo-head"><span class="stk-kv-title">MEMO</span><b id="memoTarget">-</b><span id="memoCount">0 / 500</span></div>
+                <textarea id="memoText" maxlength="500" placeholder="매매 근거·지지·저항·재검토 조건을 종목별로 적어 두세요." disabled></textarea>
+                <div class="memo-foot"><button type="button" class="term-btn term-btn-primary" id="memoSave" disabled>저장</button><span id="memoStatus"></span></div>
+              </div>
+              <div class="memo-list">
+                <table class="term-table memo-table">
+                  <thead><tr><th>종목</th><th>저장한 메모</th></tr></thead>
+                  <tbody id="memoList"><tr><td class="empty" colspan="2">불러오는 중…</td></tr></tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -348,7 +409,8 @@
 </div>
 
 <script src="/js/config.js"></script>
-<script src="/js/common.js?v=20260924-terminal"></script>
-<script src="/js/stock.js?v=20260924-guest-login"></script>
+<script src="/js/common.js?v=20260925-terminal"></script>
+<script src="/js/stock.js?v=20260925-terminal"></script>
+<script src="/js/stock-broker.js?v=20260925-terminal"></script>
 </body>
 </html>

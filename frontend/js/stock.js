@@ -36,10 +36,10 @@ let lwCandle = null;
 let lwVolume = null;
 const movingAverageSeries = {};
 const movingAverageOptions = [
-  { period: 5,   color: '#FFD60A' },
-  { period: 20,  color: '#4FC3F7' },
-  { period: 60,  color: '#B39DFF' },
-  { period: 120, color: '#FF6FAE' },
+  { period: 5,   color: TERM_MA_COLORS[5] },
+  { period: 20,  color: TERM_MA_COLORS[20] },
+  { period: 60,  color: TERM_MA_COLORS[60] },
+  { period: 120, color: TERM_MA_COLORS[120] },
 ];
 const movingAverageVisibility = Object.fromEntries(movingAverageOptions.map(({ period }) => [period, true]));
 
@@ -119,7 +119,7 @@ function updatePortfolioMini(positions, cash) {
     const pct = Math.round((p.evalAmount || 0) / total * 100);
     return `<div title="${p.name} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
+  stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:var(--series-neutral);min-width:3px;"></div>`);
 
   const sectors = positions.reduce((acc, p) => {
     const sector = p.sector || '기타';
@@ -131,7 +131,7 @@ function updatePortfolioMini(positions, cash) {
     const pct = Math.round(amount / total * 100);
     return `<div title="${sector} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
-  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
+  if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:var(--series-neutral);min-width:3px;"></div>`);
   const sectorLabels = sectorItems.map(([sector, amount], i) =>
     `<span style="display:inline-flex;align-items:center;gap:3px;"><i style="width:6px;height:6px;background:${colors[i % colors.length]};display:inline-block;"></i>${sector} ${Math.round(amount / total * 100)}%</span>`
   ).join(' · ');
@@ -484,6 +484,7 @@ async function selectStock(symbol) {
   closeStockPicker();
   updateWatchBtn(symbol);
   renderStockMarketList();
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol } }));
   await Promise.all([loadQuote(symbol), loadChart(symbol, currentPeriod)]);
 }
 
@@ -805,6 +806,7 @@ document.getElementById('stockSymbol')?.addEventListener('change', async () => {
   const sym = document.getElementById('stockSymbol')?.value;
   if (!sym) return;
   updateStockPickerSelected(sym);
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol: sym } }));
   await Promise.all([loadQuote(sym), loadChart(sym, currentPeriod)]);
 });
 
@@ -890,6 +892,31 @@ function setEl(id, val, color) {
   if (color) el.style.color = color;
 }
 
+/* ── 화면번호 진입 ──────────────────────────────────────────────────────── */
+// 명령줄의 HTS 화면번호(0130·0101·0400·0600/4990)나 ?dock= 으로 들어오면 해당 패널을 연다.
+function applyScreenFocus() {
+  const params = new URLSearchParams(window.location.search);
+  const dock = params.get('dock');
+  if (dock) document.querySelector(`.term-dock-tab[data-dock="${dock}"]`)?.click();
+  const focus = params.get('focus');
+  if (focus === 'watch') document.querySelector('.wl-tab[data-wl="WATCH"]')?.click();
+  const targets = {
+    watch: ['#stockWatchListBody', null],
+    book: ['#askBody', null],
+    chart: ['#stockChart', '#stockPickerInput'],
+    order: ['#orderPanel', '#orderQty'],
+    broker: ['#dock-broker', null],
+    memo: ['#dock-memo', '#memoText'],
+  };
+  const [panelSel, inputSel] = targets[focus] || targets[dock] || [];
+  const panel = panelSel && document.querySelector(panelSel)?.closest('.term-panel');
+  if (!panel) return;
+  panel.scrollIntoView({ block: 'nearest' });
+  panel.classList.add('term-flash');
+  setTimeout(() => panel.classList.remove('term-flash'), 1600);
+  if (inputSel) document.querySelector(inputSel)?.focus({ preventScroll: true });
+}
+
 /* ── 부트 ────────────────────────────────────────────────────────────────── */
 (async () => {
   currentUser = await initPage();
@@ -899,6 +926,8 @@ function setEl(id, val, color) {
   await loadStockList();
 
   const sym = document.getElementById('stockSymbol')?.value;
+  document.dispatchEvent(new CustomEvent('stock:selected', { detail: { symbol: sym } }));
+  applyScreenFocus();
   await Promise.all([loadMarket(), loadQuote(sym), loadAccount(), loadPositions()]);
   await Promise.all([loadChart(sym, currentPeriod), loadHistory(), loadBatchPrices()]);
 

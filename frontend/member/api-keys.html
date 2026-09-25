@@ -13,7 +13,7 @@
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','Apple SD Gothic Neo','Malgun Gothic','sans-serif']}}}}</script>
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
   <style>
     #site-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; margin-top:0; }
     body { padding-bottom: 40px; }
@@ -22,35 +22,23 @@
       align-items:center; justify-content:center;
     }
     #keyModal {
-      background:var(--surface); border:1px solid var(--border); border-radius:12px;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
       padding:1.5rem; width:520px; max-width:92vw; box-shadow:0 12px 40px rgba(0,0,0,0.25);
     }
   </style>
 </head>
 <body class="min-h-screen">
 <div id="header-mount"></div>
-<main class="w-full px-4 py-6">
+<main class="keys-main term-page">
+  <header class="term-pagehead"><span class="term-code">KEYS</span><h1>Open API 키 관리</h1><p>발급된 키로 외부 시스템에서 <code style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:1px 6px;font-size:12.5px;">/openapi/v1/*</code> 를 호출해 이 계정의 가상 주식 계좌를 조회·매매할 수 있습니다.
+      자세한 사용법은 <a href="/openapi.html" style="color:var(--accent-dark);font-weight:700;text-decoration:underline;">Open API 명세</a>를 참고하세요.</p><span class="term-right"><button id="createKeyBtn" class="term-btn term-btn-primary" onclick="createKey()">+ 새 키 발급</button></span></header>
 
-<div class="space-y-6">
+<div class="space-y-1.5">
 
-  <section class="glass-card p-6">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
-      <h1 class="text-2xl font-black" style="color:var(--fg);">Open API 키 관리</h1>
-      <button id="createKeyBtn" onclick="createKey()"
-        style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:.55rem 1.1rem;font-size:13.5px;font-weight:700;cursor:pointer;">
-        + 새 키 발급
-      </button>
-    </div>
-    <p style="font-size:13px;color:var(--muted);line-height:1.7;">
-      발급된 키로 외부 시스템에서 <code style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12.5px;">/openapi/v1/*</code> 를 호출해 이 계정의 가상 주식 계좌를 조회·매매할 수 있습니다.
-      자세한 사용법은 <a href="/openapi.html" style="color:var(--accent-dark);font-weight:700;text-decoration:underline;">Open API 명세</a>를 참고하세요.
-    </p>
-  </section>
+
 
   <section class="glass-card overflow-hidden">
-    <div class="px-5 py-4" style="border-bottom:1px solid var(--border);">
-      <h3 class="text-base font-black" style="color:var(--fg);">발급된 키</h3>
-    </div>
+    <div class="term-panel__bar"><span class="term-code">KEYS</span>발급된 키</div>
     <div class="overflow-x-auto">
       <table class="dark-table min-w-full">
         <thead>
@@ -64,7 +52,7 @@
           </tr>
         </thead>
         <tbody id="keysTableBody">
-          <tr><td colspan="6" class="px-4 py-6 text-center" style="color:var(--muted);">로딩 중...</td></tr>
+          <tr><td colspan="6" class="px-4 py-3 text-center" style="color:var(--muted);">로딩 중...</td></tr>
         </tbody>
       </table>
     </div>
@@ -80,10 +68,10 @@
     <p style="font-size:12.5px;color:var(--down);font-weight:700;margin-bottom:10px;">⚠ 이 키는 지금 한 번만 표시됩니다. 안전한 곳에 복사해 보관하세요.</p>
     <div style="display:flex;gap:6px;margin-bottom:14px;">
       <input id="newKeyValue" readonly
-        style="flex:1;background:var(--surface-2);border:1.5px solid var(--border);color:var(--fg);border-radius:6px;padding:.5rem .7rem;font-size:12.5px;font-family:monospace;"/>
-      <button onclick="copyNewKey()" style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:6px;padding:.5rem 1rem;font-size:13px;font-weight:700;cursor:pointer;">복사</button>
+        style="flex:1;background:var(--surface-2);border:1.5px solid var(--border);color:var(--fg);border-radius:var(--radius);padding:.5rem .7rem;font-size:12.5px;font-family:monospace;"/>
+      <button onclick="copyNewKey()" style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:var(--radius);padding:.5rem 1rem;font-size:13px;font-weight:700;cursor:pointer;">복사</button>
     </div>
-    <button onclick="closeKeyModal()" style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:.5rem;font-size:13px;font-weight:700;color:var(--fg);cursor:pointer;">닫기</button>
+    <button onclick="closeKeyModal()" style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem;font-size:13px;font-weight:700;color:var(--fg);cursor:pointer;">닫기</button>
   </div>
 </div>
 
@@ -94,7 +82,7 @@
   </div>
 </footer>
 <script src="/js/config.js"></script>
-<script src="/js/common.js?v=20260924-terminal"></script>
-<script src="/js/api-keys.js?v=20260924-terminal"></script>
+<script src="/js/common.js?v=20260925-terminal"></script>
+<script src="/js/api-keys.js?v=20260925-terminal"></script>
 </body>
 </html>

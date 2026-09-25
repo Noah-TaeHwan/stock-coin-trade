@@ -7,94 +7,58 @@
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
   <style>
-    .c-wrap{max-width:1360px;margin:0 auto;padding:22px 20px 56px}
-    .kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--accent-dark)}
-    .c-card{margin-top:14px;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm)}
-    .c-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
-    .c-head h1{margin:4px 0 0;font-size:24px;font-weight:900;color:var(--fg)}
-    .c-head p{margin:4px 0 0;color:var(--fg-2);font-size:13px;line-height:1.6;max-width:760px}
-    .c-search{position:relative;flex:1;min-width:260px;max-width:420px}
-    .c-search input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--fg);font:inherit;font-size:14px;font-weight:700}
-    .c-sug{position:absolute;left:0;right:0;top:100%;z-index:30;margin-top:4px;max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:var(--surface);box-shadow:0 10px 25px rgba(0,0,0,.12);display:none}
-    .c-sug button{display:flex;gap:10px;width:100%;padding:9px 12px;border:0;background:none;text-align:left;font:inherit;font-size:13px;color:var(--fg);cursor:pointer}
-    .c-sug button:hover{background:var(--surface-2)}
-    .c-sug small{color:var(--muted)}
-    .c-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-    .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface-2)}
-    .seg button{padding:9px 13px;border:0;background:none;font:inherit;font-size:13px;font-weight:800;color:var(--fg-2);cursor:pointer}
-    .seg button.on{background:var(--accent);color:var(--accent-ink)}
-    .seg button:disabled{opacity:.5;cursor:not-allowed}
-    .c-tools select{padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--fg);font:inherit;font-size:13px;font-weight:700}
-    .btn{padding:10px 14px;border:0;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:13px;cursor:pointer}
-    .btn:disabled{opacity:.6;cursor:wait}
-    .chk{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--fg-2);cursor:pointer}
-    .chk input{accent-color:var(--accent)}
-    .q-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:14px}
-    .q{padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}
-    .q small{display:block;font-size:11px;color:var(--muted);font-weight:700}
-    .q b{display:block;margin-top:3px;font-size:15px;color:var(--fg);font-variant-numeric:tabular-nums}
-    .q.up b,.up{color:var(--down)!important}.q.down b,.down{color:var(--info)!important}
-    .price-big{font-size:28px;font-weight:900;color:var(--fg);font-variant-numeric:tabular-nums}
-    .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--fg-2);font-variant-numeric:tabular-nums;min-height:18px}
-    .legend b{color:var(--fg)}
-    .legend .ma5{color:var(--warn)}.legend .ma20{color:var(--up)}.legend .ma60{color:var(--info)}
-    #chart{position:relative;width:100%;height:520px;margin-top:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
-    #chart .loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:var(--surface);font-size:13px;font-weight:800;color:var(--fg-2);z-index:5}
-    .danger{margin-top:12px;padding:12px 14px;border-radius:9px;background:var(--surface-2);color:var(--down);font-size:13px;line-height:1.65}
-    .notice{margin-top:12px;padding:12px 14px;border-radius:9px;background:var(--warn-bg);color:var(--warn);font-size:13px;line-height:1.65}
-    .tbl-wrap{overflow:auto;border:1px solid var(--border);border-radius:9px;max-height:420px;margin-top:10px}
-    .tbl{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface)}
-    .tbl th,.tbl td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-    .tbl th:first-child,.tbl td:first-child{text-align:left}
-    .tbl th{position:sticky;top:0;background:var(--surface-2);color:var(--fg);font-size:11px}
-    .tbl tr:nth-child(even) td{background:var(--surface)}
-    .footer{border-top:1px solid var(--border);background:var(--surface)}.footer div{max-width:1360px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:12px}
-    @media(max-width:760px){.c-wrap{padding:14px 12px 40px}.c-card{padding:14px}#chart{height:400px}.price-big{font-size:22px}}
+    .c-field{display:grid;gap:3px;margin-top:6px}.c-field > label,.c-field > span{color:var(--muted);font-size:11px;font-weight:700}
+    .c-field input,.c-field select{width:100%;height:28px;padding:0 8px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--bg);color:var(--fg);font-family:var(--font-mono);font-size:12.5px;font-weight:700}
+    .seg{display:flex;border:1px solid var(--border-strong)}.seg button{flex:1;height:26px;padding:0 8px;border:0;border-right:1px solid var(--border);background:var(--surface);color:var(--fg-2);font-family:var(--font-mono);font-size:12px;font-weight:800;cursor:pointer}.seg button:last-child{border-right:0}.seg button.on{background:var(--accent);color:var(--accent-ink)}.seg button:disabled{opacity:.5;cursor:not-allowed}
+    .chart-legend{display:flex;flex-wrap:wrap;gap:4px 12px;min-height:24px;padding:4px 8px;border-bottom:1px solid var(--border);color:var(--fg-2);font-family:var(--font-mono);font-size:11.5px}.chart-legend b{color:var(--fg)}
+    .chart-legend .ma5{color:var(--series-6)}.chart-legend .ma20{color:var(--series-2)}.chart-legend .ma60{color:var(--series-3)}
+    .chart-box{position:relative;flex:1 1 auto;min-height:440px;overflow:hidden;background:var(--surface)}
+    .chart-table{max-height:260px;overflow:auto;border-top:1px solid var(--border)}.chart-table summary{padding:4px 8px;background:var(--surface-2);color:var(--fg);font-size:12px;font-weight:800;cursor:pointer}
+    .chart-table table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:12px}.chart-table th,.chart-table td{padding:3px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}.chart-table th:first-child,.chart-table td:first-child{text-align:left}.chart-table th{position:sticky;top:0;background:var(--surface-2);color:var(--muted);font-size:11px}
+    .c-search{position:relative}.c-sug{position:absolute;left:0;right:0;top:100%;z-index:30;margin-top:2px;max-height:280px;overflow:auto;border:1px solid var(--border-strong);background:var(--surface);box-shadow:var(--shadow-md);display:none}
+    .c-sug button{display:flex;gap:10px;width:100%;padding:5px 8px;border:0;background:none;text-align:left;font:inherit;font-size:12.5px;color:var(--fg);cursor:pointer}.c-sug button:hover{background:var(--surface-3)}.c-sug small{color:var(--muted)}
+    .chk{display:inline-flex;align-items:center;gap:5px;margin-top:6px;color:var(--fg-2);font-size:12px;font-weight:700;cursor:pointer}.chk input{accent-color:var(--accent)}
+    #quote > div:first-child{margin-top:8px!important;gap:2px 8px!important}#quote > div:first-child > span:first-child{font-size:14px!important}
+    .price-big{font-family:var(--font-mono);font-size:20px;font-weight:800;color:var(--fg)}
+    .q-grid{display:grid;grid-template-columns:1fr;gap:1px;margin-top:6px;background:var(--border);border:1px solid var(--border)}.q{display:flex;justify-content:space-between;gap:8px;padding:3px 8px;background:var(--surface)}
+    .q small{color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap}.q b{color:var(--fg);font-family:var(--font-mono);font-size:12px;text-align:right}
+    .q.up b,.up{color:var(--up)!important}.q.down b,.down{color:var(--down)!important}
+    #chart .loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:var(--surface);color:var(--fg-2);font-size:13px;font-weight:800;z-index:5}
+    #msg .danger,#msg .notice{margin-top:6px}
   </style>
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="c-wrap">
-    <section class="c-card">
-      <div class="c-head">
-        <div style="flex:1 1 100%">
-          <div class="kicker">KIS 모의투자 실습 · 종목 차트</div>
-          <h1>KIS 모의투자 API 종목 차트</h1>
-          <p>서버의 <code>kis.key</code>(모의투자 App Key·Secret)로 KIS Testbed 의 기간별시세·당일분봉 API 를 호출해 캔들 차트를 그립니다. 계좌 설정과 로그인은 필요 없고, 조회 전용입니다. 종목명 또는 6자리 코드를 입력하세요.</p>
-          <p style="margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.6"><strong>호출 경로:</strong> 브라우저 → 이 저장소 백엔드 <code>/api/kis-chart/candles·minutes</code> → KIS Testbed <code>inquire-daily-itemchartprice·inquire-time-itemchartprice</code>. 브라우저가 KIS 를 직접 호출하지 않으며 키·토큰은 백엔드에만 있습니다. 자세한 표는 <a href="/learning/kis-test.html" style="text-decoration:underline">3단계 · 테스트</a>의 "호출 경로" 참고.</p>
-        </div>
-        <div class="c-search">
-          <input id="symbol" value="005930" placeholder="종목명 또는 종목코드 (예: 삼성전자, 005930)" autocomplete="off" aria-label="종목 검색">
-          <div id="sug" class="c-sug"></div>
-        </div>
-        <div class="c-tools">
-          <div class="seg" id="periods">
-            <button data-p="1m">1분</button><button data-p="D" class="on">일</button><button data-p="W">주</button><button data-p="M">월</button><button data-p="Y">년</button>
-          </div>
-          <select id="count" aria-label="캔들 수"><option value="60">60개</option><option value="120" selected>120개</option><option value="200">200개</option><option value="300">300개</option></select>
+  <main class="c-wrap term-page">
+    <header class="term-pagehead"><span class="term-code">KIS</span><h1>KIS 모의투자 API 종목 차트</h1><p>서버의 <code>kis.key</code>(모의투자 App Key·Secret)로 KIS Testbed 의 기간별시세·당일분봉 API 를 호출해 캔들 차트를 그립니다. 계좌 설정과 로그인은 필요 없고, 조회 전용입니다. 종목명 또는 6자리 코드를 입력하세요.</p><span class="term-right"><span class="badge badge-muted">TESTBED · READ-ONLY</span></span></header>
+    <div class="term-layout term-layout--chart">
+      <section class="term-panel term-rail c-rail">
+        <div class="term-panel__bar"><span class="term-code">REQ</span>종목·주기<span class="term-sub">기간별시세 · 당일분봉</span></div>
+        <div class="term-panel__body term-panel__body--pad">
+          <div class="c-field c-search" style="margin-top:0;"><label for="symbol">종목명 또는 6자리 코드</label><input id="symbol" value="005930" placeholder="삼성전자, 005930" autocomplete="off" aria-label="종목 검색"><div id="sug" class="c-sug"></div></div>
+          <div class="c-field"><span>주기</span><div class="seg" id="periods"><button data-p="1m">1분</button><button data-p="D" class="on">일</button><button data-p="W">주</button><button data-p="M">월</button><button data-p="Y">년</button></div></div>
+          <div class="c-field"><label for="count">캔들 수</label><select id="count" aria-label="캔들 수"><option value="60">60개</option><option value="120" selected>120개</option><option value="200">200개</option><option value="300">300개</option></select></div>
           <label class="chk"><input type="checkbox" id="ma" checked> 이동평균 5·20·60</label>
-          <button class="btn" id="load">차트 조회</button>
+          <button class="term-btn term-btn-primary" id="load" style="width:100%;margin-top:6px;">차트 조회</button>
+          <div id="quote"></div>
+          <div id="msg"></div>
+          <p class="term-note" style="margin-top:8px;"><strong>호출 경로:</strong> 브라우저 → 이 저장소 백엔드 <code>/api/kis-chart/candles·minutes</code> → KIS Testbed <code>inquire-daily-itemchartprice·inquire-time-itemchartprice</code>. 브라우저가 KIS 를 직접 호출하지 않으며 키·토큰은 백엔드에만 있습니다. 자세한 표는 <a href="/learning/kis-test.html" style="text-decoration:underline">3단계 · 테스트</a>의 "호출 경로" 참고.</p>
+          <div class="notice">모의투자 시세는 실전과 다를 수 있으며 KIS Testbed 호출 제한을 피하기 위해 같은 조회는 30초 동안 서버가 캐시합니다. 1분봉은 당일 데이터만 제공되므로 휴장일에는 비어 있을 수 있습니다.</div>
         </div>
-      </div>
-      <div id="quote"></div>
-      <div id="msg"></div>
-    </section>
-
-    <section class="c-card">
-      <div class="legend" id="legend">캔들 위에 마우스를 올리면 시가·고가·저가·종가·거래량이 표시됩니다.</div>
-      <div id="chart"><div class="loading" id="loading">KIS Testbed 에서 캔들을 불러오는 중…</div></div>
-      <div class="notice" style="margin-top:10px">모의투자 시세는 실전과 다를 수 있으며 KIS Testbed 호출 제한을 피하기 위해 같은 조회는 30초 동안 서버가 캐시합니다. 1분봉은 당일 데이터만 제공되므로 휴장일에는 비어 있을 수 있습니다.</div>
-    </section>
-
-    <section class="c-card">
-      <details><summary style="cursor:pointer;font-size:13px;font-weight:900;color:var(--fg)">캔들 데이터 표 <small id="tblCount" style="color:var(--muted);font-weight:700"></small></summary>
-        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>일시</th><th>시가</th><th>고가</th><th>저가</th><th>종가</th><th>등락</th><th>거래량</th><th>거래대금</th></tr></thead><tbody id="tbody"></tbody></table></div>
-      </details>
-    </section>
+      </section>
+      <section class="term-panel">
+        <div class="term-panel__bar"><span class="term-code">GP</span>캔들 차트<span class="term-sub">KIS Testbed</span></div>
+        <div class="chart-legend legend" id="legend">캔들 위에 마우스를 올리면 시가·고가·저가·종가·거래량이 표시됩니다.</div>
+        <div id="chart" class="chart-box"><div class="loading" id="loading">KIS Testbed 에서 캔들을 불러오는 중…</div></div>
+        <details class="chart-table"><summary>캔들 데이터 표 <small id="tblCount" style="color:var(--muted);font-weight:700"></small></summary>
+          <table class="tbl"><thead><tr><th>일시</th><th>시가</th><th>고가</th><th>저가</th><th>종가</th><th>등락</th><th>거래량</th><th>거래대금</th></tr></thead><tbody id="tbody"></tbody></table>
+        </details>
+      </section>
+    </div>
   </main>
   <footer class="footer"><div>Noah Trading Desk · KIS 모의투자 API 종목 차트 · 조회 전용 · 교육용 콘텐츠</div></footer>
-  <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script src="/js/kis-chart.js?v=20260924-terminal"></script>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260925-terminal"></script><script src="/js/kis-chart.js?v=20260925-terminal"></script>
 </body>
 </html>

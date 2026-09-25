@@ -6,49 +6,39 @@
   <title>Pine Script 안내 — 모의투자 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
 
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','sans-serif']}}}}</script>
-  <style>
-    .guide-wrap { max-width:none; min-height:calc(100vh - 126px); margin:0; padding:34px 24px 44px; }
-    .guide-card { padding:26px; border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:var(--shadow-sm); }
-    .step { display:grid; grid-template-columns:32px 1fr; gap:10px; align-items:start; padding:13px 0; border-bottom:1px solid var(--border); }
-    .step:last-child { border-bottom:0; }.step-number { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--accent); color:var(--accent-ink); font-size:13px; font-weight:900; }
-    .compare { width:100%; border-collapse:collapse; font-size:14px; }.compare th,.compare td { padding:14px; border:1px solid var(--border); text-align:left; vertical-align:top; }.compare th { background:var(--surface-2); font-weight:800; }
-    .flow { display:flex; align-items:center; gap:9px; flex-wrap:wrap; padding:15px; border-radius:9px; background:var(--surface-2); font-size:13px; font-weight:750; }.flow span { padding:7px 10px; border:1px solid var(--border); border-radius:6px; background:var(--surface); }.flow i { color:var(--accent); }
-    code { padding:1px 4px; border-radius:4px; background:var(--surface-2); color:var(--accent-dark); font-size:.92em; }
-    .guide-footer { border-top:1px solid var(--border); background:var(--surface); }.guide-footer-inner { display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:none; margin:0; padding:14px 24px; }
-    @media (max-width:640px) { .guide-wrap { padding:20px 12px 28px; } .guide-card { padding:17px; } .guide-footer-inner { padding:12px; } .compare { font-size:12px; } .compare th,.compare td { padding:9px; } }
-  </style>
+  <style>.step{ display:grid; grid-template-columns:24px 1fr; gap:8px; align-items:start; }.step-number{ display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:0; font-family:var(--font-mono); background:var(--accent); color:var(--accent-ink); font-size:11px; font-weight:900; }.compare{ width:100%; border-collapse:collapse; font-size:12.5px; }.compare th,.compare td{ padding:5px 8px; border:1px solid var(--border); text-align:left; vertical-align:top; }.compare th{ background:var(--surface-2); font-weight:800; }code{ padding:1px 4px; border-radius:var(--radius-lg); background:var(--surface-2); color:var(--accent-dark); font-size:.92em; }@media (max-width:640px){.compare{ font-size:12px; }.compare th,.compare td{ padding:9px; }}</style>
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="guide-wrap">
-    <section style="padding:27px 25px;border-radius:14px;background:var(--surface-2);border:1px solid rgba(79,195,247,.35);">
+  <main class="guide-wrap term-doc">
+    <section class="term-hero">
       <span style="font-size:12px;font-weight:900;color:var(--accent-dark);letter-spacing:.08em;">PINE SCRIPT GUIDE</span>
-      <h1 style="margin:7px 0 6px;font-size:28px;font-weight:900;color:var(--fg);">Pine Script란 무엇인가요?</h1>
-      <p style="max-width:760px;margin:0;color:var(--fg-2);font-size:15px;line-height:1.75;">Pine Script는 <strong>TradingView 차트에서 지표와 전략을 만드는 전용 언어</strong>입니다. 이 웹앱에서는 주요 전략 신호를 학습·모의주문에 활용할 수 있지만, Pine Script 전체를 직접 실행하는 환경은 TradingView입니다.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:17px;"><a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer" style="padding:9px 13px;border-radius:7px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:13px;font-weight:800;">TradingView 열기 ↗</a><a href="/trade/pine.html" style="padding:9px 13px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--fg);text-decoration:none;font-size:13px;font-weight:800;">Pine 전략 테스트하기</a></div>
+      <h1>Pine Script란 무엇인가요?</h1>
+      <p>Pine Script는 <strong>TradingView 차트에서 지표와 전략을 만드는 전용 언어</strong>입니다. 이 웹앱에서는 주요 전략 신호를 학습·모의주문에 활용할 수 있지만, Pine Script 전체를 직접 실행하는 환경은 TradingView입니다.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:17px;"><a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer" style="padding:9px 13px;border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:13px;font-weight:800;">TradingView 열기 ↗</a><a href="/trade/pine.html" style="padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);text-decoration:none;font-size:13px;font-weight:800;">Pine 전략 테스트하기</a></div>
     </section>
 
-    <section class="guide-card" style="margin-top:16px;"><h2 style="margin:0 0 6px;font-size:18px;font-weight:900;">TradingView에서 사용하는 순서</h2><p style="margin:0 0 9px;color:var(--muted);font-size:13px;">별도 프로그램을 설치하지 않고 웹 브라우저에서 Pine Script를 작성하고 차트에 적용할 수 있습니다.</p>
+    <section class="guide-card"><h2 class="title">TradingView에서 사용하는 순서</h2><p style="margin:0 0 9px;color:var(--muted);font-size:13px;">별도 프로그램을 설치하지 않고 웹 브라우저에서 Pine Script를 작성하고 차트에 적용할 수 있습니다.</p>
       <div class="step"><span class="step-number">1</span><div><strong>TradingView에 접속해 차트를 엽니다.</strong><p style="margin:3px 0 0;color:var(--muted);font-size:13px;">원하는 시장과 종목을 선택합니다.</p></div></div>
       <div class="step"><span class="step-number">2</span><div><strong>차트 하단의 <code>Pine Editor</code>를 선택합니다.</strong><p style="margin:3px 0 0;color:var(--muted);font-size:13px;">코드를 작성하거나 기존 전략을 수정합니다.</p></div></div>
       <div class="step"><span class="step-number">3</span><div><strong><code>Add to chart</code>를 눌러 적용합니다.</strong><p style="margin:3px 0 0;color:var(--muted);font-size:13px;">지표, 매수·매도 신호, 전략 테스터 결과를 차트에서 확인합니다.</p></div></div>
     </section>
 
-    <section class="guide-card" style="margin-top:16px;"><h2 style="margin:0 0 12px;font-size:18px;font-weight:900;">다른 플랫폼에서도 그대로 사용할 수 있나요?</h2>
+    <section class="guide-card"><h2 style="margin:0 0 12px;font-size:18px;font-weight:900;">다른 플랫폼에서도 그대로 사용할 수 있나요?</h2>
       <table class="compare"><thead><tr><th>환경</th><th>Pine Script 직접 실행</th><th>설명</th></tr></thead><tbody><tr><td><strong>TradingView</strong></td><td style="color:var(--up);font-weight:800;">가능</td><td>Pine Script의 원래 실행 및 전략 테스트 환경입니다.</td></tr><tr><td><strong>증권사 HTS/MTS</strong></td><td style="color:var(--down);font-weight:800;">불가</td><td>각 증권사가 제공하는 조건검색·수식 언어를 사용해야 합니다.</td></tr><tr><td><strong>MetaTrader</strong></td><td style="color:var(--down);font-weight:800;">불가</td><td>MQL 등 해당 플랫폼의 언어로 다시 작성해야 합니다.</td></tr><tr><td><strong>이 웹앱</strong></td><td style="color:var(--warn);font-weight:800;">일부 학습용 지원</td><td>주요 이동평균·RSI·교차·Long TP/SL 신호를 해석해 모의주문할 수 있습니다.</td></tr></tbody></table>
     </section>
 
-    <section class="guide-card" style="margin-top:16px;"><h2 style="margin:0 0 7px;font-size:18px;font-weight:900;">Pine 신호로 자동매매를 연결하는 일반적인 방식</h2><p style="margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.65;">Pine Script가 증권사나 거래소에 직접 주문을 보내는 것은 아닙니다. 일반적으로 TradingView 알림의 웹훅을 외부 서버가 받아, 거래소·증권사 API로 주문을 전달합니다.</p>
+    <section class="guide-card"><h2 style="margin:0 0 7px;font-size:18px;font-weight:900;">Pine 신호로 자동매매를 연결하는 일반적인 방식</h2><p style="margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.65;">Pine Script가 증권사나 거래소에 직접 주문을 보내는 것은 아닙니다. 일반적으로 TradingView 알림의 웹훅을 외부 서버가 받아, 거래소·증권사 API로 주문을 전달합니다.</p>
       <div class="flow"><span>TradingView 전략·알림</span><i>→</i><span>Webhook</span><i>→</i><span>외부 서버 (Python 등)</span><i>→</i><span>거래소·증권사 API</span></div>
-      <p style="margin:12px 0 0;padding:10px 12px;border-radius:7px;background:var(--warn-bg);color:var(--warn);font-size:12px;line-height:1.65;">실거래 자동화에는 API 키 보관, 주문 중복 방지, 예외 처리, 손실 한도와 모니터링이 필요합니다. 이 웹앱의 Pine 전략 거래는 실거래가 아닌 학습용 모의주문입니다.</p>
+      <p style="margin:12px 0 0;padding:10px 12px;border-radius:var(--radius);background:var(--warn-bg);color:var(--warn);font-size:12px;line-height:1.65;">실거래 자동화에는 API 키 보관, 주문 중복 방지, 예외 처리, 손실 한도와 모니터링이 필요합니다. 이 웹앱의 Pine 전략 거래는 실거래가 아닌 학습용 모의주문입니다.</p>
     </section>
   </main>
   <footer class="guide-footer"><div class="guide-footer-inner"><span class="brand-logo-text" style="font-size:13px;">Noah Trading Desk</span><span style="font-size:11px;color:var(--muted);">모의투자·OpenAPI 실습 · 투자 교육용 서비스</span></div></footer>
   <script src="/js/config.js"></script>
-  <script src="/js/common.js?v=20260924-terminal"></script>
+  <script src="/js/common.js?v=20260925-terminal"></script>
   <script>document.addEventListener('DOMContentLoaded', () => initPage());</script>
 </body>
 </html>

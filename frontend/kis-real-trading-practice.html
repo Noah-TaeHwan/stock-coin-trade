@@ -5,68 +5,84 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KIS 실거래 연습 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
   <style>
-    .practice-wrap{max-width:1180px;margin:0 auto;padding:28px 18px 54px}.hero{display:flex;justify-content:space-between;gap:24px;align-items:center;padding:25px;border:1px solid rgba(79,195,247,.35);border-radius:16px;background:var(--surface-2)}.eyebrow{font-size:12px;font-weight:900;letter-spacing:.08em;color:var(--info)}.hero h1{margin:6px 0;font-size:30px;font-weight:900}.hero p{margin:0;color:var(--fg-2);font-size:14px;line-height:1.7}.paper-badge{flex:none;padding:10px 14px;border-radius:999px;background:var(--surface-2);color:var(--up);border:1px solid rgba(0,210,106,.35);font-size:13px;font-weight:900}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.summary-card,.panel{border:1px solid var(--border);border-radius:13px;background:var(--surface);box-shadow:var(--shadow-sm)}.summary-card{padding:16px}.summary-card span{display:block;color:var(--muted);font-size:12px;font-weight:700}.summary-card strong{display:block;margin-top:5px;font-size:22px}.trade-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.panel{padding:20px}.panel h2{margin:0 0 16px;font-size:19px;font-weight:900}.stock-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}.field{margin-bottom:13px}.field label{display:block;margin-bottom:6px;color:var(--fg-2);font-size:12px;font-weight:800}.field input,.field select{width:100%;height:43px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--fg);font:inherit}.quote{padding:12px;border-radius:9px;background:var(--surface-2);color:var(--fg-2);font-size:13px}.quote strong{color:var(--fg);font-size:18px}.side-switch{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}.side-btn{height:42px;border:1px solid var(--border);border-radius:8px;background:var(--surface);font-weight:900;cursor:pointer}.side-btn[data-side=BUY].active{border-color:var(--up);background:var(--surface-2);color:var(--up)}.side-btn[data-side=SELL].active{border-color:var(--down);background:var(--surface-2);color:var(--down)}.order-total{display:flex;justify-content:space-between;margin:14px 0;padding:12px;border-radius:9px;background:var(--surface);font-size:14px}.submit{width:100%;height:46px;border:0;border-radius:9px;background:var(--up);color:#000;font-size:15px;font-weight:900;cursor:pointer}.submit.sell{background:var(--down)}.submit:disabled{opacity:.55;cursor:not-allowed}.message{display:none;margin-top:12px;padding:12px;border-radius:9px;font-size:13px;line-height:1.55}.message.show{display:block}.message.success{background:var(--surface-2);color:var(--up);border:1px solid rgba(0,210,106,.35)}.message.error{background:var(--surface-2);color:var(--down);border:1px solid rgba(255,77,77,.35)}.message.balance{background:var(--surface-2);color:var(--warn);border:2px solid rgba(255,214,10,.35)}.tables{display:grid;grid-template-columns:1fr 1.2fr;gap:16px;margin-top:16px}.table-wrap{overflow:auto}.data-table{width:100%;border-collapse:collapse;font-size:13px}.data-table th,.data-table td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}.data-table th:first-child,.data-table td:first-child{text-align:left}.empty{text-align:center!important;color:var(--muted);padding:24px!important}.notice{margin-top:14px;color:var(--muted);font-size:12px;line-height:1.65}.real-panel{margin-top:16px;border-color:#9fc0ff}.real-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.real-head p{margin:-8px 0 0;color:var(--fg-2);font-size:13px;line-height:1.65}.real-button{flex:none;padding:11px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:900;cursor:pointer}.real-button:disabled{opacity:.45;cursor:not-allowed}.setup-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}.setup-item{padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);font-size:12px;font-weight:800;color:var(--muted)}.setup-item.ready{border-color:rgba(0,210,106,.35);background:var(--surface-2);color:var(--up)}.setup-guide{padding:15px;border-radius:10px;background:var(--surface-2);color:var(--warn);font-size:13px;line-height:1.7}.setup-guide code{padding:2px 5px;border-radius:4px;background:var(--warn-bg)}.real-summary{display:none}.real-summary.show{display:grid}.section-title{display:flex;align-items:center;gap:10px;margin:28px 0 12px;font-size:21px;font-weight:900}.section-title span{padding:4px 8px;border-radius:999px;background:var(--surface-2);color:var(--warn);font-size:11px}@media(max-width:800px){.hero,.real-head{align-items:flex-start;flex-direction:column}.summary,.trade-grid,.tables,.setup-grid{grid-template-columns:1fr}.paper-badge{align-self:flex-start}.real-button{width:100%}}
+    .term-kpis .kpi span{color:var(--muted);font-size:11px;font-weight:700}.term-kpis .kpi strong{font-size:15px}
+    .real-button{height:22px;padding:0 10px;border:1px solid var(--accent);border-radius:var(--radius-xs);background:var(--accent);color:var(--accent-ink);font-size:11.5px;font-weight:800;text-transform:none;letter-spacing:0;cursor:pointer}.real-button:disabled{opacity:.45;cursor:not-allowed}
+    .real-panel .setup-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:6px 0;background:var(--border);border:1px solid var(--border)}
+    .setup-item{padding:4px 8px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700}.setup-item.ready{color:var(--up)}
+    .setup-guide{padding:6px 10px;border-left:2px solid var(--warn);background:var(--warn-bg);color:var(--warn);font-size:12.5px;line-height:1.6}.setup-guide code{padding:0 4px;background:rgba(255,214,10,.1)}
+    .real-summary{display:none;border-left:0;border-right:0}.real-summary.show{display:grid}
+    .practice-head{gap:10px}.practice-head b{color:var(--fg);font-size:13px}
+    .field{margin-bottom:8px}.field label{display:block;margin-bottom:3px;color:var(--muted);font-size:11px;font-weight:700}
+    .field input,.field select{width:100%;height:28px;padding:0 8px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--bg);color:var(--fg);font-size:12.5px}
+    .stock-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+    .quote{padding:6px 8px;border:1px solid var(--border);background:var(--bg);color:var(--fg-2);font-size:12.5px}.quote strong{color:var(--fg);font-family:var(--font-mono);font-size:16px}
+    .side-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px}
+    .side-btn{height:28px;border:1px solid var(--border-strong);border-radius:var(--radius-xs);background:var(--surface-2);color:var(--fg-2);font-size:12.5px;font-weight:800;cursor:pointer}
+    .side-btn[data-side=BUY].active{border-color:var(--up);background:var(--up-bg);color:var(--up)}.side-btn[data-side=SELL].active{border-color:var(--down);background:var(--down-bg);color:var(--down)}
+    .order-total{display:flex;justify-content:space-between;margin:8px 0;padding:6px 8px;border:1px solid var(--border);background:var(--bg);font-size:12.5px}.order-total strong{font-family:var(--font-mono)}
+    .submit{width:100%;height:34px;border:0;border-radius:var(--radius-xs);background:var(--up);color:#000;font-size:14px;font-weight:900;cursor:pointer}.submit.sell{background:var(--down)}.submit:disabled{opacity:.55;cursor:not-allowed}
+    .message{display:none;margin-top:6px;padding:6px 8px;font-size:12.5px;line-height:1.55}.message.show{display:block}
+    .message.success{border-left:2px solid var(--up);background:var(--up-bg);color:var(--up)}.message.error{border-left:2px solid var(--down);background:var(--down-bg);color:var(--down)}.message.balance{border-left:2px solid var(--warn);background:var(--warn-bg);color:var(--warn)}
+    .table-wrap{overflow:auto}.data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+    .data-table th,.data-table td{padding:3px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;font-family:var(--font-mono)}
+    .data-table th{background:var(--surface-2);color:var(--muted);font-family:var(--font-sans);font-size:11px}.data-table th:first-child,.data-table td:first-child{text-align:left;font-family:var(--font-sans)}
+    .empty{text-align:center!important;color:var(--muted);padding:12px!important}
+    .term-page .notice{margin-top:8px;padding:0;border:0;background:none;color:var(--muted);font-size:11.5px}
+    @media(max-width:800px){.real-panel .setup-grid{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="practice-wrap">
-    <section class="hero">
-      <div><div class="eyebrow">KIS REAL ACCOUNT · READ ONLY FIRST</div><h1>KIS 실거래 연습</h1><p>먼저 본인의 KIS 실전 계좌 연동 상태와 실제 잔고를 읽기 전용으로 확인합니다. 매수·매도 주문 기능은 연결하지 않습니다.</p></div>
-      <div class="paper-badge"><i class="fa-solid fa-eye"></i> 실전 잔고조회 · 주문 없음</div>
-    </section>
-
-    <section class="panel real-panel">
-      <div class="real-head"><div><div class="eyebrow">1단계 · 실전 계좌 연결 확인</div><h2>내 KIS 실전 잔고조회</h2><p>실전투자에서 별도 발급한 App Key와 실제 계좌가 모두 설정된 경우에만 조회합니다. 기존 <code>kis.key</code>의 모의투자 키는 사용하지 않습니다.</p></div><button id="realBalanceBtn" class="real-button" disabled>실전 잔고조회</button></div>
-      <div class="setup-grid">
+  <main class="practice-wrap term-page">
+    <header class="term-pagehead"><span class="term-code">KIS</span><h1>KIS 실거래 연습</h1><p>먼저 본인의 KIS 실전 계좌 연동 상태와 실제 잔고를 읽기 전용으로 확인합니다. 매수·매도 주문 기능은 연결하지 않습니다.</p><span class="term-right"><span class="badge badge-green"><i class="fa-solid fa-eye"></i>&nbsp;실전 잔고조회 · 주문 없음</span></span></header>
+    <section class="term-panel real-panel">
+      <div class="term-panel__bar"><span class="term-code">REAL</span>1단계 · 내 KIS 실전 잔고조회<span class="term-sub">읽기 전용</span><span class="term-right"><button id="realBalanceBtn" class="real-button" disabled>실전 잔고조회</button></span></div>
+      <div class="term-panel__body--pad">
+        <p class="term-note">실전투자에서 별도 발급한 App Key와 실제 계좌가 모두 설정된 경우에만 조회합니다. 기존 <code>kis.key</code>의 모의투자 키는 사용하지 않습니다.</p>
+        <div class="setup-grid">
         <div id="realAppKeyState" class="setup-item">○ 실전 App Key</div><div id="realSecretState" class="setup-item">○ 실전 App Secret</div><div id="realAccountState" class="setup-item">○ 실전 계좌번호</div><div id="realOwnerState" class="setup-item">○ 계좌 소유자</div>
       </div>
-      <div id="realStatus" class="setup-guide"><strong>설정 필요</strong><br><code>KIS_REAL_APP_KEY</code>, <code>KIS_REAL_APP_SECRET</code>, <code>KIS_REAL_ACCOUNT_NO=8자리-2자리</code>, <code>KIS_REAL_OWNER_EMAIL=로그인 이메일</code>을 서버 배포 비밀값으로 설정한 뒤 컨테이너를 재시작하세요. 실전 키는 KIS Developers에서 모의투자 키와 별도로 발급해야 합니다.</div>
-      <div id="realSummary" class="summary real-summary" aria-label="KIS 실전 계좌 요약">
-        <div class="summary-card"><span>실전 예수금</span><strong id="realCash">-</strong></div><div class="summary-card"><span>실전 총평가금액</span><strong id="realTotal">-</strong></div><div class="summary-card"><span>실전 평가손익</span><strong id="realPnl">-</strong></div>
+        <div id="realStatus" class="setup-guide"><strong>설정 필요</strong><br><code>KIS_REAL_APP_KEY</code>, <code>KIS_REAL_APP_SECRET</code>, <code>KIS_REAL_ACCOUNT_NO=8자리-2자리</code>, <code>KIS_REAL_OWNER_EMAIL=로그인 이메일</code>을 서버 배포 비밀값으로 설정한 뒤 컨테이너를 재시작하세요. 실전 키는 KIS Developers에서 모의투자 키와 별도로 발급해야 합니다.</div>
+      </div>
+      <div id="realSummary" class="term-kpis real-summary" aria-label="KIS 실전 계좌 요약">
+        <div class="kpi"><span>실전 예수금</span><strong id="realCash">-</strong></div><div class="kpi"><span>실전 총평가금액</span><strong id="realTotal">-</strong></div><div class="kpi"><span>실전 평가손익</span><strong id="realPnl">-</strong></div>
       </div>
       <div id="realHoldingsWrap" class="table-wrap" style="display:none"><table class="data-table"><thead><tr><th>실전 보유종목</th><th>수량</th><th>평균단가</th><th>현재가</th><th>평가금액</th><th>평가손익</th></tr></thead><tbody id="realHoldingsBody"></tbody></table></div>
     </section>
-
-    <h2 class="section-title">2단계 · 가상 매매 연습 <span>실계좌와 완전 분리</span></h2>
-    <section class="summary" aria-label="계좌 요약">
-      <div class="summary-card"><span>연습 주문 가능 예수금</span><strong id="cash">-</strong></div>
-      <div class="summary-card"><span>연습 주식 포함 총자산</span><strong id="totalAsset">-</strong></div>
-      <div class="summary-card"><span>연습 누적 수익률</span><strong id="pnlRate">-</strong></div>
-    </section>
-
-    <section class="trade-grid">
-      <div class="panel">
-        <h2>종목 선택</h2>
-        <div class="field"><label for="stockSelect">종목</label><select id="stockSelect"><option value="005930">삼성전자 (005930)</option></select></div>
+    <div class="term-toolbar practice-head"><b>2단계 · 가상 매매 연습</b><span class="badge badge-muted">실계좌와 완전 분리</span></div>
+    <div class="term-kpis" aria-label="계좌 요약"><div class="kpi"><span>연습 주문 가능 예수금</span><strong id="cash">-</strong></div>
+      <div class="kpi"><span>연습 주식 포함 총자산</span><strong id="totalAsset">-</strong></div>
+      <div class="kpi"><span>연습 누적 수익률</span><strong id="pnlRate">-</strong></div></div>
+    <div class="term-layout term-layout--3 practice-grid">
+      <section class="term-panel">
+        <div class="term-panel__bar"><span class="term-code">SEC</span>종목 선택</div>
+        <div class="term-panel__body--pad"><div class="field"><label for="stockSelect">종목</label><select id="stockSelect"><option value="005930">삼성전자 (005930)</option></select></div>
         <div class="stock-row">
           <div class="field"><label for="symbolSearch">종목명 또는 코드 검색</label><input id="symbolSearch" autocomplete="off" placeholder="예: 삼성전자, 005930"></div>
           <button id="searchBtn" class="side-btn" style="align-self:end;margin-bottom:13px;padding:0 18px">검색</button>
         </div>
         <div class="quote"><span id="quoteName">삼성전자</span> <small id="quoteSymbol">005930</small><br><strong id="quotePrice">현재가 조회 중…</strong> <span id="quoteChange"></span></div>
-        <p class="notice">화면의 예상금액은 참고값입니다. 주문 시 서버가 최신 가격과 예수금·보유수량을 다시 확인합니다.</p>
-      </div>
-
-      <div class="panel">
-        <h2>매수 · 매도 주문</h2>
-        <div class="side-switch" role="group" aria-label="주문 구분">
+        <p class="notice">화면의 예상금액은 참고값입니다. 주문 시 서버가 최신 가격과 예수금·보유수량을 다시 확인합니다.</p></div>
+      </section>
+      <section class="term-panel">
+        <div class="term-panel__bar"><span class="term-code">OT</span>매수 · 매도 주문</div>
+        <div class="term-panel__body--pad"><div class="side-switch" role="group" aria-label="주문 구분">
           <button class="side-btn active" data-side="BUY">매수</button><button class="side-btn" data-side="SELL">매도</button>
         </div>
         <div class="field"><label for="quantity">주문수량</label><input id="quantity" type="number" min="1" step="1" value="1"></div>
         <div class="order-total"><span>예상 주문금액</span><strong id="estimatedAmount">-</strong></div>
         <button id="orderBtn" class="submit">매수 주문</button>
         <div id="orderMessage" class="message" role="alert" aria-live="polite"></div>
-        <p class="notice">매수금액이 예수금보다 크면 서버가 HTTP 409와 <code>INSUFFICIENT_BALANCE</code>를 반환하며 체결되지 않습니다.</p>
+        <p class="notice">매수금액이 예수금보다 크면 서버가 HTTP 409와 <code>INSUFFICIENT_BALANCE</code>를 반환하며 체결되지 않습니다.</p></div>
+      </section>
+      <div class="term-stack">
+        <section class="term-panel"><div class="term-panel__bar"><span class="term-code">POS</span>보유종목</div><div class="table-wrap"><table class="data-table"><thead><tr><th>종목</th><th>수량</th><th>평균단가</th><th>평가금액</th></tr></thead><tbody id="positionsBody"><tr><td colspan="4" class="empty">불러오는 중…</td></tr></tbody></table></div></section>
+        <section class="term-panel"><div class="term-panel__bar"><span class="term-code">FILL</span>최근 연습 체결</div><div class="table-wrap"><table class="data-table"><thead><tr><th>종목</th><th>구분</th><th>수량</th><th>체결가</th><th>금액</th></tr></thead><tbody id="historyBody"><tr><td colspan="5" class="empty">불러오는 중…</td></tr></tbody></table></div></section>
       </div>
-    </section>
-
-    <section class="tables">
-      <div class="panel"><h2>보유종목</h2><div class="table-wrap"><table class="data-table"><thead><tr><th>종목</th><th>수량</th><th>평균단가</th><th>평가금액</th></tr></thead><tbody id="positionsBody"><tr><td colspan="4" class="empty">불러오는 중…</td></tr></tbody></table></div></div>
-      <div class="panel"><h2>최근 연습 체결</h2><div class="table-wrap"><table class="data-table"><thead><tr><th>종목</th><th>구분</th><th>수량</th><th>체결가</th><th>금액</th></tr></thead><tbody id="historyBody"><tr><td colspan="5" class="empty">불러오는 중…</td></tr></tbody></table></div></div>
-    </section>
+    </div>
   </main>
-  <script src="/js/config.js"></script><script src="/js/common.js?v=20260924-terminal"></script><script src="/js/kis-real-trading-practice.js?v=20260924-terminal"></script>
+  <script src="/js/config.js"></script><script src="/js/common.js?v=20260925-terminal"></script><script src="/js/kis-real-trading-practice.js?v=20260925-terminal"></script>
 </body>
 </html>

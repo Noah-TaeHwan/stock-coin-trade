@@ -7,10 +7,10 @@ let priceLinesMap     = {};   // exchange code → LW Charts priceLine
 
 // 거래소 구분 색은 상승·하락 의미색과 겹치지 않게 범주형 팔레트를 쓴다.
 const EXCHANGE_META = {
-  UPBIT:   { label: '업비트', color: '#4FC3F7', lineStyle: 0 },
-  BITHUMB: { label: '빗썸',   color: '#FF9F1A', lineStyle: 1 },
-  COINONE: { label: '코인원', color: '#B39DFF', lineStyle: 1 },
-  KORBIT:  { label: '코빗',   color: '#FFD60A', lineStyle: 1 },
+  UPBIT:   { label: '업비트', color: TERM_PALETTE[1], lineStyle: 0 },
+  BITHUMB: { label: '빗썸',   color: TERM_PALETTE[0], lineStyle: 1 },
+  COINONE: { label: '코인원', color: TERM_PALETTE[2], lineStyle: 1 },
+  KORBIT:  { label: '코빗',   color: TERM_PALETTE[5], lineStyle: 1 },
 };
 const livePrices = {};   // market code → 최신 WebSocket 체결가
 

@@ -14,41 +14,38 @@
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','Apple SD Gothic Neo','Malgun Gothic','sans-serif']}}}}</script>
-  <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
   <style>
     #site-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; margin-top:0; }
     body { padding-bottom: 40px; }
     .endpoint-table th, .endpoint-table td { padding:8px 12px; font-size:13px; }
     .endpoint-table th { text-align:left; color:var(--muted); font-weight:700; border-bottom:1px solid var(--border); }
     .endpoint-table td { border-bottom:1px solid var(--border); color:var(--fg); vertical-align:top; }
-    .method-badge { display:inline-block; font-size:11px; font-weight:800; padding:1px 8px; border-radius:99px; }
-    .method-get   { background:rgba(37,99,235,0.12); color:var(--info); }
-    .method-post  { background:rgba(225,29,72,0.12); color:var(--down); }
+    .method-badge { display:inline-block; font-size:11px; font-weight:800; padding:1px 8px; border-radius:var(--radius); }
+    .method-get   { background:var(--info-bg); color:var(--info); }
+    .method-post  { background:var(--accent-light); color:var(--accent); }
     pre.code-block {
-      background:#0F172A; color:#E2E8F0; border-radius:10px; padding:14px 16px;
+      background:var(--bg); color:var(--fg-2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;
       font-size:12.5px; line-height:1.65; overflow-x:auto; white-space:pre;
     }
-    code.inline-code { background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:1px 6px; font-size:12.5px; }
+    code.inline-code { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); padding:1px 6px; font-size:12.5px; }
   </style>
 </head>
 <body class="min-h-screen">
 <div id="header-mount"></div>
-<main class="w-full px-4 py-6">
+<main class="openapi-doc term-doc">
 
-<div class="space-y-6">
-
-  <section class="glass-card p-6">
+  <section class="glass-card term-hero">
     <div class="flex flex-wrap items-center gap-3 mb-2">
-      <h1 class="text-2xl font-black" style="color:var(--fg);">Open API — 가상 주식 매매</h1>
-      <span class="badge" style="font-size:11px;background:rgba(37,99,235,0.12);color:var(--info);">v1</span>
+      <h1>Open API — 가상 주식 매매</h1>
+      <span class="badge" style="font-size:11px;background:var(--info-bg);color:var(--info);">v1</span>
     </div>
     <p style="font-size:13.5px;color:var(--muted);line-height:1.7;">
       외부 시스템(봇, 트레이딩 프로그램 등)이 Noah Trading Desk 모의투자 플랫폼의 주식 계좌를 API Key로 인증해 조회·매매할 수 있는 REST API입니다.
       웹에서 로그인해 매매한 것과 동일한 예수금(KRW 캐시)·보유종목을 그대로 공유합니다.
     </p>
-    <div class="mt-4">
-      <button onclick="location.href='/member/api-keys.html'"
-        style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:.55rem 1.1rem;font-size:13.5px;font-weight:700;cursor:pointer;">
+    <div class="mt-2">
+      <button class="term-btn term-btn-primary" onclick="location.href='/member/api-keys.html'">
         🔑 API 키 발급받기
       </button>
     </div>
@@ -133,7 +130,6 @@
     </div>
   </section>
 
-</div>
 </main>
 <footer id="site-footer">
   <div class="w-full px-4 py-4 flex items-center justify-between">
@@ -142,7 +138,7 @@
   </div>
 </footer>
 <script src="/js/config.js"></script>
-<script src="/js/common.js?v=20260924-terminal"></script>
+<script src="/js/common.js?v=20260925-terminal"></script>
 <script>
   (async () => { await initPage(); })();
 </script>

@@ -119,16 +119,18 @@ async function loadAlternativePortfolio() {
 }
 
 /* ── 포트폴리오 분석 탭 (어드바이저 리포트) ───────────────────────────────────── */
+// 인라인 style에 넣는 색이라 CSS 토큰을 그대로 쓴다(색각이상 팔레트도 따라간다).
+const tint = (token, pct) => `color-mix(in srgb, var(${token}) ${pct}%, transparent)`;
 const CHECK_STATUS_STYLE = {
-  good: { icon: '✓', color: '#00D26A', bg: 'rgba(0,210,106,.08)', border: 'rgba(0,210,106,.35)' },
-  warn: { icon: '⚠', color: '#FFD60A', bg: 'rgba(255,214,10,.08)', border: 'rgba(255,214,10,.35)' },
-  risk: { icon: '✕', color: '#FF4D4D', bg: 'rgba(255,77,77,.08)', border: 'rgba(255,77,77,.35)' },
+  good: { icon: '✓', color: 'var(--up)', bg: tint('--up', 8), border: tint('--up', 35) },
+  warn: { icon: '⚠', color: 'var(--warn)', bg: tint('--warn', 8), border: tint('--warn', 35) },
+  risk: { icon: '✕', color: 'var(--down)', bg: tint('--down', 8), border: tint('--down', 35) },
 };
 function healthColor(score) {
-  if (score >= 80) return '#00D26A';
-  if (score >= 60) return '#4FC3F7';
-  if (score >= 40) return '#FFD60A';
-  return '#FF4D4D';
+  if (score >= 80) return 'var(--up)';
+  if (score >= 60) return 'var(--info)';
+  if (score >= 40) return 'var(--warn)';
+  return 'var(--down)';
 }
 function pnlColor(rate) { return priceColor(rate); }
 function signed(n, digits = 2) { return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}`; }
@@ -148,8 +150,8 @@ async function loadPortfolioAnalysis() {
     const color = healthColor(data.healthScore || 0);
 
     content.innerHTML = `
-      <div class="flex flex-wrap items-center gap-4 rounded-xl p-4" style="background:var(--surface-2);border:1px solid var(--border-strong);">
-        <div style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${color}1A;border:3px solid ${color};">
+      <div class="flex flex-wrap items-center gap-4 p-4" style="background:var(--surface-2);border:1px solid var(--border-strong);">
+        <div style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:color-mix(in srgb, ${color} 10%, transparent);border:3px solid ${color};">
           <span style="font-size:22px;font-weight:900;color:${color};">${data.healthScore ?? '-'}</span>
         </div>
         <div>
@@ -159,17 +161,17 @@ async function loadPortfolioAnalysis() {
         </div>
       </div>
 
-      <div class="mt-5"><h3 class="text-sm font-black" style="color:var(--fg);">자산 배분</h3><div class="mt-3 space-y-3">${allocation.map(item => `<div><div class="flex items-center justify-between text-sm"><span class="font-bold" style="color:var(--fg);"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${item.color};margin-right:6px;"></span>${item.name}</span><span style="color:var(--muted);">${fmt(item.value)}원 · <strong style="color:var(--fg);">${item.weight}%</strong></span></div><div style="height:8px;margin-top:7px;border-radius:999px;background:var(--surface-2);overflow:hidden;"><div style="width:${item.weight}%;height:100%;border-radius:inherit;background:${item.color};"></div></div></div>`).join('')}</div></div>
+      <div class="mt-5"><h3 class="text-sm font-black" style="color:var(--fg);">자산 배분</h3><div class="mt-3 space-y-3">${allocation.map(item => `<div><div class="flex items-center justify-between text-sm"><span class="font-bold" style="color:var(--fg);"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${item.color};margin-right:6px;"></span>${item.name}</span><span style="color:var(--muted);">${fmt(item.value)}원 · <strong style="color:var(--fg);">${item.weight}%</strong></span></div><div style="height:8px;margin-top:7px;border-radius:var(--radius);background:var(--surface-2);overflow:hidden;"><div style="width:${item.weight}%;height:100%;border-radius:inherit;background:${item.color};"></div></div></div>`).join('')}</div></div>
 
       ${stats || leverage.value || data.topSector ? `<div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        ${stats ? `<div class="rounded-lg p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">승률 · 평균수익률</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${stats.winRate}%</div><div class="text-xs" style="color:${pnlColor(stats.avgPnlRate)};">${signed(stats.avgPnlRate)}% 평균</div></div>` : ''}
-        ${stats ? `<div class="rounded-lg p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최고 · 최저 포지션</div><div class="mt-1 text-sm font-bold" style="color:${pnlColor(stats.best.pnlRate)};">${stats.best.name} ${signed(stats.best.pnlRate)}%</div><div class="text-sm font-bold" style="color:${pnlColor(stats.worst.pnlRate)};">${stats.worst.name} ${signed(stats.worst.pnlRate)}%</div></div>` : ''}
-        ${leverage.value ? `<div class="rounded-lg p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">레버리지 노출 · 현금버퍼</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${leverage.ratio}%</div><div class="text-xs" style="color:var(--muted);">현금/노출 ${leverage.cashBufferRatio}%</div></div>` : (data.topSector ? `<div class="rounded-lg p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최대 업종 비중</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${data.topSector.name}</div><div class="text-xs" style="color:var(--muted);">주식 내 ${data.topSector.weight}%</div></div>` : '')}
+        ${stats ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">승률 · 평균수익률</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${stats.winRate}%</div><div class="text-xs" style="color:${pnlColor(stats.avgPnlRate)};">${signed(stats.avgPnlRate)}% 평균</div></div>` : ''}
+        ${stats ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최고 · 최저 포지션</div><div class="mt-1 text-sm font-bold" style="color:${pnlColor(stats.best.pnlRate)};">${stats.best.name} ${signed(stats.best.pnlRate)}%</div><div class="text-sm font-bold" style="color:${pnlColor(stats.worst.pnlRate)};">${stats.worst.name} ${signed(stats.worst.pnlRate)}%</div></div>` : ''}
+        ${leverage.value ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">레버리지 노출 · 현금버퍼</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${leverage.ratio}%</div><div class="text-xs" style="color:var(--muted);">현금/노출 ${leverage.cashBufferRatio}%</div></div>` : (data.topSector ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최대 업종 비중</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${data.topSector.name}</div><div class="text-xs" style="color:var(--muted);">주식 내 ${data.topSector.weight}%</div></div>` : '')}
       </div>` : ''}
 
       <div class="mt-6"><h3 class="text-sm font-black" style="color:var(--fg);">✦ 어드바이저 체크리스트</h3><div class="mt-3 space-y-2">${checks.map(item => {
         const style = CHECK_STATUS_STYLE[item.status] || CHECK_STATUS_STYLE.good;
-        return `<div class="rounded-xl p-3" style="border:1px solid ${style.border};background:${style.bg};"><div class="flex items-center gap-2 text-sm font-black" style="color:${style.color};"><span>${style.icon}</span><span>${item.title}</span></div><p class="mt-1 text-sm leading-relaxed" style="color:${style.color};opacity:.9;">${item.message}</p></div>`;
+        return `<div class=" p-3" style="border:1px solid ${style.border};background:${style.bg};"><div class="flex items-center gap-2 text-sm font-black" style="color:${style.color};"><span>${style.icon}</span><span>${item.title}</span></div><p class="mt-1 text-sm leading-relaxed" style="color:${style.color};opacity:.9;">${item.message}</p></div>`;
       }).join('')}</div></div>
       <p class="mt-4 text-xs" style="color:var(--muted);">${data.notice || ''}</p>`;
   } catch {
@@ -197,9 +199,9 @@ function renderStockSectorSummary(positions, totalEval) {
   container.innerHTML = `<div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:8px;">섹터별 평가 비중</div><div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">${items.map(([sector, data], index) => {
     const pct = totalEval ? data.evalAmount / totalEval * 100 : 0;
     const color = palette[index % palette.length];
-    return `<div style="border:1px solid var(--border);border-radius:8px;padding:9px 10px;background:var(--surface-2);">
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:9px 10px;background:var(--surface-2);">
       <div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:var(--fg);"><span>${sector}</span><span>${pct.toFixed(1)}%</span></div>
-      <div style="height:5px;border-radius:99px;background:var(--border);overflow:hidden;margin:7px 0 5px;"><div style="width:${pct}%;height:100%;background:${color};"></div></div>
+      <div style="height:5px;border-radius:var(--radius);background:var(--border);overflow:hidden;margin:7px 0 5px;"><div style="width:${pct}%;height:100%;background:${color};"></div></div>
       <div style="font-size:10px;color:var(--muted);">${data.count}종목 · ${fmt(data.evalAmount)}원</div>
     </div>`;
   }).join('')}</div>`;
@@ -227,7 +229,7 @@ function renderStockPortfolioCharts(positions, totalEval) {
     y: Number(pos.evalAmount || 0),
     color: palette[index % palette.length],
   }));
-  if (otherEval > 0) allocationData.push({ name: '기타 종목', y: otherEval, color: '#5B616C' });
+  if (otherEval > 0) allocationData.push({ name: '기타 종목', y: otherEval, color: TERM_NEUTRAL });
 
   const sectors = positions.reduce((result, pos) => {
     const name = pos.sector || '기타';
@@ -242,9 +244,9 @@ function renderStockPortfolioCharts(positions, totalEval) {
     title: { text: null },
     tooltip: { ...sharedTooltip, pointFormat: '<b>{point.y:,.0f}원</b><br/>전체의 {point.percentage:.1f}%' },
     plotOptions: { pie: {
-      innerSize: '58%', borderWidth: 1, borderColor: '#0B0D11',
+      innerSize: '58%', borderWidth: 1, borderColor: termColors().surface,
       dataLabels: { enabled: true, format: '<b>{point.name}</b><br/>{point.percentage:.1f}%', distance: 14,
-        style: { color: '#C9CDD4', fontSize: '11px', fontWeight: '700', textOutline: 'none' },
+        style: { color: termColors().fg2, fontSize: '11px', fontWeight: '700', textOutline: 'none' },
         filter: { property: 'percentage', operator: '>', value: 4 } },
     } },
     credits: { enabled: false },
@@ -262,7 +264,7 @@ function renderStockPortfolioCharts(positions, totalEval) {
     legend: { enabled: false },
     plotOptions: { series: { borderRadius: 0, borderWidth: 0, pointPadding: 0.12, groupPadding: 0.08,
       dataLabels: { enabled: true, format: '{point.percentage:.1f}%', align: 'right', inside: false,
-        style: { color: '#C9CDD4', fontSize: '10px', fontWeight: '700', textOutline: 'none' } } } },
+        style: { color: termColors().fg2, fontSize: '10px', fontWeight: '700', textOutline: 'none' } } } },
     credits: { enabled: false },
     series: [{ name: '평가금액', colorByPoint: true, data: sectorData.map(([name, value], index) => ({
       name, y: value, percentage: value / totalEval * 100, color: palette[index % palette.length],
@@ -281,7 +283,7 @@ function renderHoldTable(holdCryptoList) {
     <tr>
       <td>
         <div class="flex items-center gap-3">
-          <img src="https://static.upbit.com/logos/${h.marketCodeOnlySymbol}.png" alt="" class="h-9 w-9 rounded-full" style="border:1px solid var(--border);">
+          <img src="https://static.upbit.com/logos/${h.marketCodeOnlySymbol}.png" alt="" class="h-9 w-9" style="border:1px solid var(--border);">
           <div>
             <p class="font-bold" style="color:var(--fg);">${h.koreanName}</p>
             <p class="text-xs font-semibold" style="color:var(--accent);">${h.marketCodeOnlySymbol}</p>
@@ -408,7 +410,7 @@ async function renderPortfolioChart(holdCryptoList, marketArrayList, memberAsset
                style:{ fontFamily:"'Pretendard', sans-serif" } },
       title: { text:'보유 비중', align:'center', style:{ fontSize:'13px', fontWeight:'800' } },
       tooltip: { pointFormat:'{series.name}: <b>{point.percentage:.1f}%</b>' },
-      plotOptions: { pie: { cursor:'pointer', colors:accentPalette, borderWidth:1, borderColor:'#0B0D11', borderRadius:0,
+      plotOptions: { pie: { cursor:'pointer', colors:accentPalette, borderWidth:1, borderColor:termColors().surface, borderRadius:0,
         dataLabels:{ enabled:true, format:'<b style="color:#000">{point.name}</b><br><span style="color:#000">{point.percentage:.1f}%</span>',
           distance:-45, style:{ fontSize:'12px', fontWeight:'700', textOutline:'none' }, filter:{ property:'percentage', operator:'>', value:4 } } } },
       credits: { enabled:false },
@@ -433,7 +435,7 @@ function annualizedVolatility(closes, tradingPeriods) {
 function volatilityBadgeHtml(vol, [low, mid] = [20, 50]) {
   if (vol == null) return '<span style="color:var(--muted);">-</span>';
   const { label, color } = vol < low ? { label: '낮음', color: 'var(--info)' }
-    : vol < mid ? { label: '보통', color: 'var(--warn)' } : { label: '높음', color: '#FF6FAE' };
+    : vol < mid ? { label: '보통', color: 'var(--warn)' } : { label: '높음', color: 'var(--series-5)' };
   return `<span class="font-bold" style="color:${color};">${vol.toFixed(1)}%</span><br><span style="font-size:10px;color:${color};">${label}</span>`;
 }
 async function loadCryptoVolatility(holdCryptoList) {
