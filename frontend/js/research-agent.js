@@ -29,8 +29,9 @@ async function loadStatus() {
     if (response.status === 404) { box.textContent = '이 배포에는 AI 리서치 기능이 없습니다.'; return; }
     const data = await response.json();
     if (!data.enabled) { box.textContent = 'AI 리서치가 꺼져 있습니다. 운영자가 예산을 정하고 켜야 쓸 수 있습니다.'; return; }
-    const me = await fetch('/api/member/me', { credentials: 'same-origin' });
-    if (!me.ok) { box.innerHTML = '로그인이 필요합니다. <a href="/member/login.html">로그인</a>'; return; }
+    // /api/member/me는 비로그인에도 200({loggedIn:false})을 준다. 상태 코드가 아니라 loggedIn을 본다.
+    const me = await fetch('/api/member/me', { credentials: 'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+    if (!me.loggedIn) { box.innerHTML = '로그인이 필요합니다. <a href="/member/login.html">로그인</a>'; return; }
     $ra('[data-redeem]').hidden = false;
     if (data.invite && data.invite.usable) {
       box.textContent = `초대 코드 "${data.invite.label}" · 남은 질문 ${data.invite.requestsLeft}회 · 만료 ${data.invite.expiresAt.slice(0, 10)} · 모델 ${data.model}`;

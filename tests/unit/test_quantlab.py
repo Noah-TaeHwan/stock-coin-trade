@@ -306,3 +306,11 @@ def test_committed_research_reports_match_a_fresh_run(tmp_path, path, argv):
     research.main([*argv, "--strategy", "ma2050", "--out", str(tmp_path / path)])
     committed = Path(__file__).parents[2] / "docs" / "research" / path
     assert (tmp_path / path).read_text(encoding="utf-8") == committed.read_text(encoding="utf-8")
+
+
+def test_research_cli_explains_a_period_too_short_for_walk_forward(capsys):
+    from quantlab import research
+
+    with pytest.raises(SystemExit) as exit_info:
+        research.main(["--symbol", "005930", "--start", "2025-06-01", "--end", "2025-12-31"])
+    assert exit_info.value.code == 2 and "워크포워드" in capsys.readouterr().err

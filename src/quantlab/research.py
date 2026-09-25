@@ -58,6 +58,10 @@ def report(symbol: str, start: date, end: date, strategy: str, costs: engine.Cos
     (best_pair, best) = max(runs, key=lambda run: run[1]["metrics"]["sharpe"] or float("-inf"))
 
     train, test = 3 * per_year, per_year // 2
+    if len(bars) < train + test:
+        raise ValueError(
+            f"기간이 짧아 워크포워드를 할 수 없습니다: 학습 {train}봉 + 검증 {test}봉이 필요한데 {len(bars)}봉입니다."
+        )
     folds, oos = walk_forward(bars, strategy, grid, train_bars=train, test_bars=test, costs=costs)
     frame = bars_to_frame(bars)
     config = config_for(symbol, costs, 10_000_000)
@@ -146,7 +150,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--slippage-bps", type=float, default=5.0)
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
-    text = report(args.symbol, args.start, args.end, args.strategy, engine.Costs(args.fee_bps, args.slippage_bps))
+    try:
+        text = report(args.symbol, args.start, args.end, args.strategy, engine.Costs(args.fee_bps, args.slippage_bps))
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.out:
         args.out.write_text(text, encoding="utf-8")
     else:
