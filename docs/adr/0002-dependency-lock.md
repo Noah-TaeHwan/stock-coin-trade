@@ -42,6 +42,7 @@
 - 같은 커밋이면 같은 패키지 집합이 설치된다. lock 설치 환경에서 단위 테스트 54개와 통합 테스트 4개가 통과했고, lock 기반 이미지로 전체 스택 스모크 테스트를 했다.
 - 의존성을 바꿀 때는 `requirements.txt`를 고치고 lock 두 개를 다시 생성해야 한다. 명령은 `requirements-dev.in` 머리말에 있다.
 - 미검증: `--universal` lock에는 aarch64 휠 해시도 들어 있지만, ARM64(Noah의 Mac Docker) 빌드는 이번에 실행하지 않았다.
+  - 2026-09-25 확인: Noah의 Mac Docker(aarch64)에서 `compose.portfolio.yml` 스택 이미지 빌드와 기동이 성공했다.
 
 ## 후속 (2026-09-25, Phase 1-4)
 

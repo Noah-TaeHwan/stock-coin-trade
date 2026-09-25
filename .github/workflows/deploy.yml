@@ -1,9 +1,7 @@
 # Deploy to the EC2 host created by infra/cloudformation/stockdesk.yaml.
 #
-# This file lives outside .github/workflows because the session that wrote it
-# cannot push workflow files. To enable it: move it to .github/workflows/deploy.yml,
-# create the GitHub environment "production" (required reviewers recommended) and set
-# these environment variables from the stack outputs:
+# Manual only (workflow_dispatch). Before the first run, create the GitHub environment
+# "production" and set these environment variables from the stack outputs:
 #   AWS_REGION, AWS_DEPLOY_ROLE_ARN, EC2_INSTANCE_ID, RELEASE_BUCKET, LOG_GROUP, SITE_ADDRESS
 # No AWS keys are stored in GitHub: the job exchanges its OIDC token for the deploy role,
 # which the stack only lets this repository's "production" environment assume.
