@@ -130,7 +130,7 @@
 
     <!-- ③ 주식 모니터 -->
     <section class="term-panel mon-eq" aria-labelledby="monEqTitle">
-      <div class="term-panel__bar"><span class="term-code">EQ</span><span id="monEqTitle">주식 모니터</span><span class="term-sub">등락률 절댓값 상위 10 · 30초</span><span class="term-right"><span class="live-dot" id="stockLiveDot" title="30초 갱신"></span></span></div>
+      <div class="term-panel__bar"><span class="term-code">EQ</span><span id="monEqTitle">주식 모니터</span><span class="term-sub">등락률 절댓값 상위 20 · 30초</span><span class="term-right"><span class="live-dot" id="stockLiveDot" title="30초 갱신"></span></span></div>
       <div class="mon-table-wrap">
         <table class="term-table mon-table">
           <thead><tr><th>종목</th><th>현재가</th><th>전일대비</th><th>등락률</th><th>거래량</th><th>시장</th></tr></thead>
@@ -141,7 +141,7 @@
 
     <!-- ④ 코인 모니터 (업비트 WebSocket 실시간) -->
     <section class="term-panel mon-cry" aria-labelledby="monCryTitle">
-      <div class="term-panel__bar"><span class="term-code">CRY</span><span id="monCryTitle">코인 모니터</span><span class="term-sub">업비트 KRW · 거래대금 상위 10 · 실시간</span><span class="term-right"><span class="live-dot" title="실시간 WebSocket"></span></span></div>
+      <div class="term-panel__bar"><span class="term-code">CRY</span><span id="monCryTitle">코인 모니터</span><span class="term-sub">업비트 KRW · 거래대금 상위 20 · 실시간</span><span class="term-right"><span class="live-dot" title="실시간 WebSocket"></span></span></div>
       <div class="mon-table-wrap">
         <table class="term-table mon-table">
           <thead><tr><th>코인</th><th>현재가</th><th>등락률</th><th>거래대금(24H)</th></tr></thead>
@@ -228,12 +228,15 @@
   loadMovers();
   setInterval(loadMovers, 30_000);
 
-  /* ── 코인 모니터 (거래대금 상위 10, 업비트 WebSocket) ─────────── */
+  // 모니터 패널이 1440×900 기준으로 빈칸 없이 차도록 20행까지 보여 준다.
+  const MON_ROWS = 20;
+
+  /* ── 코인 모니터 (거래대금 상위 MON_ROWS, 업비트 WebSocket) ───── */
   const cryptoRes = await apiFetch('/api/crypto/market-list');
   if (cryptoRes.ok) {
     const ml = await cryptoRes.json();
     const allMarkets = ml.markets ?? [];
-    let markets = allMarkets.slice(0, 10);
+    let markets = allMarkets.slice(0, MON_ROWS);
     try {
       // 업비트에 없는 코드가 섞이면 ticker 요청 전체가 실패하므로 상장 목록과 먼저 맞춘다.
       const listed = new Set((await (await fetch('/upbit-api/market/all')).json()).map(m => m.market));
@@ -241,7 +244,7 @@
       const tickRes = await fetch(`/upbit-api/ticker?markets=${tradable.map(m => m.market).join(',')}`);
       if (tickRes.ok) {
         const volumeByCode = Object.fromEntries((await tickRes.json()).map(t => [t.market, t.acc_trade_price_24h]));
-        markets = [...tradable].sort((a, b) => (volumeByCode[b.market] ?? 0) - (volumeByCode[a.market] ?? 0)).slice(0, 10);
+        markets = [...tradable].sort((a, b) => (volumeByCode[b.market] ?? 0) - (volumeByCode[a.market] ?? 0)).slice(0, MON_ROWS);
       }
     } catch {}
 
@@ -296,7 +299,7 @@
       const sorted = Object.entries(data.prices ?? {})
         .map(([sym, p]) => ({ sym, ...p }))
         .sort((a, b) => Math.abs(b.changeRate) - Math.abs(a.changeRate))
-        .slice(0, 10);
+        .slice(0, MON_ROWS);
 
       const tbody = document.getElementById('stockTop10Body');
       tbody.innerHTML = sorted.map(s => {

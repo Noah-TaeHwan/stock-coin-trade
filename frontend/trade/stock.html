@@ -139,7 +139,10 @@
     .wl-tabs { display:flex; gap:1px; }
     .wl-tab { padding:1px 8px; border:1px solid var(--border-strong); color:var(--fg-2); background:transparent; font-family:var(--font-mono); font-size:10.5px; font-weight:800; cursor:pointer; }
     .wl-tab.active { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); }
-    .stk-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
+    /* 이름·코드 두 줄을 한 행 높이 안에 붙여 목록에 더 많은 종목이 보이게 한다. */
+    .stk-list td { padding-top:2px; padding-bottom:2px; }
+    .stk-list td.txt { line-height:1.2; }
+    .stk-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10px; line-height:1.15; }
     .stk-list tbody tr { cursor:pointer; }
 
     /* 물타기 계산기 모달 */
