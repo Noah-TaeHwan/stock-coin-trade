@@ -110,6 +110,7 @@ POST /api/alternatives/orders/preview alternatives.order_preview
 POST /api/broker-test/kis/order-flow-approval broker_test.kis_order_flow_approval
 POST /api/broker-test/kis/order-flow-test broker_test.kis_order_flow_test
 POST /api/error-analysis/client error_analysis.collect_client_error
+POST /api/intent intent.resolve
 POST /api/kis-explorer/call kis_explorer.call
 POST /api/kis-practice/orders kis_practice.order
 POST /api/kis-real/balance kis_real.balance

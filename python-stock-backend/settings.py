@@ -83,6 +83,9 @@ class Settings:
     ai_monthly_budget_usd: float = 0.0
     ai_model: str = DEFAULT_AI_MODEL
     ai_invite_pepper: str = DEV_AI_INVITE_PEPPER
+    # 자연어 명령 라우터(src/deskjev, TypeSafe Jev). 기본 꺼짐. 켜면 월 예산과 TYPESAFE_API_KEY가 필요하다.
+    jev_enabled: bool = False
+    jev_monthly_budget_usd: float = 0.0
 
     @property
     def is_public(self) -> bool:
@@ -114,6 +117,16 @@ class Settings:
             ai_monthly_budget_usd = float(env.get("AI_MONTHLY_BUDGET_USD") or "0")
         except ValueError:
             raise SettingsError("AI_MONTHLY_BUDGET_USD must be a number.") from None
+        jev_enabled = (env.get("JEV_ENABLED") or "false").strip().lower() == "true"
+        try:
+            jev_monthly_budget_usd = float(env.get("JEV_MONTHLY_BUDGET_USD") or "0")
+        except ValueError:
+            raise SettingsError("JEV_MONTHLY_BUDGET_USD must be a number.") from None
+        if jev_enabled:
+            if jev_monthly_budget_usd <= 0:
+                raise SettingsError("JEV_ENABLED=true needs JEV_MONTHLY_BUDGET_USD greater than 0.")
+            if not (env.get("TYPESAFE_API_KEY") or "").strip():
+                raise SettingsError("JEV_ENABLED=true needs TYPESAFE_API_KEY.")
         if ai_enabled:
             from deskagent import pricing
 
@@ -161,6 +174,8 @@ class Settings:
             ai_monthly_budget_usd=ai_monthly_budget_usd,
             ai_model=ai_model,
             ai_invite_pepper=ai_invite_pepper or DEV_AI_INVITE_PEPPER,
+            jev_enabled=jev_enabled,
+            jev_monthly_budget_usd=jev_monthly_budget_usd,
         )
 
     def flask_config(self) -> dict[str, object]:
@@ -178,4 +193,6 @@ class Settings:
             "AI_MONTHLY_BUDGET_USD": self.ai_monthly_budget_usd,
             "AI_MODEL": self.ai_model,
             "AI_INVITE_PEPPER": self.ai_invite_pepper,
+            "JEV_ENABLED": self.jev_enabled,
+            "JEV_MONTHLY_BUDGET_USD": self.jev_monthly_budget_usd,
         }

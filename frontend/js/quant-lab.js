@@ -112,5 +112,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('[data-load]').forEach(button => button.addEventListener('click', () => load(button.dataset.load))); $('[data-run]').addEventListener('click', () => run());
   document.querySelectorAll('[data-strategy]').forEach(button => button.addEventListener('click', () => showStrategy(button.dataset.strategy)));
   $('[data-factor-run]').addEventListener('click', runFactorAnalysis);
+  // 명령 바(Jev)가 넘긴 종목·전략으로 폼만 채운다. 실행은 사용자가 누른다.
+  const preset=new URLSearchParams(location.search);
+  if (/^[A-Z0-9^-]{2,20}$/i.test(preset.get('symbol') || '')) $('[data-symbol]').value=preset.get('symbol').toUpperCase();
+  const presetKey=preset.get('strategy');
+  const presetButton=presetKey === 'ma2050' ? $('[data-run]') : presetKey && document.querySelector(`[data-strategy="${CSS.escape(presetKey)}"]`);
+  if (presetButton) { presetButton.classList.add('active'); presetButton.scrollIntoView({block:'center'}); presetButton.focus(); }
   try { const response=await fetch('/api/quant/overview'), data=await response.json(); if (!response.ok) throw new Error(data.message); $('[data-quant-stats]').innerHTML=`<b>연결됨</b><span>OHLCV ${Number(data.market_rows).toLocaleString()}건</span><span>전략 ${data.strategy_count}개</span><span>거래 로그 ${data.trade_count}건</span><span>${esc((data.symbols || []).join(' · '))}</span>`; } catch (error) { $('[data-quant-stats]').innerHTML=`<b class="error">${esc(error.message || 'PostgreSQL에 연결할 수 없습니다.')}</b>`; }
 });

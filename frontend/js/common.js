@@ -441,8 +441,10 @@ function publicNavGroups(groups) {
 }
 
 // 기능키·명령 목록을 제자리에서 고친다(다른 코드가 같은 배열을 참조한다).
+let terminalIsPublic = false;
 function applyProfileToTerminal(user) {
   if (!isPublicProfile(user)) return;
+  terminalIsPublic = true;
   const keep = item => !PUBLIC_HIDDEN_HREFS.has(_hrefPath(item.href));
   const ai = TERMINAL_FKEYS.find(f => f.code === 'AI');
   if (ai) { ai.label = 'AI 리서치'; ai.href = '/research-agent.html'; }
@@ -590,8 +592,62 @@ function runTerminalCommand(raw) {
   const menuHit = items.find(item => item.label.toLowerCase().includes(needle));
   if (menuHit) { location.href = menuHit.href; return; }
 
+  // 한글이나 여러 단어로 된 문장은 Jev(TypeSafe)에 뜻을 물어본다. 꺼져 있거나 실패하면 아래 기존 동작.
+  if (/[가-힣]/.test(text) || tokens.length > 1) { routeByIntent(text, first); return; }
+  fallbackCommand(text, first);
+}
+
+function fallbackCommand(text, first) {
   if (/^[A-Z0-9]{2,10}$/.test(first)) { location.href = `/trade/order.html?market=KRW-${first}`; return; }
   location.href = `/trade/stock.html?q=${encodeURIComponent(text)}`;
+}
+
+/* ── 자연어 명령(Jev) ─────────────────────────────────────────────────────── */
+// 화면 이름은 서버 문자열이 아니라 이 표에서 가져온다.
+const INTENT_LABELS = {
+  dashboard: '대시보드', stock: '주식', coin: '코인', arbitrage: '코인 차익·김프', alternatives: '대체자산',
+  holdings: '보유자산', history: '거래이력', avg_down: '물타기 계산기', quant: '퀀트 랩(백테스트)',
+  research: 'AI 리서치', knowledge: '지식 검색', analysis: '투자 분석 학습', openapi: '플랫폼 Open API',
+};
+
+// 서버가 만든 주소라도 같은 사이트의 경로만 받는다.
+function intentPath(href) {
+  const path = String(href ?? '');
+  if (!/^\/(?!\/)[\w\-./]*(\?[\w\-=&%]*)?$/.test(path)) return null;  // '//host'(외부 이동)는 거부
+  return terminalIsPublic && PUBLIC_HIDDEN_HREFS.has(_hrefPath(path)) ? null : path;
+}
+
+async function routeByIntent(text, first) {
+  const input = document.getElementById('term-cmd-input');
+  if (input) { input.disabled = true; input.placeholder = 'Jev가 명령을 해석하는 중…'; }
+  let result = null;
+  try {
+    const res = await apiFetch('/api/intent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }),
+    });
+    if (res.ok) result = await res.json();
+  } catch (_) { /* 기존 동작으로 */ }
+  if (input) input.disabled = false;
+  if (!result?.enabled) { fallbackCommand(text, first); return; }
+
+  const target = intentPath(result.href);
+  if (result.action === 'go' && target) {
+    // 목록에 없는 종목(예: 엔비디아)은 주식 화면의 검색어로 넘긴다.
+    location.href = result.screen === 'stock' && !target.includes('symbol=') ? `/trade/stock.html?q=${encodeURIComponent(text)}` : target;
+    return;
+  }
+  const options = (result.alternatives || []).map(alt => ({ ...alt, path: intentPath(alt.href) })).filter(alt => alt.path);
+  if (result.action === 'suggest' && options.length) { renderIntentSuggestions(options); return; }
+  renderTerminalHelp();
+}
+
+function renderIntentSuggestions(options) {
+  const box = document.getElementById('term-cmd-help');
+  if (!box) return;
+  box.innerHTML = '<div><b>Jev</b><span>어느 화면을 찾으시나요? (모델 판단 확률)</span></div>' + options.map(alt =>
+    `<div data-href="${escapeHtml(alt.path)}"><b>${escapeHtml(INTENT_LABELS[alt.screen] || alt.screen)}</b><span>${Math.round(alt.probability * 100)}%</span></div>`
+  ).join('');
+  box.classList.add('open');
 }
 
 function startTerminalClock() {
@@ -692,6 +748,8 @@ document.addEventListener('input', event => {
 document.addEventListener('click', event => {
   const row = event.target.closest?.('#term-cmd-help [data-cmd]');
   if (row) { runTerminalCommand(row.dataset.cmd); return; }
+  const suggestion = event.target.closest?.('#term-cmd-help [data-href]');
+  if (suggestion) { location.href = suggestion.dataset.href; return; }
   if (!event.target.closest?.('.term-cmd')) closeTerminalHelp();
 });
 

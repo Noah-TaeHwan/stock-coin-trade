@@ -26,6 +26,10 @@ x-backend-environment: &backend-environment
   AI_MONTHLY_BUDGET_USD: ${AI_MONTHLY_BUDGET_USD:-0}
   AI_MODEL: ${AI_MODEL:-claude-opus-5-5}
   AI_INVITE_PEPPER: ${AI_INVITE_PEPPER:-}
+  # 자연어 명령 라우터(src/deskjev, TypeSafe Jev): 기본 꺼짐. 켜면 월 예산(USD)과 TYPESAFE_API_KEY가 필요하다.
+  JEV_ENABLED: ${JEV_ENABLED:-false}
+  JEV_MONTHLY_BUDGET_USD: ${JEV_MONTHLY_BUDGET_USD:-0}
+  TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
   # 증권사 키는 kis.key/kb.key/al.key 파일(/run/secrets)이 기본이며, 아래
   # 환경변수를 .env에 채우면 파일보다 우선 적용된다. KIS_ACCOUNT_NO는
   # 'CANO-계좌상품코드'(예: 12345678-01) 형식이고 하이픈 뒤는 임의로 바꾸지 않는다.

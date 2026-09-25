@@ -66,3 +66,6 @@ deploy.md
 
 # Locally-cloned KIS MCP server (third-party, not part of this project) + its secrets
 /mcp/
+
+# Playwright MCP 브라우저 확인 중 생기는 페이지 스냅샷·콘솔 로그
+.playwright-mcp/
