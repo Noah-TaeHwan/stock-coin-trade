@@ -58,6 +58,22 @@ sudo docker compose -p stockdesk exec python-backend flask --app app create-admi
 sudo docker compose -p stockdesk exec python-backend flask --app app create-invite --label <이름> --max-requests 20
 ```
 
+## 6. DB 백업과 복구 확인
+
+`scripts/ec2/`의 두 스크립트는 릴리스 묶음에 함께 실려 호스트의 `/opt/stockdesk/releases/<sha>/scripts/ec2/`에 있다. SSM Run Command나 Session Manager에서 root로 실행한다.
+
+```bash
+export AWS_REGION=ap-northeast-2
+# 두 DB를 임시 폴더에 덤프하고, 둘 다 성공해야 s3://<ReleaseBucket>/backups/<UTC 시각>/에 올린다(35일 뒤 자동 삭제)
+bash scripts/ec2/backup-db.sh <ReleaseBucket>
+# 백업을 임시 컨테이너(같은 이미지)에 복구하고 테이블별 행 수를 실DB와 대조한다. 실DB는 COUNT(*) 조회만 한다
+bash scripts/ec2/restore-check.sh s3://<ReleaseBucket>/backups/<UTC 시각>
+```
+
+- 호스트 역할은 `backups/*`의 객체 읽기·쓰기만 가능하고 버킷 목록은 볼 수 없다. 그래서 복구 확인은 파일 이름으로 하나씩 받는다.
+- 실제로 되살릴 때는 서비스를 멈춘 뒤 같은 덤프를 `mariadb`/`pg_restore --clean`으로 운영 컨테이너에 넣는다. 리허설 기록: [정비 2026-09-26](../evidence/maintenance-2026-09-26.md).
+- 정기 실행(타이머)은 아직 없다. 필요하면 `deploy.sh`에서 systemd 타이머를 설치하는 방식으로 추가한다.
+
 ## 되돌리기
 
 - **자동**: `deploy.sh`는 새 릴리스의 `/health`가 150초 안에 통과하지 않으면 직전 릴리스를 다시 올린다.

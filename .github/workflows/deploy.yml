@@ -56,7 +56,7 @@ jobs:
       - name: Upload the release bundle
         run: |
           tar czf release.tgz docker-compose.yml compose.public.yml compose.edge.yml compose.aws.yml \
-            docker database scripts/ec2/deploy.sh
+            docker database scripts/ec2
           aws s3 cp release.tgz "s3://$RELEASE_BUCKET/releases/$IMAGE_TAG.tgz"
 
       - name: Run deploy.sh on the host (SSM Run Command)

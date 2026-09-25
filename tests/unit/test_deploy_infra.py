@@ -196,3 +196,45 @@ def test_first_release_that_fails_does_not_invent_a_rollback(run_deploy):
     result, state, _ = run_deploy("r1", "bad")
     assert result.returncode == 1 and "rolling back" not in result.stderr
     assert not (state / "current").exists()
+
+
+# ── backup-db.sh with stub aws/docker ────────────────────────────────────────
+
+# `docker exec` on the MariaDB container fails when DUMP_FAILS is set; aws records its calls.
+STUB_BACKUP_DOCKER = """#!/usr/bin/env bash
+case "$1" in
+  ps) [[ "$*" == *service=mariadb* ]] && echo maria-id || echo pg-id ;;
+  exec) if [[ -n "${DUMP_FAILS:-}" && "$2" == maria-id ]]; then exit 1; fi; echo dump ;;
+esac
+"""
+STUB_BACKUP_AWS = """#!/usr/bin/env bash
+echo "$*" >> "$CALLS"
+"""
+
+
+@pytest.mark.parametrize("dump_fails", [False, True])
+def test_backup_uploads_only_after_every_dump_succeeded(tmp_path, dump_fails):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _stub(bin_dir, "docker", STUB_BACKUP_DOCKER)
+    _stub(bin_dir, "aws", STUB_BACKUP_AWS)
+    calls = tmp_path / "calls.log"
+    env = {
+        **os.environ,
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "AWS_REGION": "ap-northeast-2",
+        "CALLS": str(calls),
+        **({"DUMP_FAILS": "1"} if dump_fails else {}),
+    }
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts" / "ec2" / "backup-db.sh"), "demo-bucket"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if dump_fails:
+        assert result.returncode != 0 and not calls.exists()
+    else:
+        assert result.returncode == 0, result.stderr
+        assert "s3://demo-bucket/backups/" in calls.read_text()
