@@ -20,6 +20,7 @@ from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
 from models import Member
 from research_agent import ensure_ai_tables
+from stock_trading import ensure_stock_order_columns
 from settings import profile_from_env
 
 
@@ -32,6 +33,7 @@ def create_tables() -> None:
     ensure_error_analysis_table()
     ensure_api_usage_table()
     ensure_ai_tables()
+    ensure_stock_order_columns()
 
 
 def seed_demo_data() -> None:

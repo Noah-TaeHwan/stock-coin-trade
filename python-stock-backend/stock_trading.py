@@ -1,5 +1,8 @@
 import time
 
+from sqlalchemy import text
+
+from db import engine
 from models import StockOrder, StockPosition
 from stock_market import current_price, get_chart_cached, get_stock_info, order_quote
 from volatility import annualized_volatility
@@ -84,9 +87,16 @@ def get_order_history(db, member_id: int, limit: int = 50) -> list[dict]:
             "price":    o.price,
             "amount":   o.amount,
             "source":   o.source,
+            "simulated": o.simulated,
         }
         for o in rows
     ]
+
+
+def ensure_stock_order_columns() -> None:
+    """이미 배포된 DB의 stock_order에 simulated 열을 추가한다(MariaDB 10.0.2+ IF NOT EXISTS)."""
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE stock_order ADD COLUMN IF NOT EXISTS simulated TINYINT(1) NOT NULL DEFAULT 0"))
 
 
 def allows_simulated_price(profile: str) -> bool:
@@ -166,6 +176,7 @@ def execute_order(
         price=price,
         amount=amount,
         source=source,
+        simulated=simulated,
     ))
 
     return {
