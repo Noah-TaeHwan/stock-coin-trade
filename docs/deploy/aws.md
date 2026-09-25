@@ -1,17 +1,18 @@
 # AWS 공개 데모 배포 절차
 
-[ADR-0003](../adr/0003-aws-demo-topology.md)의 구성을 처음 올리는 순서다. 명령은 `ap-northeast-2`를 예로 든다. **아직 실행한 적 없다.**
+[ADR-0003](../adr/0003-aws-demo-topology.md)의 구성을 처음 올리는 순서다. 명령은 `ap-northeast-2`를 예로 든다.
 
 ## 1. 스택 만들기
 
 ```bash
 aws cloudformation deploy --region ap-northeast-2 --stack-name stockdesk \
   --template-file infra/cloudformation/stockdesk.yaml --capabilities CAPABILITY_IAM \
-  --parameter-overrides BudgetEmail=<메일> MonthlyBudgetUsd=30 InstanceType=t3.medium
+  --parameter-overrides BudgetEmail=<메일> MonthlyBudgetUsd=35 InstanceType=t3.small
 aws cloudformation describe-stacks --stack-name stockdesk --query 'Stacks[0].Outputs'
 ```
 
 - 계정에 GitHub OIDC 공급자가 이미 있으면 다음을 추가한다: `CreateGitHubOidcProvider=false ExistingGitHubOidcProviderArn=<ARN>`
+- 예산은 인스턴스 크기에 맞춘다. 서울 온디맨드 기준(2026-09-25 가격 API) t3.small은 EBS 50 GiB·공인 IPv4를 더해 월 약 $28, t3.medium은 약 $46이다. t3.medium이면 `MonthlyBudgetUsd=50`으로 올린다.
 - 적용 전에 변경 내용을 보려면 `--no-execute-changeset`으로 변경 세트만 만든다.
 
 ## 2. 비밀값(SSM Parameter Store, SecureString)
@@ -34,16 +35,18 @@ aws ssm put-parameter --type SecureString --name /stock-coin-trade/prod/secret-k
 ## 3. 도메인
 
 1. 스택 출력 `PublicIp`로 A 레코드를 만든다.
+   - 도메인이 없으면 `SITE_ADDRESS`에 `<IP의 점을 대시로>.sslip.io`(예: `3-35-1-2.sslip.io`)를 쓴다. 이 이름은 그 IP로 풀리므로 A 레코드 없이 Caddy가 인증서를 받는다. 나중에 도메인을 사면 변수만 바꾸고 다시 배포한다.
 2. Caddy는 첫 요청 때 인증서를 받는다. 80·443이 열려 있어야 한다.
 
 ## 4. GitHub
 
-1. `.github/deploy.pending.yml`을 `.github/workflows/deploy.yml`로 옮긴다.
-2. 저장소 Settings → Environments에서 `production`을 만든다. 승인자(required reviewers) 지정을 권장한다.
-3. 같은 환경에 변수를 넣는다. 모두 비밀값이 아닌 식별자다.
+워크플로는 `.github/workflows/deploy.yml`이고 수동 실행(`workflow_dispatch`)만 받는다.
+
+1. 저장소 Settings → Environments에서 `production`을 만든다. 승인자(required reviewers) 지정은 선택이다.
+2. 같은 환경에 변수를 넣는다. 모두 비밀값이 아닌 식별자다.
    - `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `EC2_INSTANCE_ID`, `RELEASE_BUCKET`, `LOG_GROUP`: 스택 출력값
    - `SITE_ADDRESS`: 도메인
-4. Actions → Deploy → Run workflow로 배포한다.
+3. Actions → Deploy → Run workflow로 배포한다.
 
 ## 5. 배포 후
 
