@@ -22,6 +22,8 @@ def test_registry_loads_and_names_every_source_in_use(reg):
         "krx_kind",
         "exchange_quotes",
         "coinmarketcap",
+        "bithumb_notices",
+        "dart",
     }
     assert expected <= set(reg.sources)
 

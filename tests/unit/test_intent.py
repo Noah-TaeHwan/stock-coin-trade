@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 import intent as intent_api
+import jev_usage
 from deskjev import intent
 from settings import Settings, SettingsError
 
@@ -128,9 +129,9 @@ def test_route_pins_the_model_and_sends_only_the_trimmed_command():
 def jev_client(app, monkeypatch):
     app.config.update(JEV_ENABLED=True, JEV_MONTHLY_BUDGET_USD=1.0)
     intent_api._route.cache_clear()
-    monkeypatch.setattr(intent_api, "_over_budget", lambda: False)
+    monkeypatch.setattr(jev_usage, "over_budget", lambda budget: False)
     recorded = []
-    monkeypatch.setattr(intent_api, "_record", recorded.append)
+    monkeypatch.setattr(jev_usage, "record", recorded.append)
     yield app.test_client(), recorded
     intent_api._route.cache_clear()
 
@@ -148,7 +149,7 @@ def test_endpoint_routes_and_records_only_uncached_calls(jev_client, monkeypatch
                 answers=_answers({"arbitrage": 0.96}, coin={"ETH": 0.97}), usage=SimpleNamespace(input_tokens=740)
             )
 
-    monkeypatch.setattr(intent_api, "_client", FakeClient)
+    monkeypatch.setattr(jev_usage, "client", FakeClient)
     for _ in range(2):
         body = http.post("/api/intent", json={"text": "이더  김프"}).get_json()
     assert body["enabled"] and body["action"] == "go" and body["href"] == "/arbitrage.html?symbol=ETH"
@@ -162,7 +163,7 @@ def test_endpoint_falls_back_when_jev_fails(jev_client, monkeypatch):
         def system_one(self, *args, **kwargs):
             raise TimeoutError("jev timed out")
 
-    monkeypatch.setattr(intent_api, "_client", Down)
+    monkeypatch.setattr(jev_usage, "client", Down)
     assert http.post("/api/intent", json={"text": "홈"}).get_json() == {"enabled": False, "reason": "unavailable"}
     assert recorded == []
 

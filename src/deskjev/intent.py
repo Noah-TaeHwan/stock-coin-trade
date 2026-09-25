@@ -13,8 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from urllib.parse import urlencode
 
-# 별칭(jev-latest)은 가리키는 모델이 바뀌면 아래 임계값이 틀어진다. 모델을 바꾸면 평가를 다시 돌린다.
-MODEL = "jev-1.13.0"
+from deskjev import MODEL  # noqa: F401 (평가와 테스트가 intent.MODEL로 읽는다)
+
 MAX_TEXT = 200
 # evals/jev_intent 실측으로 정한 값(모델을 바꾸면 다시 잰다).
 # 화면 확률이 GO 이상이면 바로 이동하고, SUGGEST 이상이면 후보를 보여 준다.

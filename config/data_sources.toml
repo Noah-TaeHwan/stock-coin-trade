@@ -152,3 +152,37 @@ modification = "unknown"
 attribution = "출처: CoinMarketCap"
 notes = "python-stock-backend/scheduler.py(코인 랭킹). API 키를 쿼리스트링으로 보낸다."
 enabled = { local = true, public = false }
+
+# ── 판단 보조(TypeSafe Jev)가 읽는 공개 텍스트 소스. 제목·분류·게시 시각만 쓴다. ──
+
+[sources.bithumb_notices]
+name = "빗썸 공지사항 API"
+kind = "api"
+status = "unverified"
+terms_url = ""
+checked_on = ""
+checked_by = ""
+commercial_use = "unknown"
+redistribution = "unknown"
+modification = "unknown"
+attribution = "공지 출처: 빗썸"
+rate_limit = "IP당 초당 1회(시스템 상황에 따라 바뀔 수 있음). count 1~20, 최신순."
+rate_limit_source = "https://apidocs.bithumb.com/reference/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD-%EC%A1%B0%ED%9A%8C"
+notes = "GET https://api.bithumb.com/v1/notices(feed-api.bithumb.com으로 302). 인증 없음. 응답 필드는 categories·title·pc_url·published_at·modified_at. 김프 화면의 실행 위험 경고에 쓴다."
+enabled = { local = true, public = false }
+
+[sources.dart]
+name = "금융감독원 OpenDART API"
+kind = "api"
+status = "unverified"
+terms_url = ""
+checked_on = ""
+checked_by = ""
+commercial_use = "unknown"
+redistribution = "unknown"
+modification = "unknown"
+attribution = "공시 출처: 금융감독원 전자공시시스템(DART)"
+rate_limit = "키당 하루 약 20,000건(비공식 수치, 초과 시 오류 020). 과다 호출은 이용 제한 사유."
+rate_limit_source = "https://opendart.fss.or.kr/intro/terms.do"
+notes = "list.json(공시 목록). rcept_dt에는 시각이 없어 처음 본 시각을 따로 기록한다. corp_code 없이 검색하면 기간이 3개월로 제한된다. 계획 단계 조사에서 상업적 이용 금지 조항은 찾지 못했다(미검증)."
+enabled = { local = true, public = false }
