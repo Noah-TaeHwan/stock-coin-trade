@@ -17,8 +17,8 @@
   <style>
     #site-footer { position:fixed; bottom:0; left:0; right:0; z-index:50; margin-top:0; }
     body { padding-bottom: 40px; }
-    .calc-label { font-size:13px; font-weight:700; color:var(--fg-2); margin-bottom:.35rem; display:block; }
-    .calc-row { margin-bottom:14px; }
+    .calc-label { font-size:11px; font-weight:700; color:var(--muted); margin-bottom:.2rem; display:block; }
+    .calc-row { margin-bottom:8px; }
     .result-row { display:flex; justify-content:space-between; align-items:baseline; padding:10px 0; border-bottom:1px solid var(--border); }
     .result-row:last-child { border-bottom:none; }
     .result-label { font-size:13px; color:var(--muted); font-weight:600; }
@@ -27,20 +27,18 @@
 </head>
 <body class="min-h-screen">
 <div id="header-mount"></div>
-<main class="w-full px-4 py-6">
+<main class="avg-main term-page">
+  <header class="term-pagehead"><span class="term-code">AVG</span><h1>물타기 계산기</h1><p>추가 매수 시 평균 매수가가 얼마나 낮아지는지, 목표 평균가에 도달하려면 얼마를 더 매수해야 하는지 계산합니다.</p></header>
 
-<div class="space-y-6">
+<div class="space-y-1.5">
 
-  <section class="text-center">
-    <h2 class="text-2xl font-black mb-1" style="color:var(--fg);">🧮 물타기 계산기</h2>
-    <p class="text-sm" style="color:var(--muted);">추가 매수 시 평균 매수가가 얼마나 낮아지는지, 목표 평균가에 도달하려면 얼마를 더 매수해야 하는지 계산합니다.</p>
-  </section>
+  
 
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <div class="grid grid-cols-1 gap-1.5 lg:grid-cols-2">
 
     <!-- 입력 카드 -->
-    <section class="glass-card p-6">
-      <h3 class="text-base font-black mb-4" style="color:var(--fg);">현재 보유 정보</h3>
+    <section class="glass-card p-3">
+      <h3 class="text-base font-black mb-2" style="color:var(--fg);">현재 보유 정보</h3>
 
       <div class="calc-row">
         <label class="calc-label">보유 수량</label>
@@ -51,9 +49,9 @@
         <input type="text" inputmode="decimal" id="holdAvgPrice" class="dark-input" placeholder="예: 50000">
       </div>
 
-      <div class="oc-divider" style="margin:18px 0;"></div>
+      <div class="oc-divider" style="margin:8px 0;"></div>
 
-      <h3 class="text-base font-black mb-4" style="color:var(--fg);">추가 매수 정보</h3>
+      <h3 class="text-base font-black mb-2" style="color:var(--fg);">추가 매수 정보</h3>
 
       <div class="calc-row">
         <label class="calc-label">추가 매수가 (KRW)</label>
@@ -73,9 +71,9 @@
         <input type="text" inputmode="decimal" id="buyAmount" class="dark-input" placeholder="추가 매수 금액 (KRW)" style="display:none;margin-top:8px;">
       </div>
 
-      <div class="oc-divider" style="margin:18px 0;"></div>
+      <div class="oc-divider" style="margin:8px 0;"></div>
 
-      <h3 class="text-base font-black mb-4" style="color:var(--fg);">목표 평균가 역산 <span class="badge badge-muted" style="font-size:10px;">선택</span></h3>
+      <h3 class="text-base font-black mb-2" style="color:var(--fg);">목표 평균가 역산 <span class="badge badge-muted" style="font-size:10px;">선택</span></h3>
       <div class="calc-row" style="margin-bottom:0;">
         <label class="calc-label">목표 평균 매수가 (KRW)</label>
         <input type="text" inputmode="decimal" id="targetAvgPrice" class="dark-input" placeholder="도달하고 싶은 평균가를 입력하세요">
@@ -83,8 +81,8 @@
     </section>
 
     <!-- 결과 카드 -->
-    <div class="space-y-6">
-      <section class="glass-card p-6">
+    <div class="space-y-1.5">
+      <section class="glass-card p-3">
         <h3 class="text-base font-black mb-2" style="color:var(--fg);">물타기 결과</h3>
         <div id="forwardResult">
           <div class="result-row"><span class="result-label">추가 매수 금액</span><span class="result-value" id="r_buyAmount">-</span></div>
@@ -96,7 +94,7 @@
         </div>
       </section>
 
-      <section class="glass-card p-6">
+      <section class="glass-card p-3">
         <h3 class="text-base font-black mb-2" style="color:var(--fg);">목표 평균가 도달 조건</h3>
         <div id="reverseResult">
           <p style="color:var(--muted);font-size:13px;">목표 평균 매수가를 입력하면 추가 매수가 기준으로 필요한 매수 수량과 금액을 계산합니다.</p>

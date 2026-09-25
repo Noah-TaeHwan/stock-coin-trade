@@ -11,18 +11,18 @@
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','sans-serif']}}}}</script>
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    .pine-page { max-width:none; min-height:calc(100vh - 126px); margin:0; padding:20px 18px 30px; }
-    .pine-card { border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow-sm); }
-    .pine-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
-    .pine-select { min-width:190px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); color:var(--fg); background:var(--surface-2); font:inherit; font-size:13px; }
+    .pine-page { max-width:none; margin:0; }
+    .pine-card { border:1px solid var(--border); border-radius:0; background:var(--surface); box-shadow:none; }
+    .pine-toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 8px; background:var(--surface-2); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .pine-select { min-width:190px; height:26px; padding:0 8px; border:1px solid var(--border-strong); border-radius:var(--radius-xs); color:var(--fg); background:var(--bg); font:inherit; font-size:13px; }
     .period { padding:5px 9px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--fg-2); font-size:12px; font-weight:700; cursor:pointer; }
     .period.active { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
     #pineChart { height:min(52vh,530px); min-height:330px; }
-    .editor-grid { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:14px; margin-top:14px; }
-    .editor-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid var(--border); }
-    #pineScript { display:block; width:100%; min-height:315px; resize:vertical; padding:15px; border:0; outline:0; background:var(--bg); color:var(--fg-2); font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2; }
-    .signal { padding:13px; border-radius:var(--radius); background:var(--surface-2); }
-    .signal-value { margin-top:4px; font-size:20px; font-weight:900; color:var(--fg); }
+    .editor-grid { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:6px; margin-top:0; }
+    .editor-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 8px; background:var(--surface-2); border-bottom:1px solid var(--border); }
+    #pineScript { display:block; width:100%; min-height:260px; resize:vertical; padding:8px 10px; border:0; outline:0; background:var(--bg); color:var(--fg-2); font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2; }
+    .signal { padding:6px 8px; border:1px solid var(--border); border-radius:0; background:var(--surface-2); }
+    .signal-value { margin-top:1px; font-family:var(--font-mono); font-size:16px; font-weight:800; color:var(--fg); }
     .primary { padding:9px 12px; border:0; border-radius:var(--radius); background:var(--accent); color:var(--accent-ink); font:700 13px inherit; cursor:pointer; }
     .primary:hover { background:var(--accent-dark); }.primary:disabled { opacity:.5; cursor:not-allowed; }
     .secondary { padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--fg-2); font:700 12px inherit; cursor:pointer; }
@@ -35,11 +35,8 @@
 </head>
 <body>
   <div id="header-mount"></div>
-  <main class="pine-page">
-    <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin:4px 0 14px;flex-wrap:wrap;">
-      <div><h1 style="margin:0;font-size:23px;font-weight:900;color:var(--fg);">Pine 전략 거래</h1><p style="margin:4px 0 0;color:var(--muted);font-size:13px;">차트 신호를 확인하고 Pine 전략으로 모의주문을 실행하세요. <a href="/trade/pine-guide.html" style="color:var(--accent-dark);font-weight:800;text-decoration:none;">Pine Script란? →</a></p></div>
-      <span id="pinePrice" style="font-size:18px;font-weight:900;color:var(--accent-dark);">-</span>
-    </div>
+  <main class="pine-page term-page">
+    <header class="term-pagehead"><span class="term-code">PINE</span><h1>Pine 전략 거래</h1><p>차트 신호를 확인하고 Pine 전략으로 모의주문을 실행하세요. <a href="/trade/pine-guide.html" style="color:var(--accent-dark);font-weight:800;text-decoration:none;">Pine Script란? →</a></p><span class="term-right"><span id="pinePrice" style="font-family:var(--font-mono);font-size:16px;font-weight:800;color:var(--fg);">-</span></span></header>
 
     <section class="pine-card">
       <div class="pine-toolbar">
@@ -56,8 +53,8 @@
         <p class="notice">지원 문법: <code>input.float</code>, <code>ta.sma</code>, <code>ta.ema</code>, <code>ta.rsi</code>, <code>ta.crossover</code>, <code>ta.crossunder</code>, <code>strategy.entry</code>, <code>strategy.close</code>, <code>strategy.exit(limit, stop)</code>. Long 포지션의 평균 진입가 기준 퍼센트 익절·손절을 테스트할 수 있습니다. TradingView Pine 전체 실행 환경이나 공매도는 지원하지 않습니다.</p>
       </article>
 
-      <aside class="pine-card" style="padding:14px;">
-        <h2 style="margin:0;font-size:15px;font-weight:900;">전략 신호 · 모의주문</h2>
+      <aside class="pine-card" style="padding:8px 10px;">
+        <h2 style="margin:0;font-size:13px;font-weight:800;">전략 신호 · 모의주문</h2>
         <div class="signal" style="margin-top:12px;"><span style="font-size:11px;color:var(--muted);">최신 신호</span><div id="pineSignal" class="signal-value">계산 대기</div><div id="pineSignalDetail" style="margin-top:4px;font-size:11px;color:var(--muted);">스크립트를 실행해 신호를 확인하세요.</div><div id="pineRiskLevels" style="display:none;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-size:11px;line-height:1.65;"></div></div>
         <label for="pineQuantity" style="display:block;margin-top:14px;font-size:12px;font-weight:800;color:var(--fg);">주문 수량 (주)</label>
         <input id="pineQuantity" type="number" min="1" step="1" value="1" style="width:100%;margin-top:6px;padding:9px;border:1px solid var(--border);border-radius:var(--radius);font:inherit;font-size:13px;">

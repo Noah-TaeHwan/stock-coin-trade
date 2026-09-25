@@ -10,13 +10,15 @@
     /* 헤더·검정 푸터는 화면에 고정하고, 가운데 콘텐츠 영역만 스크롤한다. */
     body.alternatives-layout { height:100vh; min-height:0; overflow:hidden; display:grid; grid-template-rows:auto minmax(0,1fr) auto; }
     body.alternatives-layout > main { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
-    body.alternatives-layout #site-footer { margin-top:0; background:#000; border-top:1px solid #27272A; }
+    body.alternatives-layout #site-footer { margin-top:0; background:var(--bg); border-top:1px solid var(--border-strong); }
+    body.alternatives-layout > main.alt-page { padding:var(--gap); }
+    .alt-cash { color:var(--muted); font-size:11px; font-weight:700; } .alt-cash b { margin-left:4px; color:var(--fg); font-family:var(--font-mono); font-size:15px; }
     .asset-menu-btn { width:100%; display:flex; align-items:center; gap:9px; padding:10px 11px; border:1px solid transparent; border-radius:var(--radius); background:transparent; color:var(--fg-2); text-align:left; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
     .asset-menu-btn:hover { background:var(--accent-light); color:var(--accent-dark); }.asset-menu-btn.active { background:var(--accent); color:var(--accent-ink); }
     .alt-ladder-head { display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid var(--border); background:var(--surface-2); font-size:12px; font-weight:800; }.alt-ladder-head span { color:var(--muted); font-weight:600; }.alt-ladder-head.ask { color:var(--down); }.alt-ladder-head.bid { color:var(--up); border-top:1px solid var(--border); border-bottom:0; }
     .asset-menu-icon { width:25px; height:25px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius); background:rgba(255,255,255,.16); font-size:13px; }.asset-menu-note { margin:4px 0 10px; padding:0 11px; color:var(--muted); font-size:11px; line-height:1.45; }
     .market-row { cursor:pointer; transition:background .15s; }.market-row:hover,.market-row.selected { background:var(--accent-light); }
-    .futures-guide { border:1px solid var(--border); background:var(--surface); }.futures-guide summary { cursor:pointer; list-style:none; }.futures-guide summary::-webkit-details-marker { display:none; }.futures-guide summary::after { content:'＋'; float:right; color:var(--accent); font-size:18px; line-height:1; }.futures-guide[open] summary::after { content:'−'; }
+    .futures-guide { padding:6px 10px; border:1px solid var(--border); background:var(--surface); font-size:13px; }.futures-guide summary { cursor:pointer; list-style:none; }.futures-guide summary::-webkit-details-marker { display:none; }.futures-guide summary::after { content:'＋'; float:right; color:var(--accent); font-size:18px; line-height:1; }.futures-guide[open] summary::after { content:'−'; }
     /* 실제 거래화면 패턴 (frontend/trade/stock.html과 동일) — 상세 메뉴 + 탭 모달 */
     .detail-launcher { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; padding:6px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow-sm); }
     .detail-launcher-btn { min-height:50px; padding:7px; border:1px solid var(--border); border-radius:var(--radius); color:var(--accent-dark); background:var(--surface-2); font-family:inherit; font-size:12px; font-weight:850; cursor:pointer; transition:transform .15s,box-shadow .15s,border-color .15s; }
@@ -38,46 +40,24 @@
   <link rel="stylesheet" href="/css/style.css?v=20260924-terminal">
 </head>
 <body class="min-h-screen alternatives-layout"><div id="header-mount"></div>
-<main class="w-full px-4 py-6">
-  <section class="glass-card p-5 mb-5" style="background:var(--surface-2);">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-      <div><span class="badge badge-gold">통합 모의투자</span><h1 class="mt-2 text-2xl font-black" style="color:var(--fg);">파생상품 · 귀금속 · 부동산</h1><p class="mt-2 text-sm" style="color:var(--muted);">선물·옵션·파생 ETN, 금·은 현물, 부동산 지분을 하나의 KRW 잔고로 연습합니다.</p></div>
-      <div class="stat-card min-w-[210px]"><div class="stat-label">주문 가능 KRW</div><div id="cash" class="stat-value">-</div><div class="mt-1 text-xs" style="color:var(--muted);">신규 가입 기준 모의투자금 100,000,000원</div></div>
-    </div>
-    <p class="mt-4 text-xs leading-relaxed" style="color:var(--muted);">※ 표시 가격은 교육용 기준 시세입니다. 실제 시세·투자 권유가 아니며, 선물은 증거금률, 옵션은 프리미엄 기준으로 체결됩니다.</p>
-  </section>
-  <details class="futures-guide mb-5 px-5 py-4 text-sm">
-    <summary class="font-bold" style="color:var(--fg);">선물의 계약승수·포인트와 이 화면의 연습용 계산 방식</summary>
-    <div class="mt-4 grid gap-4 lg:grid-cols-2" style="color:var(--fg-2);">
-      <div>
-        <h2 class="font-bold" style="color:var(--fg);">실제 선물에서는</h2>
-        <p class="mt-2 text-xs leading-relaxed">선물 가격이 지수라면 이를 <strong>포인트</strong>로 표시합니다. <strong>계약승수(거래승수)</strong>는 포인트 1포인트가 원화로 얼마인지를 정하는 값이며, 1계약의 명목금액과 손익 규모를 결정합니다.</p>
-        <p class="mt-2 p-3 text-xs leading-relaxed" style="background:var(--surface-2);">명목금액 = 지수(포인트) × 계약승수<br>손익 = 가격 변동폭(포인트) × 계약승수 × 계약 수</p>
-        <p class="mt-2 text-xs leading-relaxed">예: KOSPI 200 선물의 계약승수는 <strong>1포인트당 250,000원</strong>입니다. 지수 372.5포인트라면 1계약 명목금액은 약 93,125,000원이고, 지수가 1포인트 움직이면 1계약의 손익도 250,000원 움직입니다. 실제 필요 증거금은 거래소·증권사가 정한 증거금률에 따라 달라집니다.</p>
-      </div>
-      <div>
-        <h2 class="font-bold" style="color:var(--fg);">이 서비스의 연습용 선물은</h2>
-        <p class="mt-2 text-xs leading-relaxed">과도한 주문금액을 피하고 1억 원의 모의자금 안에서 연습할 수 있도록, 실제 KOSPI 200 선물 계약을 그대로 재현하지 않은 <strong>축소 모의계약</strong>입니다.</p>
-        <p class="mt-2 p-3 text-xs leading-relaxed" style="background:var(--surface-2);">화면의 교육용 기준가를 원화로 사용<br>연습용 계약승수: 1<br>명목금액 = 기준가 × 1<br>주문금액 = 명목금액 × 증거금률(현재 15%)</p>
-        <p class="mt-2 text-xs leading-relaxed">따라서 기준가가 372,500원일 때 1계약의 명목금액은 372,500원, 주문 시 차감되는 증거금은 55,875원입니다. 이는 실제 KOSPI 200 선물의 1계약 규모나 손익을 뜻하지 않습니다.</p>
-      </div>
-    </div>
-  </details>
-  <section class="grid grid-cols-1 gap-5 xl:grid-cols-[230px_minmax(0,1fr)_380px]">
-    <aside class="glass-card h-fit p-3 xl:sticky xl:top-4">
+<main class="term-page alt-page">
+  <header class="term-pagehead"><span class="term-code">ALT</span><h1>파생상품 · 귀금속 · 부동산</h1><p>선물·옵션·파생 ETN, 금·은 현물, 부동산 지분을 하나의 KRW 잔고로 연습합니다. 표시 가격은 교육용 기준 시세이며, 선물은 증거금률, 옵션은 프리미엄 기준으로 체결됩니다.</p><span class="term-right"><span class="alt-cash">주문 가능 KRW <b id="cash">-</b></span><span class="badge badge-gold">통합 모의투자</span></span></header>
+  
+  <section class="grid grid-cols-1 gap-1.5 xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+    <aside class="glass-card h-fit p-2 xl:sticky xl:top-0">
       <div class="px-2 pb-3" style="border-bottom:1px solid var(--border);"><h2 class="text-sm font-black" style="color:var(--fg);">거래 기능</h2><p class="mt-1 text-xs" style="color:var(--muted);">방식에 따라 상품을 선택하세요.</p></div>
       <div id="sideMenu" class="mt-3"></div>
     </aside>
-    <div class="space-y-5">
+    <div class="space-y-1.5">
       <div class="glass-card overflow-hidden">
-      <div class="p-4" style="border-bottom:1px solid var(--border);"><div id="marketListTitle" class="text-sm font-black" style="color:var(--fg);">전체 거래 가능 상품</div><p id="marketListGuide" class="mt-1 text-xs" style="color:var(--muted);">상품을 선택하면 주문창이 연동됩니다.</p></div>
+      <div class="px-3 py-1.5" style="border-bottom:1px solid var(--border);background:var(--surface-2);"><div id="marketListTitle" class="text-sm font-black" style="color:var(--fg);">전체 거래 가능 상품</div><p id="marketListGuide" class="mt-1 text-xs" style="color:var(--muted);">상품을 선택하면 주문창이 연동됩니다.</p></div>
       <div class="overflow-x-auto"><table class="dark-table min-w-full"><thead><tr><th class="text-left">상품</th><th class="text-right">기준가격</th><th class="text-right">등락률</th><th class="text-right">주문금액</th><th class="text-right">단위 / 조건</th></tr></thead><tbody id="marketBody"></tbody></table></div>
       </div>
     </div>
-    <aside class="space-y-5">
-      <section class="glass-card p-5"><div class="flex items-center justify-between"><h2 class="text-lg font-black" style="color:var(--fg);">주문</h2><span id="selectedCategory" class="badge badge-muted">상품 선택</span></div>
+    <aside class="space-y-1.5">
+      <section class="glass-card p-3"><div class="flex items-center justify-between"><h2 class="text-sm font-black" style="color:var(--fg);">주문</h2><span id="selectedCategory" class="badge badge-muted">상품 선택</span></div>
         <div class="mt-4"><div id="selectedName" class="font-bold" style="color:var(--fg);">좌측에서 상품을 선택하세요.</div><div id="selectedInfo" class="mt-1 text-xs" style="color:var(--muted);"></div><div id="futuresContractInfo" class="mt-2 hidden p-2 text-xs leading-relaxed" style="background:var(--surface-2);color:var(--info);"></div></div>
-        <label class="mt-5 block text-xs font-bold" style="color:var(--muted);">주문 수량</label><input id="quantity" type="number" min="1" value="1" class="dark-input mt-2 w-full" style="padding:.65rem .8rem;">
+        <label class="mt-3 block text-xs font-bold" style="color:var(--muted);">주문 수량</label><input id="quantity" type="number" min="1" value="1" class="dark-input mt-2 w-full" style="padding:.35rem .6rem;">
         <div class="mt-3 grid grid-cols-2 gap-2">
           <div><div class="text-[10px] font-bold" style="color:var(--muted);margin-bottom:4px;">매수 · 보유 현금 비율</div>
             <div id="buyPercentBtns" class="grid grid-cols-4 gap-1">
@@ -136,6 +116,23 @@
       </div>
     </section>
   </div>
+  <details class="futures-guide">
+    <summary class="font-bold" style="color:var(--fg);">선물의 계약승수·포인트와 이 화면의 연습용 계산 방식</summary>
+    <div class="mt-2 grid gap-3 lg:grid-cols-2" style="color:var(--fg-2);">
+      <div>
+        <h2 class="font-bold" style="color:var(--fg);">실제 선물에서는</h2>
+        <p class="mt-2 text-xs leading-relaxed">선물 가격이 지수라면 이를 <strong>포인트</strong>로 표시합니다. <strong>계약승수(거래승수)</strong>는 포인트 1포인트가 원화로 얼마인지를 정하는 값이며, 1계약의 명목금액과 손익 규모를 결정합니다.</p>
+        <p class="mt-2 p-3 text-xs leading-relaxed" style="background:var(--surface-2);">명목금액 = 지수(포인트) × 계약승수<br>손익 = 가격 변동폭(포인트) × 계약승수 × 계약 수</p>
+        <p class="mt-2 text-xs leading-relaxed">예: KOSPI 200 선물의 계약승수는 <strong>1포인트당 250,000원</strong>입니다. 지수 372.5포인트라면 1계약 명목금액은 약 93,125,000원이고, 지수가 1포인트 움직이면 1계약의 손익도 250,000원 움직입니다. 실제 필요 증거금은 거래소·증권사가 정한 증거금률에 따라 달라집니다.</p>
+      </div>
+      <div>
+        <h2 class="font-bold" style="color:var(--fg);">이 서비스의 연습용 선물은</h2>
+        <p class="mt-2 text-xs leading-relaxed">과도한 주문금액을 피하고 1억 원의 모의자금 안에서 연습할 수 있도록, 실제 KOSPI 200 선물 계약을 그대로 재현하지 않은 <strong>축소 모의계약</strong>입니다.</p>
+        <p class="mt-2 p-3 text-xs leading-relaxed" style="background:var(--surface-2);">화면의 교육용 기준가를 원화로 사용<br>연습용 계약승수: 1<br>명목금액 = 기준가 × 1<br>주문금액 = 명목금액 × 증거금률(현재 15%)</p>
+        <p class="mt-2 text-xs leading-relaxed">따라서 기준가가 372,500원일 때 1계약의 명목금액은 372,500원, 주문 시 차감되는 증거금은 55,875원입니다. 이는 실제 KOSPI 200 선물의 1계약 규모나 손익을 뜻하지 않습니다.</p>
+      </div>
+    </div>
+  </details>
 </main><footer id="site-footer"><div class="w-full px-4 py-4 flex justify-between"><span class="brand-logo-text" style="font-size:13px;">Noah Trading Desk</span><span style="font-size:12px;color:var(--muted);">모의투자 교육 서비스</span></div></footer>
 <script>
 function switchTab(name) {
