@@ -1,27 +1,78 @@
-# Stock & Coin Trading Desk — Noah
+# Noah Trading Desk — 모든 숫자에 영수증이 있는 퀀트 리서치 데스크
 
-모의투자·OpenAPI 실습
+[![CI](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/workflows/ci.yml/badge.svg)](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/workflows/ci.yml)
 
-## 개인 포트폴리오 작업
+강사 원본(주식·코인 모의투자와 Open API 실습 플랫폼)을 포크했다. 그 위에 **데이터 출처, 백테스트 계산, AI 답변의 숫자를 모두 추적할 수 있는** 퀀트 리서치 데스크를 만든 개인 포트폴리오다. 원본 기능은 [아래 절](#원본-강의-기능-edumgt)에 따로 정리했다.
 
-**Noah Trading Desk**는 강사 원본을 기반으로 한 GitHub 포크를 정리한 개인 포트폴리오입니다. 화면·차트·모의거래·KIS·KB증권·Alpaca 연동·MCP 실습 기능은 원본에 이미 구현되어 있습니다.
+## 세 층의 영수증
 
-Noah의 작업은 Bloomberg·IBKR TWS를 참고한 터미널형 다크 UI(명령줄·기능키·티커, 패널형 주식·코인 워크스페이스), 포트폴리오 브랜딩, 격리된 로컬 Compose 실행, 브로커·클라우드 키와 Docker socket 전달 제한, DB 준비 상태 대기, KIS MCP의 모의투자 키 입력 경계 보강, 자동 운영 배포 경로 제거와 배포 값의 명시적 설정 요구, 로컬 실행·검증 기록입니다. 개인 배포는 아직 수행하지 않았습니다.
+```mermaid
+flowchart LR
+  A["라이선스 영수증<br/>config/data_sources.toml<br/>약관 상태·재배포·출처 문구·프로필 on/off"] --> B["계산 영수증<br/>src/quantlab<br/>입력 봉 sha256 + 파라미터 + 엔진 버전 → receiptId"]
+  B --> C["인용 영수증<br/>src/deskagent<br/>AI 답변의 숫자 = receiptId + 경로, 서버가 채움"]
+```
 
-포트폴리오 개발 계획의 기반 단계에서는 다음을 더했습니다.
+1. **라이선스 영수증**: 약관을 확인한 소스만 공개 배포에 쓴다. 정책 테스트가 이를 강제한다. 지금 public에서 쓸 수 있는 소스는 결정적 합성 데이터뿐이다.
+2. **계산 영수증**
+   - 백테스트는 종가에 신호를 내고 다음 봉 시가에 체결한다. 비용을 반영하고, 지표는 일별 자산곡선으로 계산한다.
+   - 같은 입력이면 같은 `receiptId`가 나오고, 서버는 실행을 한 번만 저장한다.
+3. **인용 영수증**
+   - AI 에이전트는 숫자를 직접 쓰지 않고 `{{n1}}` 자리표시자와 (영수증, 경로)만 낸다. 서버가 값을 채운다.
+   - 영수증 없는 숫자가 들어간 답변은 보여 주지 않는다. "AI가 숫자를 지어내지 않는다"고 주장하는 대신, 구조로 막고 eval로 잰다.
+
+## 결과 한눈에
+
+| 항목 | 값 | 근거 |
+|---|---|---|
+| 테스트 | 302개 통과(MariaDB 11.4·PostgreSQL 16 통합 포함), 핵심 방어 코드마다 변형 테스트 | [검증 기록 색인](docs/evidence/README.md) |
+| 구 백테스트 엔진 오류 | 7개 수정(예: 005930 RSI 전략 Sharpe 587.39 → 6.72, MDD 0.00% → -0.50%) | [quant-engine](docs/evidence/quant-engine-2026-09-25.md) |
+| AI 숫자 영수증 eval(30사례 × 2회) | 완벽 모델 100%, 숫자를 지어내는 모델 3종(직접 입력·일부 위조·가짜 영수증) 0% | [eval](evals/numeric_faithfulness/README.md) |
+| 과최적화 측정(합성 데이터) | 005930 MA 교차: 사후 최적 +51.4% vs 워크포워드 +15.8% | [리서치](docs/research/README.md) |
+| 공개 배포 차단 요인 | 주문 lost update, 저장형 XSS(실행 5·7회 → 0회), SSRF, 관리자 선점, 의존성 취약점 0건 | [Phase 1 기록](docs/evidence/README.md) |
+| 라우트 | local 132개 / public 62개(실습·약관 미확인 기능 제외, 스냅샷으로 고정) | `tests/unit/snapshots/` |
+
+## 직접 확인하기
+
+- **로컬 실행**: [PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md). 공개 구성은 `compose.public.yml`(+ `compose.edge.yml` HTTPS)이다.
+- **화면**
+  - 퀀트 백테스트: `/quant.html` — 자산·낙폭 차트, 지표, 계산 영수증
+  - AI 리서치: `/research-agent.html` — 초대 코드 필요, 숫자마다 영수증 링크
+- **재현**
+  - `PYTHONPATH=src python -m quantlab.research --symbol 005930 --start 2016-01-01 --end 2025-12-31`
+  - `PYTHONPATH=src python -m deskagent.eval --mode oracle`
+- **MCP**: `PYTHONPATH=src python -m deskmcp.server` — [Noah Desk MCP](#noah-desk-mcp--모의계좌백테스트를-mcp-도구로)
+- **공개 데모**: 아직 없다. AWS 구성은 준비·검증을 마쳤고([ADR-0003](docs/adr/0003-aws-demo-topology.md)), 계정·도메인 승인 후 배포한다. AI 리서치는 배포 후 초대 코드로 연다.
+- **데이터**: 공개 화면과 리포트의 시세는 모두 합성 데이터다. 실제 시장 성과가 아니며, 소스별 약관 상태는 [데이터 소스](docs/data-sources.md)에 있다.
+
+## Noah가 만든 것
+
+| 위치 | 내용 |
+|---|---|
+| `src/marketdata` | 소스 레지스트리·합성/업비트 소스·품질 검사·수집 기록·파티션 |
+| `src/quantlab` | 백테스트 엔진·지표·계산 영수증·워크포워드·리서치 CLI |
+| `src/deskagent` | 숫자 영수증 AI 에이전트(공식 Anthropic SDK)·가격·eval |
+| `src/deskmcp` | 데스크 API를 MCP 도구로 노출하는 서버 |
+| `python-stock-backend/` | `create_app()`, 설정·권한·보안(CSRF·레이트 리밋·XSS·SSRF), 주문 정합성, 퀀트·에이전트 API(원본 모듈 수정분) |
+| `infra/`, `compose.*.yml`, `scripts/ec2/` | AWS 공개 데모(CloudFormation, Caddy, 배포·롤백) |
+| `tests/`, `docs/` | 테스트·검증 기록·ADR·방법론 |
+
+작업 목록(시간순):
 - pytest·ruff 설정, 해시로 고정한 의존성 lock, GitHub Actions CI(단위·MariaDB/PostgreSQL 통합·의존성 감사·이미지 빌드)
 - import 부작용을 없앤 `create_app()` 팩토리, `APP_PROFILE`별 기동 검사, 테이블·시드를 맡는 일회성 `init` 서비스, 주기 작업을 맡는 `worker` 서비스
+- 같은 회원의 동시 주식 주문이 옛 포지션을 읽어 초과 매도·이중 입금·500이 나던 문제 수정(MariaDB 재현 테스트), public 프로필에서 시뮬레이션 가격 체결 거부
+- 관리자 선점·시스템 계정 로그인·이메일 중복 차단, 로그인·가입·키 발급 레이트 리밋, 전역 CSRF 출처 검사, 예외 원문 대신 요청 ID
+- 저장형 XSS 차단(공용 이스케이프, Qdrant 추가 관리자 전용, 브라우저 검사), 크롤러 리디렉션 홉별 SSRF 검사, 공개 프로필에서 실습·외부 키 의존 기능 12개 제외, CORS 정확 일치
+- 의존성 취약점 0건(Flask·flask-cors·requests·python-dotenv·qdrant-client 업그레이드), 비루트 백엔드 컨테이너, nginx 보안 헤더·`/health` 실제 프록시, 공개 배포용 `compose.public.yml`(Redis 레이트 리밋, 키·socket 미전달)
+- 데이터 소스 레지스트리(약관 메타데이터·프로필별 on/off·공개 정책 테스트), 결정적 합성 시세, 업비트 캔들 어댑터, 품질 검사·수집 기록·파티션 관리(`src/marketdata`)
+- 화면 시세도 레지스트리가 허용한 소스만 사용(공개 프로필은 합성 시세 + "합성 데이터" 배지, 코인 기능은 업비트 약관 확인 전까지 비활성)
+- 백테스트 엔진 재작성(`src/quantlab`): 종가 신호 → 다음 봉 시가 체결, bp 단위 비용, 일별 자산곡선 기반 Sharpe·MDD·CAGR, 같은 비용의 매수 후 보유 비교, 입력 해시·파라미터·엔진 버전으로 만든 계산 영수증과 멱등 저장, 워크포워드 검증과 재현 가능한 리서치 리포트. 구 엔진의 계산 오류 7개를 회귀 테스트로 고정
+- 자체 MCP 서버(`src/deskmcp`): 모의계좌 조회·백테스트·영수증 조회를 MCP 도구로 제공, 주문 도구는 명시적으로 켤 때만 등록, Open API 키별 요청 제한을 공유 저장소(Redis)로 이동
+- 초대 코드 전용 AI 리서치(`src/deskagent`): 공식 Anthropic SDK 도구 루프, 답변의 숫자는 서버가 계산 영수증에서 채우고 영수증 없는 숫자는 차단, 초대 코드별 한도와 월 예산, 코드 채점 eval(완벽 모델 100%, 숫자를 지어내는 모델 3종 0%)
+- AWS 공개 데모 준비: CloudFormation(80·443만 열고 SSH 없음, IMDSv2, 암호화·스냅샷 데이터 볼륨, 예산 알림), Caddy 자동 HTTPS(클라이언트 IP 보존), OIDC 배포 역할, 헬스 체크 실패 시 자동 롤백하는 배포 스크립트 — 로컬 검증까지, 실제 배포는 계정·도메인 승인 후
 
-HTTP API(라우트 122개)는 그대로입니다. 기동 순서만 바뀌었고, 차이는 [검증 기록](docs/evidence/foundation-2026-09-24.md)에 적었습니다. 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리합니다.
+원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리한다. 모든 검증 기록은 [색인](docs/evidence/README.md)에 있고, 설계 결정은 [ADR-0001 앱 팩토리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock](docs/adr/0002-dependency-lock.md), [ADR-0003 AWS 구성](docs/adr/0003-aws-demo-topology.md)이다.
 
-- [포트폴리오용 로컬 실행](PORTFOLIO_LOCAL.md)
-- [브랜딩 전 가입·로그인·모의거래·DB 재시작 검증](docs/evidence/README.md)
-- [브랜딩 후 로컬 화면·모의거래 검증](docs/evidence/portfolio-brand-2026-09-23.md)
-- [터미널형 UI 전환 검증](docs/evidence/terminal-ui-2026-09-24.md)
-- [기반 작업(테스트·CI·앱 팩토리) 검증](docs/evidence/foundation-2026-09-24.md)
-- [코인 차익·김프 화면 검증](docs/evidence/arbitrage-2026-09-24.md)
-- 설계 결정: [ADR-0001 앱 팩토리와 프로세스 분리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock과 Python 버전](docs/adr/0002-dependency-lock.md)
-- [터미널 UI 마감(모서리·색·화면 밀도·HTS 흡수) 검증](docs/evidence/terminal-ui-polish-2026-09-25.md)
+## 원본 강의 기능 (edumgt)
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
 
@@ -144,8 +195,11 @@ Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에�
 | `GET` | `/api/quant/overview` | 적재 건수·사용 가능 심볼 |
 | `GET` | `/api/quant/market-data?symbol=005930` | 파티션된 OHLCV 조회 |
 | `GET` | `/api/quant/signals?symbol=005930&fast=20&slow=50` | 윈도우 함수 기반 MA 시그널 |
-| `POST` | `/api/quant/backtests` | 전략·체결 로그·성과 지표 저장 |
-| `GET` | `/api/quant/results` | 저장된 전략과 거래 로그 |
+| `POST` | `/api/quant/backtests` | quantlab 백테스트: 지표·매수 후 보유 비교·일별 자산곡선·계산 영수증. 같은 입력은 한 번만 저장([방법론](docs/methodology/backtest.md)) |
+| `GET` | `/api/quant/results?strategyId=` | 저장된 전략과 거래 로그 |
+| `GET` | `/api/quant/data-quality?symbol=` | 저장된 봉의 품질 검사와 마지막 수집 기록 |
+| `GET` | `/api/quant/backtests/<receiptId>` | 영수증으로 저장된 실행 조회 |
+| `GET` | `/api/quant/sources` | 데이터 소스 레지스트리(이 배포의 프로필 기준 사용 여부·출처 문구) |
 
 웹 화면은 임의 SQL을 실행하지 않고, 파라미터 바인딩된 읽기 전용 SQL 템플릿만 보여주고 실행합니다. 이는 데이터 조회 편의성과 운영 DB 보호를 함께 고려한 방식입니다.
 
@@ -166,7 +220,7 @@ Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에�
 postgresql+psycopg://<QUANT_DB_USER>:<QUANT_DB_PASSWORD>@postgres:5432/<QUANT_DB_NAME>
 ```
 
-운영 오버레이 `docker-compose.prod.yml`과 `scripts/ec2/deploy.sh`는 운영자가 자신의 `ECR_REGISTRY`와 실제 푸시한 `IMAGE_TAG`를 모두 명시해야 시작합니다. 개인 AWS 배포는 아직 수행하지 않았습니다.
+공개 데모는 `compose.public.yml` + `compose.edge.yml`(Caddy HTTPS) + `compose.aws.yml`(ECR 이미지·CloudWatch 로그)을 EC2 한 대에 올리는 구성입니다. 인프라는 `infra/cloudformation/stockdesk.yaml`, 배포는 GitHub OIDC → ECR → SSM Run Command → `scripts/ec2/deploy.sh`(헬스 체크 실패 시 자동 롤백)입니다([ADR-0003](docs/adr/0003-aws-demo-topology.md), [배포 절차](docs/deploy/aws.md)). 템플릿·스크립트는 로컬에서 검증했고, 실제 AWS 배포는 아직 하지 않았습니다. 예전 `docker-compose.prod.yml`은 키·socket 마운트를 물려받으므로 공개 배포에 쓰지 않습니다.
 
 ### 세션 API
 
@@ -383,9 +437,29 @@ aws ssm put-parameter --name "/stock-coin-trade/alpaca/secret_key" --type Secure
 
 파라미터가 없거나 IAM 권한이 부족하면 화면에 "SSM Parameter Store에 …이(가) 없습니다" 같은 안전한 오류 메시지만 표시되고, AWS 자격 증명이나 파라미터 값은 응답·로그에 노출되지 않습니다.
 
+## Noah Desk MCP — 모의계좌·백테스트를 MCP 도구로
+
+`src/deskmcp`는 이 데스크의 HTTP API를 MCP 도구로 노출하는 자체 서버입니다(MCP Python SDK 2.2.0, stdio). DB에 직접 붙지 않고 브라우저·스크립트와 같은 HTTP 경로를 쓰므로, API 키·키별 요청 제한·모의계좌 범위·데이터 소스 레지스트리가 MCP 호출에도 그대로 적용됩니다.
+
+| 도구 | 호출하는 API | 성격 |
+|---|---|---|
+| `list_sources` | `GET /api/quant/sources` | 읽기 |
+| `get_quote`, `get_account`, `get_positions`, `list_orders` | `/openapi/v1/*`(API 키) | 읽기 |
+| `run_backtest` | `POST /api/quant/backtests` | 저장하지만 멱등(같은 입력 → 같은 영수증) |
+| `get_backtest` | `GET /api/quant/backtests/<receiptId>` | 읽기 |
+| `place_paper_order` | `POST /openapi/v1/orders` | `DESK_MCP_ALLOW_ORDERS=1`일 때만 등록, 모의계좌 주문 |
+
+```bash
+pip install --require-hashes -r src/deskmcp/requirements.lock   # 또는 requirements-dev.lock
+export DESK_API_KEY=...   # 데스크의 "API 키" 화면에서 발급
+PYTHONPATH=src DESK_BASE_URL=http://127.0.0.1:3333 python3 -m deskmcp.server
+```
+
+`.vscode/mcp.json`(`noah-desk`, 키는 입력 창으로 받아 VS Code가 보관)과 `.codex/config.toml`(`env_vars`로 셸의 `DESK_API_KEY`를 전달)에 등록되어 있습니다. 도구 annotations(`read_only_hint` 등)는 클라이언트용 힌트이고, 실제 권한은 API 키의 회원과 모의계좌로 서버가 정합니다. 검증은 [검증 기록](docs/evidence/mcp-server-2026-09-25.md)을 참고하세요.
+
 ## KIS MCP — VS Code·Codex에서 자연어로 KIS API 사용하기
 
-`/broker-api-test.html`의 KIS 연결 테스트와는 별개로, 한국투자증권은 AI 도구로 **MCP(Model Context Protocol)** 를 제공합니다. MCP는 생성형 AI가 외부 도구와 데이터에 표준 방식으로 연결되도록 하는 규약입니다. 이 프로젝트는 MCP 서버를 자체 구현하거나 `broker_test.py`를 MCP로 감싼 것이 아니라, 아래의 한투 공식 MCP를 별도로 사용합니다.
+`/broker-api-test.html`의 KIS 연결 테스트와는 별개로, 한국투자증권은 AI 도구로 **MCP(Model Context Protocol)** 를 제공합니다. MCP는 생성형 AI가 외부 도구와 데이터에 표준 방식으로 연결되도록 하는 규약입니다. 이 절의 두 서버는 한투 공식 MCP이며, `broker_test.py`를 MCP로 감싼 것이 아닙니다. 이 데스크 자체의 MCP 서버는 위 "Noah Desk MCP" 절을 참고하세요.
 
 | 구분 | 용도 | 공식 안내 |
 |---|---|---|
@@ -479,13 +553,20 @@ IDE 채팅 없이 공식 MCP 도구를 직접 호출하려면 아래 명령을 �
 │   ├── alpaca_test*.py                 # Alpaca Paper 조회·주문 흐름
 │   ├── stock_market.py                 # 국내 주식 시세·차트
 │   └── requirements.txt / .lock        # 직접 의존성, uv로 만든 해시 고정 lock
+├── src/marketdata/                    # 데이터 소스 레지스트리·합성/업비트 소스·품질 검사·저장
+├── src/quantlab/                      # 백테스트 엔진·지표·계산 영수증·워크포워드·리서치 CLI
+├── src/deskmcp/                       # 데스크 HTTP API를 MCP 도구로 노출하는 서버
+├── src/deskagent/                     # 숫자 영수증 AI 리서치 에이전트·가격·eval
+├── evals/numeric_faithfulness/        # 에이전트 eval 사례·결과
+├── config/data_sources.toml           # 소스별 약관 메타데이터와 프로필별 on/off
 ├── tests/                             # unit·integration·labs(기존 실습 테스트) pytest
 ├── database/db.sql                    # MariaDB 초기 스키마·예제 데이터
 ├── docker/                            # Frontend·Backend 이미지와 Nginx 설정
 ├── docker-compose.yml                 # 로컬 실행 구성
 ├── .github/workflows/ci.yml           # CI: lint·unit·통합·의존성 감사·이미지 빌드
-├── docs/                              # evidence(검증 기록)·adr(설계 결정)·provenance(허락 기록)
-├── scripts/ec2/deploy.sh              # 사용자 ECR 레지스트리의 이미지 배포 스크립트
+├── docs/                              # evidence(검증 기록)·adr(설계 결정)·provenance(허락 기록)·methodology·research
+├── infra/cloudformation/stockdesk.yaml # AWS 공개 데모(EC2·ECR·S3·로그·예산·OIDC 배포 역할)
+├── scripts/ec2/deploy.sh              # EC2 배포: SSM 비밀값 → pull → up → 헬스 체크 → 실패 시 롤백
 ├── .env.example                       # 공유 가능한 환경 변수 예시
 └── mcp/                                # (Git 미추적) 한투 공식 KIS MCP 서버와 전용 실행 환경
 ```
@@ -507,7 +588,7 @@ pytest -m "not integration"
 
 ### 로컬 실행 검증
 
-[PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md)의 전용 Compose 명령과 [브랜딩 후 로컬 검증](docs/evidence/portfolio-brand-2026-09-23.md)을 참고하세요. `scripts/ec2/deploy.sh`는 운영자가 `ECR_REGISTRY`와 `IMAGE_TAG`를 명시한 뒤에만 이미지를 당겨 실행합니다. 개인 AWS 배포는 아직 수행하지 않았습니다.
+[PORTFOLIO_LOCAL.md](PORTFOLIO_LOCAL.md)의 전용 Compose 명령과 [브랜딩 후 로컬 검증](docs/evidence/portfolio-brand-2026-09-23.md)을 참고하세요. AWS 배포 절차는 [docs/deploy/aws.md](docs/deploy/aws.md)에 있습니다. 개인 AWS 배포는 아직 수행하지 않았습니다.
 
 ## 운영 시 유의사항
 

@@ -1,0 +1,5 @@
+# New portfolio code (src/) follows the same stricter rules as tests/.
+extend = "../pyproject.toml"
+
+[lint]
+extend-select = ["E", "W", "I", "B", "UP", "SIM"]

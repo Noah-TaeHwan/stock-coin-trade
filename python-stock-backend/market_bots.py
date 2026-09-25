@@ -14,9 +14,9 @@ alternatives의 execute_alternative_order를 실제 사용자와 완전히 동�
 import logging
 import random
 
-import bcrypt
-
+import price_sources
 import stock_trading
+from accounts import BOT_EMAIL_DOMAIN, UNUSABLE_PASSWORD
 from alternatives import CATALOG as ALT_CATALOG
 from alternatives import _quote as alt_quote
 from alternatives import execute_alternative_order
@@ -24,13 +24,12 @@ from crypto import execute_crypto_buy, execute_crypto_sell
 from db import session_scope
 from demo_seed import CRYPTO_MARKETS
 from models import AlternativePosition, HoldCrypto, Member, StockPosition, UpbitMarket
+from settings import profile_from_env
 from stock_market import STOCKS, current_price
 
 LOGGER = logging.getLogger(__name__)
 
 BOT_COUNT = 20
-BOT_EMAIL_DOMAIN = "@system-bot.local"
-BOT_PASSWORD = "system-bot-account"  # 로그인용이 아니라 계정 생성 요건을 맞추기 위한 값
 BOT_INITIAL_ASSET = 100_000_000
 BOTS_PER_ROUND = 6  # 라운드마다 무작위로 골라 거래를 시도하는 봇 수
 MIN_BUDGET_RATE, MAX_BUDGET_RATE = 0.01, 0.04  # 보유 현금 대비 1회 주문 비중
@@ -45,16 +44,20 @@ def _bot_email(index: int) -> str:
 
 
 def ensure_bot_accounts() -> int:
-    """system01~system20 봇 계정을 만든다. 이미 있으면 그대로 둔다."""
+    """system01~system20 봇 계정을 만든다. 이미 있으면 그대로 두고, 예전에 알려진
+    비밀번호로 만든 계정은 로그인할 수 없는 값으로 바꾼다."""
     try:
         with session_scope() as db:
-            password_hash = bcrypt.hashpw(BOT_PASSWORD.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
             added = 0
             for index in range(1, BOT_COUNT + 1):
                 email = _bot_email(index)
-                if db.query(Member).filter(Member.email == email).first():
+                existing = db.query(Member).filter(Member.email == email).first()
+                if existing:
+                    if existing.password != UNUSABLE_PASSWORD:
+                        existing.password = UNUSABLE_PASSWORD
                     continue
-                db.add(Member(username=bot_username(index), email=email, password=password_hash, asset=BOT_INITIAL_ASSET))
+                db.add(Member(username=bot_username(index), email=email, password=UNUSABLE_PASSWORD,
+                              asset=BOT_INITIAL_ASSET))
                 added += 1
         if added:
             LOGGER.info("Created %s market-bot accounts (system01-system%02d).", added, BOT_COUNT)
@@ -64,12 +67,33 @@ def ensure_bot_accounts() -> int:
         return 0
 
 
+def _tradable_asset_classes() -> dict[str, int]:
+    """Asset classes and their weights, limited to what the data sources allow.
+
+    Crypto is priced from Upbit and alternatives from Yahoo Finance; stocks fall
+    back to the labelled synthetic source, so they are always tradable.
+    """
+    classes = {"STOCK": 3}
+    if price_sources.allowed("upbit"):
+        classes["CRYPTO"] = 3
+    if price_sources.allowed("yfinance"):
+        classes["ALT"] = 2
+    return classes
+
+
+def _allow_simulated_price() -> bool:
+    return stock_trading.allows_simulated_price(profile_from_env())
+
+
 def _trade_stock(db, member: Member) -> str | None:
     positions = db.query(StockPosition).filter(StockPosition.member_id == member.member_id).all()
     if positions and random.random() < 0.45:
         pos = random.choice(positions)
         quantity = random.randint(1, pos.quantity)
-        stock_trading.execute_order(db, member, pos.symbol, stock_trading.SELL, quantity, source="BOT")
+        stock_trading.execute_order(
+            db, member, pos.symbol, stock_trading.SELL, quantity, source="BOT",
+            allow_simulated_price=_allow_simulated_price(),
+        )
         return f"주식 매도 {pos.symbol} {quantity}주"
 
     symbol = random.choice(list(STOCKS))
@@ -79,7 +103,10 @@ def _trade_stock(db, member: Member) -> str | None:
     quantity = int(member.asset * random.uniform(MIN_BUDGET_RATE, MAX_BUDGET_RATE) // price)
     if quantity < 1:
         return None
-    stock_trading.execute_order(db, member, symbol, stock_trading.BUY, quantity, source="BOT")
+    stock_trading.execute_order(
+        db, member, symbol, stock_trading.BUY, quantity, source="BOT",
+        allow_simulated_price=_allow_simulated_price(),
+    )
     return f"주식 매수 {symbol} {quantity}주"
 
 
@@ -127,7 +154,8 @@ def _trade_alternative(db, member: Member) -> str | None:
 
 def _random_action_for_bot(db, member: Member) -> str | None:
     db.refresh(member, with_for_update=True)
-    asset_class = random.choices(("STOCK", "CRYPTO", "ALT"), weights=(3, 3, 2))[0]
+    classes = _tradable_asset_classes()
+    asset_class = random.choices(list(classes), weights=list(classes.values()))[0]
     try:
         if asset_class == "STOCK":
             return _trade_stock(db, member)
@@ -146,15 +174,25 @@ def run_bot_trading_round() -> None:
     """스케줄러가 10분마다 호출: 무작위로 고른 봇들이 각각 매수 또는 매도를 한 건씩 시도한다."""
     try:
         with session_scope() as db:
-            bots = db.query(Member).filter(Member.email.like(f"%{BOT_EMAIL_DOMAIN}")).all()
-            if not bots:
-                return
-            chosen = random.sample(bots, k=min(BOTS_PER_ROUND, len(bots)))
-            log_lines = []
-            for member in chosen:
-                outcome = _random_action_for_bot(db, member)
-                if outcome:
-                    log_lines.append(f"{member.username}: {outcome}")
+            bot_ids = [row[0] for row in db.query(Member.member_id)
+                       .filter(Member.email.like(f"%{BOT_EMAIL_DOMAIN}")).all()]
+        if not bot_ids:
+            return
+        chosen = random.sample(bot_ids, k=min(BOTS_PER_ROUND, len(bot_ids)))
+        log_lines = []
+        # 봇마다 트랜잭션을 따로 둔다. 한 트랜잭션에서 여러 봇을 처리하면 앞 봇의
+        # 행 잠금이 라운드 끝까지 유지되고, 한 봇의 DB 오류가 다른 봇 거래까지 되돌린다.
+        for member_id in chosen:
+            try:
+                with session_scope() as db:
+                    member = db.get(Member, member_id)
+                    if member is None:
+                        continue
+                    outcome = _random_action_for_bot(db, member)
+                    if outcome:
+                        log_lines.append(f"{member.username}: {outcome}")
+            except Exception:
+                LOGGER.exception("Bot trade transaction failed for member %s", member_id)
         if log_lines:
             LOGGER.info("Bot trading round: %s", "; ".join(log_lines))
     except Exception:

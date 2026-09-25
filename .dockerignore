@@ -11,3 +11,15 @@ package.json
 package-lock.json
 README.md
 *.md
+# 비밀값·로컬 환경·테스트는 빌드 컨텍스트로 보내지 않는다.
+.env
+.env.*
+*.key
+.venv
+.pytest_cache
+.ruff_cache
+**/__pycache__
+tests
+mcp
+.codex
+.vscode

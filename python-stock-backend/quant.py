@@ -1,12 +1,12 @@
 """PostgreSQL-backed quant data browser and moving-average backtest API."""
 import os
-import math
 from datetime import datetime, timezone
 from decimal import Decimal
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
+from errors import error_response
 
 
 quant_bp = Blueprint("quant", __name__, url_prefix="/api/quant")
@@ -74,98 +74,6 @@ def _regression(rows, factors):
             "r_squared": 1 - residual / total if total else 0.0, "observations": len(rows)}
 
 
-def _ensure_factor_schema(conn):
-    conn.execute(text("""
-        CREATE TABLE IF NOT EXISTS factor_returns (
-          factor_date date PRIMARY KEY, risk_free numeric(12,8) NOT NULL, market_excess numeric(12,8) NOT NULL,
-          smb numeric(12,8) NOT NULL, hml numeric(12,8) NOT NULL, rmw numeric(12,8) NOT NULL,
-          cma numeric(12,8) NOT NULL, mom numeric(12,8) NOT NULL, source varchar(100) NOT NULL DEFAULT 'learning_sample'
-        )
-    """))
-    conn.execute(text("""
-        CREATE TABLE IF NOT EXISTS factor_exposures (
-          symbol varchar(20) NOT NULL, model varchar(20) NOT NULL, factor_name varchar(30) NOT NULL,
-          start_date date NOT NULL, end_date date NOT NULL, loading numeric(18,8) NOT NULL,
-          alpha_annual numeric(18,8), r_squared numeric(18,8), observations integer NOT NULL,
-          calculated_at timestamptz NOT NULL DEFAULT now(),
-          PRIMARY KEY(symbol,model,factor_name,start_date,end_date)
-        )
-    """))
-    conn.execute(text("""
-        INSERT INTO factor_returns(factor_date,risk_free,market_excess,smb,hml,rmw,cma,mom)
-        SELECT factor_day, 0.00008, round((0.00035 + sin(n / 13.0) * 0.006)::numeric,8),
-          round((cos(n / 9.0) * 0.0025)::numeric,8), round((sin(n / 17.0) * 0.0022)::numeric,8),
-          round((cos(n / 21.0) * 0.0018)::numeric,8), round((sin(n / 25.0) * 0.0015)::numeric,8),
-          round((sin(n / 11.0) * 0.0030)::numeric,8)
-        FROM (SELECT DISTINCT trade_time::date AS factor_day, row_number() OVER (ORDER BY trade_time::date)-1 AS n FROM market_data) d
-        ON CONFLICT(factor_date) DO NOTHING
-    """))
-
-
-_STRATEGY_NAMES = {
-    "ma2050": "이동평균 교차 MA 20/50",
-    "trend": "단기 추세추종 MA 5/20",
-    "pullback": "상승추세 눌림목 MA 20/60",
-    "rsi": "RSI 과매도 반등",
-    "breakout": "거래량 20일 돌파",
-    "momentum": "60일 모멘텀",
-}
-
-
-def _average(values):
-    return sum(values) / len(values) if values else None
-
-
-def _strategy_signals(prices, strategy):
-    """Generate long-only signals without using any future candle data."""
-    closes = [float(row["adjusted_close"]) for row in prices]
-    volumes = [float(row["volume"]) for row in prices]
-    ma5 = [_average(closes[max(0, index - 4):index + 1]) for index in range(len(closes))]
-    ma10 = [_average(closes[max(0, index - 9):index + 1]) for index in range(len(closes))]
-    ma20 = [_average(closes[max(0, index - 19):index + 1]) for index in range(len(closes))]
-    ma50 = [_average(closes[max(0, index - 49):index + 1]) for index in range(len(closes))]
-    ma60 = [_average(closes[max(0, index - 59):index + 1]) for index in range(len(closes))]
-    gains, losses, rsi = [], [], []
-    for index, close in enumerate(closes):
-        change = close - closes[index - 1] if index else 0
-        gains.append(max(change, 0)); losses.append(max(-change, 0))
-        avg_gain = _average(gains[max(0, index - 13):index + 1])
-        avg_loss = _average(losses[max(0, index - 13):index + 1])
-        rsi.append(100 if not avg_loss else 100 - 100 / (1 + avg_gain / avg_loss))
-    in_position = False
-    signals = []
-    for index, row in enumerate(prices):
-        buy = sell = False
-        if strategy == "ma2050":
-            buy = index > 0 and ma20[index] > ma50[index] and ma20[index - 1] <= ma50[index - 1]
-            sell = index > 0 and ma20[index] < ma50[index] and ma20[index - 1] >= ma50[index - 1]
-        elif strategy == "trend":
-            buy = index > 0 and ma5[index] > ma20[index] and ma5[index - 1] <= ma20[index - 1]
-            sell = index > 0 and ma5[index] < ma20[index] and ma5[index - 1] >= ma20[index - 1]
-        elif strategy == "pullback":
-            buy = index > 60 and ma20[index] > ma60[index] and closes[index] > ma20[index] and closes[index - 1] <= ma20[index - 1]
-            sell = index > 60 and ma20[index] < ma60[index]
-        elif strategy == "rsi":
-            buy = index > 14 and rsi[index] > 30 and rsi[index - 1] <= 30
-            sell = index > 14 and rsi[index] < 70 and rsi[index - 1] >= 70
-        elif strategy == "breakout":
-            prior_high = max(closes[max(0, index - 20):index]) if index >= 20 else None
-            prior_volume = _average(volumes[max(0, index - 20):index]) if index >= 20 else None
-            buy = index >= 20 and closes[index] > prior_high and volumes[index] > prior_volume
-            sell = index >= 20 and closes[index] < ma10[index]
-        elif strategy == "momentum":
-            buy = index >= 60 and closes[index] / closes[index - 60] - 1 > 0 and closes[index] > ma60[index]
-            sell = index >= 60 and (closes[index] / closes[index - 60] - 1 <= 0 or closes[index] < ma60[index])
-        if buy and not in_position:
-            signals.append({**row, "signal": "BUY"}); in_position = True
-        elif sell and in_position:
-            signals.append({**row, "signal": "SELL"}); in_position = False
-    # Close an open position on the final available price to make each run comparable.
-    if in_position and prices:
-        signals.append({**prices[-1], "signal": "SELL"})
-    return signals
-
-
 def _params():
     symbol = request.args.get("symbol", "005930").upper().strip()
     if not symbol or len(symbol) > 20 or not all(char.isalnum() or char in "-_" for char in symbol):
@@ -231,92 +139,259 @@ def signals():
         with _db().connect() as conn:
             rows = _rows(conn.execute(sql, {"symbol": symbol, "fast": fast - 1, "slow": slow - 1, "limit": limit}))
         return jsonify({"rows": list(reversed(rows)), "fast": fast, "slow": slow})
-    except (ValueError, SQLAlchemyError) as exc:
-        return jsonify({"message": f"시그널 조회 실패: {exc}"}), 400
+    except ValueError as exc:
+        return error_response("시그널 조회 실패: 요청 값을 확인하세요.", exc, 400, key="message")
+    except SQLAlchemyError as exc:
+        return error_response("시그널 조회 실패: 데이터베이스 오류", exc, 503, key="message")
+
+
+_MAX_RANGE_DAYS = 366 * 20
+
+
+def _backtest_request(data):
+    """Validate the POST body. Raises ValueError with a user-facing message."""
+    from datetime import date, timedelta
+
+    from quantlab import engine as qengine
+
+    symbol = str(data.get("symbol", "005930")).upper().strip()
+    if not symbol or len(symbol) > 20 or not all(char.isalnum() or char in "-_^" for char in symbol):
+        raise ValueError("유효한 symbol을 입력하세요.")
+    strategy = str(data.get("strategy", "ma2050")).strip().lower()
+    fast = int(data["fast"]) if data.get("fast") is not None else None
+    slow = int(data["slow"]) if data.get("slow") is not None else None
+    # The UI sends rates as fractions (0.00015 = 1.5 bps); the engine takes bps. Rounding keeps
+    # 0.00015 * 1e4 from becoming 1.4999999999999998, which would change the receipt id.
+    def bps(key, default):
+        return round(float(data.get(key, default)) * 1e4, 6)
+
+    costs = qengine.Costs(
+        fee_bps=bps("feeRate", 0.00015), slippage_bps=bps("slippage", 0.0005), sell_tax_bps=bps("sellTaxRate", 0.0)
+    )
+    capital = float(data.get("initialCapital", 10_000_000))
+    if not (10_000 <= capital <= 1e12):
+        raise ValueError("initialCapital은 10,000 이상 1조 이하여야 합니다.")
+    end = date.fromisoformat(data["end"]) if data.get("end") else date.today() + timedelta(days=1)
+    start = date.fromisoformat(data["start"]) if data.get("start") else end - timedelta(days=366 * 3)
+    if not start < end or (end - start).days > _MAX_RANGE_DAYS:
+        raise ValueError("기간(start < end, 최대 20년)을 확인하세요.")
+    return symbol, strategy, fast, slow, costs, capital, start, end
+
+
+def _pct(value, digits=4):
+    return round(value * 100, digits) if value is not None else None
+
+
+def _curve(result):
+    equity, bench = result["equity"], result["benchmarkEquity"]
+    drawdown = equity / equity.cummax() - 1
+    return [
+        {"t": ts.date().isoformat(), "equity": round(float(e), 2), "benchmark": round(float(b), 2),
+         "drawdown": round(float(d), 6), "position": int(p)}
+        for ts, e, b, d, p in zip(equity.index, equity, bench, drawdown, result["position"], strict=True)
+    ]
+
+
+class NotEnoughBars(LookupError):
+    """The requested symbol and period have fewer than two stored bars."""
+
+
+class SourceBlocked(PermissionError):
+    """Stored bars come from a source the registry does not allow in this profile."""
+
+
+def _require_allowed_sources(bars) -> None:
+    """Backtests only use bars whose source config/data_sources.toml enables for this profile.
+
+    Ingestion already checks the registry, but market_data can also hold rows loaded
+    another way (the SQL seed, a restored dump), so the check also runs where data is served.
+    """
+    import price_sources
+    from marketdata import registry
+
+    reg, profile = registry.load(), price_sources.profile()
+    for source_id in sorted({bar.source for bar in bars}):
+        try:
+            allowed = reg.get(source_id).allowed_in(profile)
+        except registry.RegistryError:
+            allowed = False
+        if not allowed:
+            raise SourceBlocked(f"데이터 소스 {source_id!r}는 이 배포({profile})에서 사용할 수 없습니다.")
+
+
+def execute_backtest(data: dict) -> tuple[dict, bool]:
+    """Run and store one backtest; returns (response body, reused).
+
+    Shared by POST /api/quant/backtests and the research agent (deskagent), so
+    both produce the same receipts. Raises ValueError/TypeError/KeyError for bad
+    input, NotEnoughBars, or SQLAlchemyError.
+    """
+    import json
+
+    from marketdata import store
+    from quantlab.backtest import backtest
+
+    symbol, strategy, fast, slow, costs, capital, start, end = _backtest_request(data)
+    with _db().begin() as conn:
+        bars = store.load_bars(conn, symbol, start=start, end=end)
+        if len(bars) < 2:
+            raise NotEnoughBars(f"{symbol}의 {start}~{end} 시세가 부족합니다.")
+        _require_allowed_sources(bars)
+        result = backtest(bars, strategy, fast, slow, costs, capital)
+        receipt, summary, bench = result["receipt"], result["metrics"], result["benchmark"]
+        inserted = conn.execute(text("""
+            INSERT INTO backtest_runs(receipt_id, engine_version, input_sha256, params, sources, first_bar,
+                                      last_bar, bar_count, git_sha, metrics, benchmark)
+            VALUES (:id, :engine, :input, CAST(:params AS jsonb), :sources, :first, :last, :count, :git,
+                    CAST(:metrics AS jsonb), CAST(:benchmark AS jsonb))
+            ON CONFLICT (receipt_id) DO NOTHING RETURNING receipt_id
+        """), {"id": receipt["receiptId"], "engine": receipt["engineVersion"], "input": receipt["inputSha256"],
+               "params": json.dumps(receipt["params"]), "sources": receipt["sources"],
+               "first": receipt["firstBar"], "last": receipt["lastBar"], "count": receipt["barCount"],
+               "git": receipt["gitSha"], "metrics": json.dumps(summary),
+               "benchmark": json.dumps(bench)}).scalar_one_or_none()
+        if inserted is None:
+            stored = conn.execute(text(
+                "SELECT strategy_id, git_sha, created_at FROM backtest_runs WHERE receipt_id = :id"
+            ), {"id": receipt["receiptId"]}).mappings().one()
+            strategy_id = stored["strategy_id"]
+            receipt = {**receipt, "gitSha": stored["git_sha"], "createdAt": stored["created_at"].isoformat()}
+        else:
+            strategy_id = conn.execute(text("""
+                INSERT INTO strategies(name, parameters) VALUES (:name, CAST(:params AS jsonb))
+                RETURNING strategy_id
+            """), {"name": f"{result['strategy']['label']} {symbol}"[:100],
+                   "params": json.dumps({**receipt["params"], "receiptId": receipt["receiptId"]})}).scalar_one()
+            conn.execute(text("UPDATE backtest_runs SET strategy_id = :sid WHERE receipt_id = :id"),
+                         {"sid": strategy_id, "id": receipt["receiptId"]})
+            slip = costs.slippage_bps * 1e-4
+            for trade in result["trades"]:
+                reference = trade.price / (1 + slip) if trade.side == "BUY" else trade.price / (1 - slip)
+                conn.execute(text("""
+                    INSERT INTO trade_logs(strategy_id,symbol,trade_time,side,price,quantity,fee,slippage,pnl)
+                    VALUES(:id,:symbol,:time,:side,:price,:quantity,:fee,:slippage,:pnl)
+                """), {"id": strategy_id, "symbol": symbol, "time": trade.ts.to_pydatetime(), "side": trade.side,
+                       "price": trade.price, "quantity": trade.units, "fee": trade.costs,
+                       "slippage": abs(trade.price - reference) * trade.units, "pnl": trade.pnl})
+            conn.execute(text("""
+                INSERT INTO performance_metrics(strategy_id,start_date,end_date,sharpe_ratio,max_drawdown,
+                                                annual_return,total_return,trade_count)
+                VALUES(:id,:start,:end,:sharpe,:mdd,:annual,:total,:count)
+            """), {"id": strategy_id, "start": receipt["firstBar"], "end": receipt["lastBar"],
+                   "sharpe": summary["sharpe"], "mdd": _pct(summary["maxDrawdown"]),
+                   "annual": _pct(summary["cagr"]), "total": _pct(summary["totalReturn"]),
+                   "count": summary["trades"]})
+    body = {
+        # Keys the existing UI reads; percentages as before.
+        "strategyId": strategy_id,
+        "tradeCount": summary["trades"],
+        "realizedPnl": round(summary["realizedPnl"], 2),
+        "totalReturn": _pct(summary["totalReturn"]),
+        "sharpeRatio": round(summary["sharpe"], 4) if summary["sharpe"] is not None else None,
+        "maxDrawdown": _pct(summary["maxDrawdown"]),
+        "annualReturn": _pct(summary["cagr"]),
+        "message": ("같은 입력의 기존 실행을 돌려줍니다." if inserted is None
+                    else "백테스트 결과와 거래 로그를 PostgreSQL에 저장했습니다."),
+        # quantlab results; ratios are fractions here (0.1 = 10%).
+        "receiptId": receipt["receiptId"],
+        "receipt": receipt,
+        "reused": inserted is None,
+        "strategy": result["strategy"],
+        "parameters": receipt["params"],
+        "metrics": summary,
+        "benchmark": bench,
+        "equity": _curve(result),
+        "trades": [{"t": t.ts.isoformat(), "side": t.side, "price": round(t.price, 4), "units": t.units,
+                    "costs": round(t.costs, 4), "pnl": round(t.pnl, 4)} for t in result["trades"]],
+        "source": receipt["sources"],
+    }
+    return body, inserted is None
 
 
 @quant_bp.post("/backtests")
 def run_backtest():
-    data = request.get_json(silent=True) or {}
-    symbol = str(data.get("symbol", "005930")).upper().strip()
-    fast, slow = int(data.get("fast", 20)), int(data.get("slow", 50))
-    quantity = max(1, min(int(data.get("quantity", 10)), 100000))
-    fee_rate = max(0.0, min(float(data.get("feeRate", 0.00015)), 0.02))
-    slippage = max(0.0, min(float(data.get("slippage", 0.0005)), 0.02))
-    strategy = str(data.get("strategy", "ma2050")).strip().lower()
-    if not symbol or fast < 2 or slow <= fast or slow > 250 or strategy not in _STRATEGY_NAMES:
-        return jsonify({"message": "symbol과 이동평균 기간을 확인하세요."}), 400
+    """Run a quantlab backtest on stored bars and keep one receipted run per input."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"message": "JSON 객체 본문이 필요합니다."}), 400
     try:
-        with _db().begin() as conn:
-            strategy_id = conn.execute(text("""
-                INSERT INTO strategies(name, parameters) VALUES (:name, CAST(:params AS jsonb)) RETURNING strategy_id
-            """), {"name": f"{_STRATEGY_NAMES[strategy]} {symbol}", "params": __import__("json").dumps(data)}).scalar_one()
-            price_rows = _rows(conn.execute(text("""
-                SELECT trade_time, adjusted_close, volume FROM market_data WHERE symbol=:symbol ORDER BY trade_time
-            """), {"symbol": symbol}))
-            signal_rows = _strategy_signals(price_rows, strategy)
-            entry = None
-            trades = []
-            for row in signal_rows:
-                if row["signal"] == "BUY" and entry is None:
-                    entry = row
-                    trades.append((row, "BUY", 0.0))
-                elif row["signal"] == "SELL" and entry is not None:
-                    buy_cost = entry["adjusted_close"] * quantity * (1 + fee_rate + slippage)
-                    sell_value = row["adjusted_close"] * quantity * (1 - fee_rate - slippage)
-                    trades.append((row, "SELL", sell_value - buy_cost))
-                    entry = None
-            for row, side, pnl in trades:
-                price = row["adjusted_close"] * (1 + slippage if side == "BUY" else 1 - slippage)
-                conn.execute(text("""
-                    INSERT INTO trade_logs(strategy_id,symbol,trade_time,side,price,quantity,fee,slippage,pnl)
-                    VALUES(:id,:symbol,:time,:side,:price,:quantity,:fee,:slippage,:pnl)
-                """), {"id": strategy_id, "symbol": symbol, "time": row["trade_time"], "side": side, "price": price,
-                       "quantity": quantity, "fee": row["adjusted_close"] * quantity * fee_rate, "slippage": row["adjusted_close"] * quantity * slippage, "pnl": pnl})
-            realized = [pnl for _, side, pnl in trades if side == "SELL"]
-            total_pnl = sum(realized)
-            first = signal_rows[0]["trade_time"] if signal_rows else datetime.now(timezone.utc)
-            last = signal_rows[-1]["trade_time"] if signal_rows else first
-            capital = (signal_rows[0]["adjusted_close"] if signal_rows else 1) * quantity
-            total_return = (total_pnl / capital * 100) if capital else 0
-            equity = capital
-            peak = capital
-            max_drawdown = 0.0
-            periodic_returns = []
-            for pnl in realized:
-                prior_equity = equity
-                equity += pnl
-                if prior_equity:
-                    periodic_returns.append(pnl / prior_equity)
-                peak = max(peak, equity)
-                if peak:
-                    max_drawdown = min(max_drawdown, (equity / peak - 1) * 100)
-            if len(periodic_returns) > 1:
-                mean_return = sum(periodic_returns) / len(periodic_returns)
-                deviation = math.sqrt(sum((value - mean_return) ** 2 for value in periodic_returns) / (len(periodic_returns) - 1))
-                sharpe = mean_return / deviation * math.sqrt(252) if deviation else None
-            else:
-                sharpe = None
-            first_dt = datetime.fromisoformat(str(first))
-            last_dt = datetime.fromisoformat(str(last))
-            days = max((last_dt - first_dt).days, 1)
-            annual_return = ((equity / capital) ** (365 / days) - 1) * 100 if capital > 0 and equity > 0 else total_return
-            conn.execute(text("""
-                INSERT INTO performance_metrics(strategy_id,start_date,end_date,sharpe_ratio,max_drawdown,annual_return,total_return,trade_count)
-                VALUES(:id,:start,:end,:sharpe,:mdd,:annual,:total,:count)
-            """), {"id": strategy_id, "start": first, "end": last, "sharpe": sharpe, "mdd": max_drawdown,
-                   "annual": annual_return, "total": total_return, "count": len(trades)})
-        return jsonify({"strategyId": strategy_id, "tradeCount": len(trades), "realizedPnl": round(total_pnl, 2),
-                        "totalReturn": round(total_return, 4), "sharpeRatio": round(sharpe, 4) if sharpe is not None else None,
-                        "maxDrawdown": round(max_drawdown, 4), "annualReturn": round(annual_return, 4),
-                        "message": "백테스트 결과와 거래 로그를 PostgreSQL에 저장했습니다."}), 201
-    except (ValueError, SQLAlchemyError) as exc:
-        return jsonify({"message": f"백테스트 실행 실패: {exc}"}), 400
+        body, reused = execute_backtest(data)
+        return jsonify(body), (200 if reused else 201)
+    except NotEnoughBars as exc:
+        return jsonify({"message": str(exc)}), 404
+    except SourceBlocked as exc:
+        return jsonify({"message": str(exc)}), 403
+    except (ValueError, TypeError, KeyError) as exc:
+        return error_response("백테스트 실행 실패: 요청 값을 확인하세요.", exc, 400, key="message")
+    except SQLAlchemyError as exc:
+        return error_response("백테스트 실행 실패: 데이터베이스 오류", exc, 503, key="message")
+
+
+def stored_backtest(receipt_id: str) -> dict | None:
+    """A stored run by receipt id, or None. Raises ValueError for a malformed id, SQLAlchemyError."""
+    receipt_id = receipt_id.lower()
+    if len(receipt_id) != 64 or any(char not in "0123456789abcdef" for char in receipt_id):
+        raise ValueError("receipt id는 64자리 16진수입니다.")
+    with _db().connect() as conn:
+        row = conn.execute(text("""
+            SELECT receipt_id, strategy_id, engine_version, input_sha256, params, sources, first_bar, last_bar,
+                   bar_count, git_sha, metrics, benchmark, created_at
+            FROM backtest_runs WHERE receipt_id = :id
+        """), {"id": receipt_id}).mappings().first()
+    if row is None:
+        return None
+    return {
+        "receiptId": row["receipt_id"],
+        "strategyId": row["strategy_id"],
+        "receipt": {
+            "receiptId": row["receipt_id"], "engineVersion": row["engine_version"], "inputSha256": row["input_sha256"],
+            "params": row["params"], "sources": list(row["sources"]), "firstBar": row["first_bar"].isoformat(),
+            "lastBar": row["last_bar"].isoformat(), "barCount": row["bar_count"], "gitSha": row["git_sha"],
+            "createdAt": row["created_at"].isoformat(),
+        },
+        "parameters": row["params"],
+        "metrics": row["metrics"],
+        "benchmark": row["benchmark"],
+    }
+
+
+@quant_bp.get("/backtests/<receipt_id>")
+def get_backtest(receipt_id):
+    """A stored run by its receipt id (the id a backtest response returned)."""
+    try:
+        body = stored_backtest(receipt_id)
+    except ValueError as exc:
+        return jsonify({"message": str(exc)}), 400
+    except SQLAlchemyError as exc:
+        return error_response("백테스트 조회 실패: 데이터베이스 오류", exc, 503, key="message")
+    if body is None:
+        return jsonify({"message": "해당 영수증의 실행이 없습니다."}), 404
+    return jsonify(body)
+
+
+def sources_payload() -> dict:
+    """The data source registry as this deployment applies it (config/data_sources.toml)."""
+    import price_sources
+
+    profile = price_sources.profile()
+    sources = price_sources._registry().sources.values()
+    return {"profile": profile, "sources": [
+        {"id": s.id, "name": s.name, "kind": s.kind, "status": s.status, "enabled": s.allowed_in(profile),
+         "redistribution": s.redistribution, "attribution": s.attribution, "termsUrl": s.terms_url,
+         "checkedOn": s.checked_on}
+        for s in sorted(sources, key=lambda s: s.id)
+    ]}
+
+
+@quant_bp.get("/sources")
+def data_sources():
+    return jsonify(sources_payload())
 
 
 @quant_bp.get("/results")
 def results():
     try:
+        strategy_id = request.args.get("strategyId", type=int)
         with _db().connect() as conn:
             strategies = _rows(conn.execute(text("""
                 SELECT s.strategy_id, s.name, s.parameters, s.created_at, p.total_return, p.annual_return, p.trade_count
@@ -325,8 +400,9 @@ def results():
             """)))
             trades = _rows(conn.execute(text("""
                 SELECT trade_id,strategy_id,symbol,trade_time,side,price,quantity,fee,slippage,pnl
-                FROM trade_logs ORDER BY trade_id DESC LIMIT 50
-            """)))
+                FROM trade_logs WHERE CAST(:sid AS bigint) IS NULL OR strategy_id = :sid
+                ORDER BY trade_id DESC LIMIT 50
+            """), {"sid": strategy_id}))
         return jsonify({"strategies": strategies, "trades": trades})
     except SQLAlchemyError as exc:
         return jsonify({"message": f"결과 조회 실패: {exc.__class__.__name__}"}), 503
@@ -338,7 +414,6 @@ def factor_analysis():
     try:
         symbol, _ = _params()
         with _db().begin() as conn:
-            _ensure_factor_schema(conn)
             rows = _rows(conn.execute(text("""
                 WITH prices AS (
                   SELECT trade_time::date factor_date, adjusted_close,
@@ -375,5 +450,42 @@ def factor_analysis():
                                         "exposures": [{"name": name, "label": labels[name], "loading": round(value, 4)} for name, value in multi["loadings"].items()]},
                         "source": "learning_sample",
                         "notice": "팩터 수익률은 교육용 샘플입니다. 실제 운용에는 검증된 시장·팩터 데이터로 교체해야 합니다."})
-    except (ValueError, SQLAlchemyError) as exc:
-        return jsonify({"message": f"팩터 분석 실패: {exc}"}), 400
+    except ValueError as exc:
+        return error_response("팩터 분석 실패: 요청 값을 확인하세요.", exc, 400, key="message")
+    except SQLAlchemyError as exc:
+        return error_response("팩터 분석 실패: 데이터베이스 오류", exc, 503, key="message")
+
+
+@quant_bp.get("/data-quality")
+def data_quality():
+    """Re-run the quality checks on the stored bars of one symbol."""
+    from datetime import date, timedelta
+
+    from marketdata import quality, store
+
+    symbol = request.args.get("symbol", "005930").upper().strip()
+    try:
+        days = max(1, min(int(request.args.get("days", 365)), 3650))
+    except ValueError:
+        return jsonify({"message": "days must be an integer"}), 400
+    start = date.today() - timedelta(days=days)
+    try:
+        with _db().connect() as conn:
+            bars = store.load_bars(conn, symbol, start=start)
+            run = conn.execute(text(
+                "SELECT run_id, source, status, row_count, checksum, finished_at FROM ingestion_runs "
+                "WHERE :symbol = ANY(symbols) ORDER BY run_id DESC LIMIT 1"
+            ), {"symbol": symbol}).mappings().first()
+    except SQLAlchemyError as exc:
+        return error_response("데이터 품질 조회 실패: 데이터베이스 오류", exc, 503, key="message")
+    findings = quality.check(bars, as_of=datetime.now(timezone.utc))
+    return jsonify({
+        "symbol": symbol,
+        "bars": len(bars),
+        "sources": sorted({bar.source for bar in bars}),
+        "errors": sum(1 for f in findings if f.severity == "error"),
+        "warnings": sum(1 for f in findings if f.severity == "warn"),
+        "findings": [f.as_dict() for f in findings],
+        "lastIngestion": ({**run, "finished_at": run["finished_at"].isoformat() if run["finished_at"] else None}
+                          if run else None),
+    })

@@ -3,15 +3,18 @@ import requests
 import threading
 import time
 from datetime import datetime, timedelta
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
 
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 import stock_trading
 from db import engine, session_scope
 from models import AlternativeOrder, CryptoOrder, HoldCrypto, HtsWatchMemo, Member, StockOrder, StockPosition, UpbitMarket
 from alternatives import get_positions as get_alternative_positions, position_value
-from authz import can_use_kis_account, is_admin_member
+from accounts import can_sign_in, is_reserved_email
+from authz import admin_email, can_use_kis_account, is_admin_member
+from extensions import limiter
 from security import csrf_token
 from stock_market import cached_price
 
@@ -29,7 +32,9 @@ def _hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def _check_password(password: str, hashed: str) -> bool:
+def _check_password(password: str, hashed: str | None) -> bool:
+    if not hashed:
+        return False
     try:
         return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
     except ValueError:
@@ -39,16 +44,18 @@ def _check_password(password: str, hashed: str) -> bool:
 @member_bp.get("/me")
 def me():
     member_id = session.get("member_id")
+    # profile lets the menu hide screens whose APIs this deployment does not register.
+    profile = current_app.config.get("APP_PROFILE", "local")
     if not member_id:
-        return jsonify({"loggedIn": False, "csrfToken": csrf_token()})
+        return jsonify({"loggedIn": False, "csrfToken": csrf_token(), "profile": profile})
     with session_scope() as db:
         member = db.get(Member, member_id)
         if not member:
-            return jsonify({"loggedIn": False, "csrfToken": csrf_token()})
+            return jsonify({"loggedIn": False, "csrfToken": csrf_token(), "profile": profile})
         return jsonify({
             "loggedIn": True, "username": member.username, "asset": member.asset,
-            "isAdmin": is_admin_member(member_id), "canUseKisAccount": can_use_kis_account(member_id),
-            "csrfToken": csrf_token(),
+            "isAdmin": is_admin_member(member_id, db), "canUseKisAccount": can_use_kis_account(member_id, db),
+            "csrfToken": csrf_token(), "profile": profile,
         })
 
 
@@ -108,6 +115,38 @@ def ensure_member_tables() -> None:
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
     with engine.begin() as conn:
         conn.execute(text(statement))
+    ensure_unique_member_email()
+
+
+MEMBER_EMAIL_INDEX = "uq_member_email"
+
+
+class DuplicateEmailError(RuntimeError):
+    """The member table already holds the same email more than once."""
+
+
+def ensure_unique_member_email() -> None:
+    """Add a UNIQUE index on member.email (idempotent).
+
+    Registration checks for an existing email and then inserts, so two requests
+    at once could both pass the check. The table collation is case-insensitive,
+    so the index also treats addresses that differ only in case as equal.
+    Existing duplicates are reported instead of silently merged.
+    """
+    with engine.begin() as conn:
+        exists = conn.execute(text(
+            "SELECT COUNT(*) FROM information_schema.statistics "
+            "WHERE table_schema = DATABASE() AND table_name = 'member' AND index_name = :name"
+        ), {"name": MEMBER_EMAIL_INDEX}).scalar()
+        if exists:
+            return
+        duplicates = conn.execute(text(
+            "SELECT email, COUNT(*) FROM member WHERE email IS NOT NULL GROUP BY email HAVING COUNT(*) > 1"
+        )).all()
+        if duplicates:
+            listing = ", ".join(f"{email} x{count}" for email, count in duplicates)
+            raise DuplicateEmailError(f"member.email has duplicates; resolve them before adding {MEMBER_EMAIL_INDEX}: {listing}")
+        conn.execute(text(f"ALTER TABLE member ADD UNIQUE KEY {MEMBER_EMAIL_INDEX} (email)"))
 
 
 @member_bp.get("/portfolio-analysis")
@@ -365,6 +404,7 @@ def investor_rankings():
 
 
 @member_bp.post("/login")
+@limiter.limit("10 per minute")
 def login():
     body = request.get_json(silent=True) or {}
     email = (body.get("email") or "").strip()
@@ -374,7 +414,11 @@ def login():
 
     with session_scope() as db:
         member = db.query(Member).filter(Member.email == email).first()
-        if not member or not _check_password(password, member.password):
+        if (
+            not member
+            or not can_sign_in(member.email, current_app.config["APP_PROFILE"])
+            or not _check_password(password, member.password)
+        ):
             return jsonify({"error": "아이디 또는 비밀번호가 맞지 않습니다."}), 401
 
         session.clear()
@@ -384,6 +428,7 @@ def login():
 
 
 @member_bp.post("/register")
+@limiter.limit("5 per hour")
 def register():
     body = request.get_json(silent=True) or {}
     username = (body.get("username") or "").strip()
@@ -401,6 +446,11 @@ def register():
         return jsonify({"field": "password2", "error": "비밀번호 확인을 입력해주세요."}), 400
     if password != password2:
         return jsonify({"field": "password2", "error": "패스워드가 일치하지 않습니다."}), 400
+    # 시스템 계정 도메인과, 공개 배포의 관리자 주소는 가입으로 만들 수 없다.
+    # 공개 배포의 관리자는 `flask --app app create-admin`으로 만든다.
+    reserved_admin = current_app.config["APP_PROFILE"] == "public" and email.lower() == admin_email()
+    if is_reserved_email(email) or reserved_admin:
+        return jsonify({"field": "email", "error": "사용할 수 없는 이메일입니다."}), 400
 
     with session_scope() as db:
         if db.query(Member).filter(Member.email == email).first():
@@ -408,7 +458,12 @@ def register():
 
         member = Member(username=username, email=email, password=_hash_password(password), asset=INITIAL_ASSET)
         db.add(member)
-        db.flush()
+        try:
+            db.flush()
+        except IntegrityError:
+            # 동시에 같은 이메일로 가입한 요청이 먼저 커밋됐다(uq_member_email).
+            db.rollback()
+            return jsonify({"field": "email", "error": "이미 존재하는 회원입니다."}), 400
         session.clear()
         session["member_id"] = member.member_id
         session.permanent = True

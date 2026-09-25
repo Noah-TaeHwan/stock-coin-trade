@@ -4,11 +4,14 @@ import secrets
 from flask import Blueprint, jsonify, request, session
 
 from db import session_scope
+from extensions import limiter
 from models import ApiKey
 
 api_key_bp = Blueprint("api_keys", __name__, url_prefix="/api/member/api-keys")
 
 KEY_PREFIX = "eduapi_live_"
+# 회원당 활성 키 상한. 레이트 리밋이 키 단위라 키를 무한히 만들면 우회된다.
+MAX_ACTIVE_KEYS = 5
 
 
 @api_key_bp.before_request
@@ -42,6 +45,7 @@ def list_keys():
 
 
 @api_key_bp.post("")
+@limiter.limit("10 per hour")
 def create_key():
     member_id = session["member_id"]
     body = request.get_json(silent=True) or {}
@@ -52,6 +56,12 @@ def create_key():
     key_prefix = raw_key[:16]
 
     with session_scope() as db:
+        active = db.query(ApiKey).filter(ApiKey.member_id == member_id, ApiKey.is_active.is_(True)).count()
+        if active >= MAX_ACTIVE_KEYS:
+            return jsonify({
+                "error": "TOO_MANY_KEYS",
+                "message": f"활성 API 키는 {MAX_ACTIVE_KEYS}개까지입니다. 사용하지 않는 키를 폐기한 뒤 다시 발급하세요.",
+            }), 400
         key = ApiKey(member_id=member_id, label=label, key_prefix=key_prefix, key_hash=key_hash)
         db.add(key)
         db.flush()

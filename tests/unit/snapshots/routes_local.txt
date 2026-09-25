@@ -1,5 +1,6 @@
 DELETE /api/member/api-keys/<int:key_id> api_keys.revoke_key
 GET /api/admin/me admin.admin_me
+GET /api/agent/status research_agent.status
 GET /api/ai-sheet/sectors ai_sheet.list_sectors
 GET /api/alpaca-test/market/clock alpaca_test.market_clock
 GET /api/alpaca-test/market/quote alpaca_test.market_quote
@@ -65,11 +66,14 @@ GET /api/member/portfolio-analysis member.portfolio_analysis
 GET /api/member/trading-activity member.trading_activity
 GET /api/ohlcv-db/summary ohlcv_db.summary
 GET /api/ohlcv-db/tickers ohlcv_db.tickers
+GET /api/quant/backtests/<receipt_id> quant.get_backtest
+GET /api/quant/data-quality quant.data_quality
 GET /api/quant/factor-analysis quant.factor_analysis
 GET /api/quant/market-data quant.market_data
 GET /api/quant/overview quant.overview
 GET /api/quant/results quant.results
 GET /api/quant/signals quant.signals
+GET /api/quant/sources quant.data_sources
 GET /api/stocks/account stocks.account
 GET /api/stocks/ai/qdrant/list core.ai_qdrant_list
 GET /api/stocks/ai/qdrant/stats core.ai_qdrant_stats
@@ -93,6 +97,8 @@ GET /openapi/v1/positions openapi.positions
 GET /openapi/v1/quote/<symbol> openapi.quote
 GET /openapi/v1/stocks openapi.list_stocks
 GET /static/<path:filename> static
+POST /api/agent/ask research_agent.ask
+POST /api/agent/redeem research_agent.redeem
 POST /api/ai-sheet/crawl ai_sheet.crawl_to_sheet
 POST /api/ai-sheet/lean-backtest ai_sheet.lean_backtest
 POST /api/ai-sheet/quant-analyze ai_sheet.quant_analyze

@@ -2,7 +2,7 @@
 (() => {
   const apiBase = window.APP_CONFIG?.apiBase || '';
   const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const esc = escapeHtml;
 
   let catalog = { apis: [] };
   let user = null;

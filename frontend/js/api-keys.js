@@ -20,8 +20,8 @@ async function loadKeys() {
     }
     tbody.innerHTML = keys.map(k => `
       <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-        <td class="px-4 py-3" style="font-weight:700;color:var(--fg);font-size:13px;">${k.label}</td>
-        <td class="px-4 py-3" style="font-family:monospace;font-size:12px;color:var(--muted);">${k.keyPrefix}••••••••</td>
+        <td class="px-4 py-3" style="font-weight:700;color:var(--fg);font-size:13px;">${escapeHtml(k.label)}</td>
+        <td class="px-4 py-3" style="font-family:monospace;font-size:12px;color:var(--muted);">${escapeHtml(k.keyPrefix)}••••••••</td>
         <td class="px-4 py-3" style="font-size:12px;color:var(--muted);">${fmtDate(k.createdAt)}</td>
         <td class="px-4 py-3" style="font-size:12px;color:var(--muted);">${fmtDate(k.lastUsedAt)}</td>
         <td class="px-4 py-3 text-center">
@@ -31,12 +31,12 @@ async function loadKeys() {
         </td>
         <td class="px-4 py-3 text-center">
           ${k.isActive
-            ? `<button onclick="revokeKey(${k.id})" style="background:var(--down-bg);color:var(--down);border:1px solid rgba(255,77,77,.35);border-radius:var(--radius);padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
+            ? `<button onclick="revokeKey(${Number(k.id)})" style="background:var(--down-bg);color:var(--down);border:1px solid rgba(255,77,77,.35);border-radius:var(--radius);padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
             : '-'}
         </td>
       </tr>`).join('');
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center" style="color:var(--down);">불러오기 실패: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center" style="color:var(--down);">불러오기 실패: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 

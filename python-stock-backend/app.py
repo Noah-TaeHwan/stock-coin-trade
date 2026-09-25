@@ -21,8 +21,10 @@ import click  # noqa: E402
 import requests as _req  # noqa: E402
 from flask import Blueprint, Flask, g, got_request_exception, jsonify, request, session  # noqa: E402
 from flask_cors import CORS  # noqa: E402
+from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: E402
 
 import bootstrap  # noqa: E402
+from authz import is_admin_member  # noqa: E402
 from admin import admin_bp  # noqa: E402
 from ai import ai_bp  # noqa: E402
 from ai_sheet import ai_sheet_bp  # noqa: E402
@@ -37,6 +39,8 @@ from broker_test_aws_api import aws_broker_test_bp  # noqa: E402
 from crypto import market_bp, trade_bp  # noqa: E402
 from crypto_exchange_test_api import crypto_exchange_test_bp  # noqa: E402
 from error_analysis import error_analysis_bp, record_error  # noqa: E402
+from errors import error_response, request_id  # noqa: E402
+from extensions import limiter  # noqa: E402
 from kis_api_explorer import kis_explorer_bp  # noqa: E402
 from kis_chart_api import kis_chart_bp  # noqa: E402
 from kis_practice import kis_practice_bp  # noqa: E402
@@ -44,10 +48,14 @@ from kis_real import kis_real_bp  # noqa: E402
 from members import member_bp  # noqa: E402
 from ohlcv_db import ohlcv_db_bp  # noqa: E402
 from openapi import open_api_bp  # noqa: E402
+import price_sources  # noqa: E402
+from marketdata import registry as data_registry  # noqa: E402
 from quant import quant_bp  # noqa: E402
+from research_agent import create_invite_command, research_agent_bp  # noqa: E402
+from security import cross_site_request_rejected  # noqa: E402
 from settings import Settings  # noqa: E402
 from stock_market import (  # noqa: E402
-    BASE_PRICES, get_chart_cached, get_dashboard_stock_quotes, get_index_cached, get_market_cap_rankings,
+    BASE_PRICES, get_chart_with_source, get_dashboard_stock_quotes, get_index_cached, get_market_cap_rankings,
     get_quote_cached, get_stock_info, list_krx_stocks, search_krx_stocks,
 )
 from stocks import stock_bp  # noqa: E402
@@ -60,8 +68,33 @@ BLUEPRINTS = (
     member_bp, market_bp, trade_bp, crypto_exchange_test_bp, admin_bp, ai_bp, ai_sheet_bp,
     alpaca_test_bp, aws_alpaca_test_bp, stock_bp, api_key_bp, broker_test_bp, kis_explorer_bp,
     kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp, open_api_bp, ohlcv_db_bp,
-    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp,
+    quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp, research_agent_bp,
 )
+
+# Classroom labs that need broker or cloud credentials, the host Docker socket,
+# or an external database. The public profile does not register them.
+LOCAL_ONLY_BLUEPRINTS = frozenset({
+    crypto_exchange_test_bp, alpaca_test_bp, aws_alpaca_test_bp, broker_test_bp, kis_explorer_bp,
+    kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp,  # broker labs (KIS, KB, Alpaca, AWS SSM, exchanges)
+    ai_sheet_bp,  # page crawler and LEAN backtest through the host Docker socket
+    ohlcv_db_bp,  # external OHLCV database with a hardcoded default DSN
+    alternative_bp,  # futures/options P&L model not yet reviewed
+    ai_bp,  # market summary on the server's API key with no invite or budget; public uses research_agent_bp
+})
+
+# Features that exist only to show a given data source's prices. They are
+# registered only when config/data_sources.toml allows every source they need
+# in the running profile, so enabling a verified source there brings them back.
+SOURCE_DEPENDENT_BLUEPRINTS = {
+    market_bp: ("upbit",),  # crypto market list and quotes
+    trade_bp: ("upbit",),  # crypto paper trading priced from Upbit
+    arb_bp: ("upbit", "exchange_quotes"),  # cross-exchange arbitrage view
+}
+
+# Exact origins, not prefixes: flask-cors treats these strings as regular
+# expressions matched from the start, so "http://localhost:*" also matched
+# "http://localhost.evil.example".
+LOCAL_DEV_ORIGINS = [r"^http://localhost(:\d+)?$", r"^http://127\.0\.0\.1(:\d+)?$"]
 
 _API_USAGE_PREFIXES = (
     "/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/kis-real/", "/api/aws-broker-test/",
@@ -74,26 +107,44 @@ def create_app(settings: Settings | None = None) -> Flask:
     settings = settings or Settings.from_env()
     app = Flask(__name__)
     app.config.update(settings.flask_config())
+    if settings.trusted_proxy_count:
+        # request.remote_addr(레이트 리밋 키)를 nginx 뒤의 실제 클라이언트 IP로 복원한다.
+        # 프록시 수와 정확히 같아야 한다(더 크면 클라이언트가 IP를 위조할 수 있다).
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=settings.trusted_proxy_count)
+    limiter.init_app(app)
 
     CORS(
         app,
         resources={
-            r"/api/*": {"origins": ["http://localhost:*", "http://127.0.0.1:*"]},
-            r"/openapi/*": {"origins": "*"},
+            # The public site serves the frontend and the API from one origin.
+            r"/api/*": {"origins": [] if settings.is_public else LOCAL_DEV_ORIGINS, "supports_credentials": True},
+            # API-key clients from anywhere; no cookies, so no credentials.
+            r"/openapi/*": {"origins": "*", "supports_credentials": False},
         },
-        supports_credentials=True,
     )
 
+    sources = data_registry.load()
     for blueprint in BLUEPRINTS:
+        if settings.is_public and blueprint in LOCAL_ONLY_BLUEPRINTS:
+            continue
+        needed = SOURCE_DEPENDENT_BLUEPRINTS.get(blueprint, ())
+        if not all(sources.get(source_id).allowed_in(settings.profile) for source_id in needed):
+            continue
         app.register_blueprint(blueprint)
     app.register_blueprint(core_bp)
 
     got_request_exception.connect(_capture_unhandled_exception, app, weak=False)
+    app.before_request(_reject_cross_site_requests)
     app.before_request(_start_api_usage_timer)
     app.after_request(_record_failed_response)
+    app.after_request(_add_request_id_header)
+    app.register_error_handler(429, _rate_limited)
 
     app.cli.add_command(init_db_command)
     app.cli.add_command(seed_demo_command)
+    app.cli.add_command(create_admin_command)
+    app.cli.add_command(init_quant_db_command)
+    app.cli.add_command(create_invite_command)
     return app
 
 
@@ -104,11 +155,53 @@ def init_db_command() -> None:
     click.echo("init-db: tables are ready")
 
 
+@click.command("init-quant-db")
+def init_quant_db_command() -> None:
+    """Upgrade the quant PostgreSQL schema (source column, receipts table; idempotent)."""
+    from marketdata import store
+
+    store.ensure_schema(store.engine_from_env())
+    click.echo("init-quant-db: schema is up to date")
+
+
 @click.command("seed-demo")
 def seed_demo_command() -> None:
     """Add sample investors, their datasets and market-bot accounts (idempotent)."""
     bootstrap.seed_demo_data()
     click.echo("seed-demo: done")
+
+
+@click.command("create-admin")
+@click.option("--email", envvar="ADMIN_EMAIL", required=True, help="Defaults to the ADMIN_EMAIL setting.")
+@click.password_option(help="At least 12 characters. Prompted when omitted.")
+def create_admin_command(email: str, password: str) -> None:
+    """Create the admin account (or reset its password). Registration refuses this address in public."""
+    try:
+        outcome = bootstrap.create_admin(email, password)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"create-admin: {outcome} {email.strip().lower()}")
+
+
+def _reject_cross_site_requests():
+    from flask import current_app
+
+    if cross_site_request_rejected(current_app.config["APP_PROFILE"]):
+        return jsonify({"error": "CSRF_REJECTED", "message": "다른 사이트에서 보낸 요청은 처리하지 않습니다."}), 403
+    return None
+
+
+def _rate_limited(error):
+    return jsonify({
+        "error": "RATE_LIMITED",
+        "message": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+        "limit": str(getattr(error, "description", "")),
+    }), 429
+
+
+def _add_request_id_header(response):
+    response.headers["X-Request-ID"] = request_id()
+    return response
 
 
 def _capture_unhandled_exception(sender, exception, **extra):
@@ -125,7 +218,9 @@ def _record_failed_response(response):
     """Capture handled API failures too, not only Flask exceptions."""
     if getattr(g, "api_usage_started_at", None) is not None:
         record_api_usage(response, g.api_usage_started_at)
-    if response.status_code >= 400 and not request.path.startswith("/api/error-analysis/"):
+    # 429는 기록하지 않는다. 제한에 걸린 요청마다 행을 쓰면 제한이 DB 쓰기를 막지 못한다.
+    if (response.status_code >= 400 and response.status_code != 429
+            and not request.path.startswith("/api/error-analysis/")):
         try:
             body = response.get_json(silent=True) or {}
             exc = getattr(g, "unhandled_error", None)
@@ -135,11 +230,19 @@ def _record_failed_response(response):
                 status=response.status_code, method=request.method, path=request.full_path.rstrip("?"),
                 error_type=type(exc).__name__ if exc else "HTTPError",
                 message=message, stack_trace="".join(traceback.format_exception(exc)) if exc else None,
-                request_meta={"endpoint": request.endpoint, "remoteAddr": request.remote_addr}, member_id=session.get("member_id"),
+                request_meta={"endpoint": request.endpoint, "remoteAddr": request.remote_addr,
+                              "requestId": request_id()},
+                member_id=session.get("member_id"),
             )
         except Exception:
             pass
     return response
+
+
+def _stock_list_label() -> dict:
+    if price_sources.allowed("krx_kind"):
+        return price_sources.label("krx_kind")
+    return {"source": "builtin", "attribution": "내장 실습 종목 목록"}
 
 
 # ── Health ──────────────────────────────────────────────────────────────────
@@ -154,9 +257,9 @@ def stock_list():
     try:
         limit = max(1, min(int(request.args.get("limit", 30)), 100))
         market = request.args.get("market", "")
-        return jsonify({"stocks": list_krx_stocks(limit, market), "source": "KRX"})
+        return jsonify({"stocks": list_krx_stocks(limit, market), **_stock_list_label()})
     except Exception as exc:
-        return jsonify({"message": f"KRX 종목 목록을 가져오지 못했습니다: {exc}"}), 503
+        return error_response("KRX 종목 목록을 가져오지 못했습니다.", exc, 503, key="message")
 
 
 @core_bp.get("/api/stocks/search")
@@ -164,9 +267,9 @@ def stock_search():
     query = request.args.get("q", "")
     try:
         limit = max(1, min(int(request.args.get("limit", 20)), 50))
-        return jsonify({"stocks": search_krx_stocks(query, limit), "source": "KRX"})
+        return jsonify({"stocks": search_krx_stocks(query, limit), **_stock_list_label()})
     except Exception as exc:
-        return jsonify({"message": f"KRX 종목 검색을 사용할 수 없습니다: {exc}"}), 503
+        return error_response("KRX 종목 검색을 사용할 수 없습니다.", exc, 503, key="message")
 
 
 # ── Market indices ───────────────────────────────────────────────────────────
@@ -204,8 +307,9 @@ def chart():
     if not get_stock_info(symbol):
         return jsonify({"message": f"지원하지 않는 KRX 종목입니다: {symbol}"}), 404
     try:
-        ohlcv, visible_from = get_chart_cached(symbol, period, include_ma)
-        return jsonify({"symbol": symbol, "period": period, "data": ohlcv, "visibleFrom": visible_from})
+        ohlcv, visible_from, source = get_chart_with_source(symbol, period, include_ma)
+        return jsonify({"symbol": symbol, "period": period, "data": ohlcv, "visibleFrom": visible_from,
+                        **price_sources.label(source)})
     except RuntimeError as e:
         return jsonify({"message": str(e)}), 503
     except ValueError as e:
@@ -272,14 +376,17 @@ def market_cap_rankings():
 def ai_qdrant_search():
     data  = request.get_json(silent=True) or {}
     query = str(data.get("query", "")).strip()
-    limit = max(1, min(int(data.get("limit", 5)), 10))
+    try:
+        limit = max(1, min(int(data.get("limit", 5)), 10))
+    except (TypeError, ValueError):
+        return jsonify({"error": "limit must be an integer"}), 400
     if not query:
         return jsonify({"error": "query is required"}), 400
     try:
         import qdrant_service as qs
         return jsonify({"results": qs.search(query, limit)})
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스 검색을 사용할 수 없습니다.", exc, 503)
 
 
 @core_bp.get("/api/stocks/ai/qdrant/stats")
@@ -288,7 +395,7 @@ def ai_qdrant_stats():
         import qdrant_service as qs
         return jsonify(qs.stats())
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스 상태를 확인할 수 없습니다.", exc, 503)
 
 
 @core_bp.get("/api/stocks/ai/qdrant/list")
@@ -298,15 +405,18 @@ def ai_qdrant_list():
         limit = max(1, min(int(request.args.get("limit", 30)), 100))
         return jsonify({"documents": qs.list_docs(limit)})
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스 문서 목록을 가져올 수 없습니다.", exc, 503)
 
 
 @core_bp.post("/api/stocks/ai/qdrant/add")
 def ai_qdrant_add():
+    # 추가한 문서는 모든 방문자의 검색 결과와 AI 프롬프트에 들어간다. 관리자만 추가한다.
+    if not is_admin_member(session.get("member_id")):
+        return jsonify({"error": "관리자만 지식 베이스에 문서를 추가할 수 있습니다."}), 403
     data     = request.get_json(silent=True) or {}
     text     = str(data.get("text", "")).strip()
-    title    = str(data.get("title", "")).strip()
-    category = str(data.get("category", "custom")).strip() or "custom"
+    title    = str(data.get("title", "")).strip()[:200]
+    category = str(data.get("category", "custom")).strip()[:50] or "custom"
     if not text:
         return jsonify({"error": "text is required"}), 400
     if len(text) > 2000:
@@ -316,7 +426,7 @@ def ai_qdrant_add():
         doc_id = qs.add_doc(text, title, category)
         return jsonify({"id": doc_id, "status": "added"})
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 503
+        return error_response("지식 베이스에 문서를 추가할 수 없습니다.", exc, 503)
 
 
 # ── KRX 보도자료 뉴스 ────────────────────────────────────────────────────────
@@ -366,7 +476,7 @@ def krx_news():
         }, timeout=10)
         items = resp.json().get("output", [])
     except Exception as e:
-        return jsonify({"error": str(e), "news": []}), 503
+        return error_response("KRX 보도자료를 가져올 수 없습니다.", e, 503, news=[])
 
     news = []
     for a in items:

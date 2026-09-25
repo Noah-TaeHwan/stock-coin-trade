@@ -1,0 +1,6 @@
+# Runtime dependencies of the MCP server alone (it talks to the desk over HTTP).
+# Compile the lock with:
+#   uv pip compile src/deskmcp/requirements.txt --universal --python-version 3.11 \
+#     --generate-hashes --no-header -o src/deskmcp/requirements.lock
+mcp==2.2.0
+requests==2.34.2

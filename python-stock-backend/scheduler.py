@@ -70,9 +70,14 @@ def build_scheduler(scheduler_cls: type[BaseScheduler] = BackgroundScheduler) ->
     worker.py runs it with BlockingScheduler in its own process so the web
     workers never run these jobs.
     """
+    import price_sources
+
     scheduler = scheduler_cls(timezone="Asia/Seoul")
-    scheduler.add_job(sync_coinmarketcap_rankings, CronTrigger(minute=0, timezone="Asia/Seoul"))
-    scheduler.add_job(sync_upbit_markets, CronTrigger(hour=18, minute=0, timezone="Asia/Seoul"))
+    # External syncs run only where the data source registry allows the source.
+    if price_sources.allowed("coinmarketcap"):
+        scheduler.add_job(sync_coinmarketcap_rankings, CronTrigger(minute=0, timezone="Asia/Seoul"))
+    if price_sources.allowed("upbit"):
+        scheduler.add_job(sync_upbit_markets, CronTrigger(hour=18, minute=0, timezone="Asia/Seoul"))
     scheduler.add_job(run_bot_trading_round, IntervalTrigger(minutes=10))
     return scheduler
 

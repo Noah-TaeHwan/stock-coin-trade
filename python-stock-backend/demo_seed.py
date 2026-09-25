@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 import bcrypt
 
+from accounts import DEMO_EMAIL_DOMAIN
 from db import session_scope
 from models import (
     AlternativeOrder,
@@ -17,10 +18,10 @@ from models import (
     StockPosition,
     UpbitMarket,
 )
+from settings import profile_from_env
 from stock_market import BASE_PRICES, STOCKS
 
 LOGGER = logging.getLogger(__name__)
-DEMO_EMAIL_DOMAIN = "@sample-investor.local"
 DEMO_PASSWORD = "123456"
 INITIAL_ASSET = 100_000_000
 
@@ -144,13 +145,19 @@ def _portfolio_for(index: int) -> tuple[list[tuple[str, int, int]], list[tuple[s
     return stocks, coins
 
 
+def demo_seed_enabled() -> bool:
+    """DEMO_SEED_ENABLED. 기본값은 local에서 켜짐, public에서 꺼짐(샘플 계정 비밀번호가 공개돼 있다)."""
+    default = "false" if profile_from_env() == "public" else "true"
+    return os.environ.get("DEMO_SEED_ENABLED", default).lower() in {"1", "true", "yes", "on"}
+
+
 def seed_demo_investors() -> int:
     """30개의 샘플 투자자와 보유 주식·코인을 추가한다.
 
     같은 이메일이 이미 있으면 해당 계정은 그대로 두므로 재기동·재배포해도
     중복 생성하거나 사용자가 변경한 샘플 포트폴리오를 덮어쓰지 않는다.
     """
-    if os.environ.get("DEMO_SEED_ENABLED", "true").lower() not in {"1", "true", "yes", "on"}:
+    if not demo_seed_enabled():
         return 0
 
     try:

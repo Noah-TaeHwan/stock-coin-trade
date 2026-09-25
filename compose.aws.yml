@@ -1,0 +1,38 @@
+# EC2 배포용: 소스에서 빌드하지 않고 ECR 이미지를 당기고, 로그를 CloudWatch Logs로 보낸다.
+# compose.public.yml, compose.edge.yml 위에 얹는다(scripts/ec2/deploy.sh가 조합한다).
+# awslogs 드라이버는 호스트의 Docker 데몬이 인스턴스 역할로 호출하므로, 컨테이너는
+# 인스턴스 메타데이터(IMDS)에 닿지 않아도 된다(홉 제한 1).
+x-awslogs: &awslogs
+  driver: awslogs
+  options:
+    awslogs-region: ${AWS_REGION:?set AWS_REGION}
+    awslogs-group: ${LOG_GROUP:?set LOG_GROUP}
+    tag: "{{.Name}}"
+
+x-backend-image: &backend-image ${ECR_REGISTRY:?set ECR_REGISTRY}/stock-coin-trade-python-backend:${IMAGE_TAG:?set IMAGE_TAG}
+
+services:
+  frontend:
+    image: ${ECR_REGISTRY:?set ECR_REGISTRY}/stock-coin-trade-frontend:${IMAGE_TAG:?set IMAGE_TAG}
+    build: !reset null
+    logging: *awslogs
+  init:
+    image: *backend-image
+    build: !reset null
+    logging: *awslogs
+  python-backend:
+    image: *backend-image
+    build: !reset null
+    logging: *awslogs
+  worker:
+    image: *backend-image
+    build: !reset null
+    logging: *awslogs
+  mariadb:
+    logging: *awslogs
+  postgres:
+    logging: *awslogs
+  redis:
+    logging: *awslogs
+  caddy:
+    logging: *awslogs

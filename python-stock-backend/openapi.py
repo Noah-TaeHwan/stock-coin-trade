@@ -4,10 +4,12 @@ import time
 from datetime import datetime, timezone
 from functools import wraps
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
+from limits import parse as parse_limit
 
 import stock_trading
 from db import session_scope
+from extensions import limiter
 from models import ApiKey, Member
 from stock_market import get_quote_cached, list_krx_stocks
 
@@ -19,7 +21,15 @@ _rate_buckets: dict[int, list] = {}
 _rate_lock = threading.Lock()
 
 
+_KEY_LIMIT = parse_limit(f"{RATE_LIMIT_MAX}/{RATE_LIMIT_WINDOW} second")
+
+
 def _check_rate_limit(api_key_id: int) -> bool:
+    """Per-key limit. Shared storage (Redis in public) when rate limiting is on, so
+    every worker and the MCP server's calls count against the same budget; a
+    process-local window otherwise (local profile, one worker)."""
+    if current_app.config.get("RATELIMIT_ENABLED"):
+        return limiter.limiter.hit(_KEY_LIMIT, "openapi-key", str(api_key_id))
     now = time.time()
     with _rate_lock:
         bucket = [t for t in _rate_buckets.get(api_key_id, []) if now - t < RATE_LIMIT_WINDOW]
@@ -109,7 +119,10 @@ def place_order():
     with session_scope() as db:
         member = db.get(Member, g.member_id)
         try:
-            result = stock_trading.execute_order(db, member, symbol, side, quantity, source="OPENAPI")
+            result = stock_trading.execute_order(
+                db, member, symbol, side, quantity, source="OPENAPI",
+                allow_simulated_price=stock_trading.allows_simulated_price(current_app.config["APP_PROFILE"]),
+            )
         except ValueError as e:
             return jsonify({"error": "INVALID_REQUEST", "message": str(e)}), 400
         return jsonify(result)

@@ -1,0 +1,23 @@
+# USD per million tokens. Source: https://platform.claude.com/docs/en/about-claude/pricing
+# (checked 2026-09-25). Columns there: base input, 5m cache write, 1h cache write,
+# cache hit, output. Update this file, not the code, when prices change.
+checked_on = "2026-09-25"
+source = "https://platform.claude.com/docs/en/about-claude/pricing"
+
+[models.claude-opus-5]
+input = 5.00
+cache_write_5m = 6.25
+cache_read = 0.50
+output = 25.00
+
+[models.claude-sonnet-5]
+input = 2.00
+cache_write_5m = 2.50
+cache_read = 0.20
+output = 10.00
+
+[models.claude-haiku-4-5]
+input = 1.00
+cache_write_5m = 1.25
+cache_read = 0.10
+output = 5.00

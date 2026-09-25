@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS market_data (
     close           numeric(18, 4) NOT NULL,
     volume          bigint NOT NULL,
     adjusted_close  numeric(18, 4) NOT NULL,
+    source          varchar(40) NOT NULL DEFAULT 'synthetic_sql',
     PRIMARY KEY (symbol, trade_time)
 ) PARTITION BY RANGE (trade_time);
 
@@ -20,7 +21,6 @@ CREATE TABLE IF NOT EXISTS market_data_2026 PARTITION OF market_data
 CREATE TABLE IF NOT EXISTS market_data_default PARTITION OF market_data DEFAULT;
 
 CREATE INDEX IF NOT EXISTS idx_market_data_time_brin ON market_data USING brin (trade_time);
-CREATE INDEX IF NOT EXISTS idx_market_data_symbol_time ON market_data (symbol, trade_time DESC);
 
 CREATE TABLE IF NOT EXISTS strategies (
     strategy_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -36,12 +36,29 @@ CREATE TABLE IF NOT EXISTS trade_logs (
     trade_time timestamptz NOT NULL,
     side varchar(4) NOT NULL CHECK (side IN ('BUY', 'SELL')),
     price numeric(18, 4) NOT NULL,
-    quantity integer NOT NULL CHECK (quantity > 0),
+    quantity numeric(24, 8) NOT NULL CHECK (quantity > 0),
     fee numeric(18, 4) NOT NULL DEFAULT 0,
     slippage numeric(18, 4) NOT NULL DEFAULT 0,
     pnl numeric(18, 4) NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_trade_logs_strategy_time ON trade_logs(strategy_id, trade_time);
+
+-- Calculation receipts (src/quantlab/receipts.py). Same inputs and parameters -> same row.
+CREATE TABLE IF NOT EXISTS backtest_runs (
+    receipt_id char(64) PRIMARY KEY,
+    strategy_id bigint REFERENCES strategies(strategy_id) ON DELETE SET NULL,
+    engine_version varchar(40) NOT NULL,
+    input_sha256 char(64) NOT NULL,
+    params jsonb NOT NULL,
+    sources text[] NOT NULL,
+    first_bar timestamptz NOT NULL,
+    last_bar timestamptz NOT NULL,
+    bar_count integer NOT NULL,
+    git_sha varchar(64) NOT NULL,
+    metrics jsonb NOT NULL,
+    benchmark jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
 
 CREATE TABLE IF NOT EXISTS performance_metrics (
     strategy_id bigint NOT NULL REFERENCES strategies(strategy_id) ON DELETE CASCADE,

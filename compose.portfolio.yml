@@ -14,6 +14,7 @@ x-portfolio-backend-environment: &portfolio-backend-environment
   DEMO_SEED_ENABLED: "true"
   QDRANT_URL: ":memory:"
   SESSION_COOKIE_SECURE: "false"
+  TRUSTED_PROXY_COUNT: "1"
 
 services:
   frontend:
@@ -41,6 +42,9 @@ services:
       <<: *portfolio-backend-environment
     depends_on:
       mariadb:
+        condition: service_healthy
+        required: true
+      postgres:
         condition: service_healthy
         required: true
 

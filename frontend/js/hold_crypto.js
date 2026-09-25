@@ -79,11 +79,11 @@ async function loadStockPortfolio() {
       const color = priceColor(pnl);
       const tradeUrl = `/trade/stock.html?symbol=${encodeURIComponent(pos.symbol)}`;
       return `<tr>
-        <td><a href="${tradeUrl}" title="${pos.name} 매수·매도" style="display:inline-block;text-decoration:none;">
-          <div class="font-bold" style="color:var(--fg);">${pos.name} <span style="font-size:10px;color:var(--accent);">매매하기 ↗</span></div>
-          <div class="text-xs" style="color:var(--accent);">${pos.symbol}</div>
+        <td><a href="${tradeUrl}" title="${escapeHtml(pos.name)} 매수·매도" style="display:inline-block;text-decoration:none;">
+          <div class="font-bold" style="color:var(--fg);">${escapeHtml(pos.name)} <span style="font-size:10px;color:var(--accent);">매매하기 ↗</span></div>
+          <div class="text-xs" style="color:var(--accent);">${escapeHtml(pos.symbol)}</div>
         </a></td>
-        <td><span class="badge badge-muted" style="font-size:10px;">${pos.sector || '기타'}</span></td>
+        <td><span class="badge badge-muted" style="font-size:10px;">${escapeHtml(pos.sector || '기타')}</span></td>
         <td class="text-right font-semibold" style="color:var(--fg);">${Number(pos.quantity).toLocaleString('ko-KR')}주</td>
         <td class="text-right" style="color:var(--fg);">${fmt(pos.avgPrice)}원</td>
         <td class="text-right" style="color:var(--fg);">${fmt(pos.currentPrice)}원</td>
@@ -111,7 +111,7 @@ async function loadAlternativePortfolio() {
     }
     tbody.innerHTML = positions.map(pos => {
       const pnl = Number(pos.pnl || 0);
-      return `<tr><td><div class="font-bold" style="color:var(--fg);">${pos.name}</div><div class="text-xs" style="color:var(--accent);">${pos.symbol}</div></td><td><span class="badge badge-muted">${pos.category}</span></td><td class="text-right" style="color:var(--fg);">${Number(pos.quantity).toLocaleString('ko-KR')}${pos.unit}</td><td class="text-right" style="color:var(--fg);">${fmt(pos.avgPrice)}원</td><td class="text-right font-bold" style="color:var(--accent);">${fmt(pos.evalAmount)}원</td><td class="text-right font-bold" style="color:${priceColor(pnl)};">${pnl >= 0 ? '+' : ''}${fmt(pnl)}원</td><td class="text-right">${volatilityBadgeHtml(pos.volatility)}</td></tr>`;
+      return `<tr><td><div class="font-bold" style="color:var(--fg);">${escapeHtml(pos.name)}</div><div class="text-xs" style="color:var(--accent);">${escapeHtml(pos.symbol)}</div></td><td><span class="badge badge-muted">${escapeHtml(pos.category)}</span></td><td class="text-right" style="color:var(--fg);">${Number(pos.quantity).toLocaleString('ko-KR')}${escapeHtml(pos.unit)}</td><td class="text-right" style="color:var(--fg);">${fmt(pos.avgPrice)}원</td><td class="text-right font-bold" style="color:var(--accent);">${fmt(pos.evalAmount)}원</td><td class="text-right font-bold" style="color:${priceColor(pnl)};">${pnl >= 0 ? '+' : ''}${fmt(pnl)}원</td><td class="text-right">${volatilityBadgeHtml(pos.volatility)}</td></tr>`;
     }).join('');
   } catch {
     tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center" style="color:var(--muted);">대체자산 포트폴리오를 불러올 수 없습니다.</td></tr>';
@@ -155,25 +155,25 @@ async function loadPortfolioAnalysis() {
           <span style="font-size:22px;font-weight:900;color:${color};">${data.healthScore ?? '-'}</span>
         </div>
         <div>
-          <div class="text-xs font-bold" style="color:var(--muted);">포트폴리오 건강도 · <span style="color:${color};">${data.healthLabel || '-'}</span></div>
+          <div class="text-xs font-bold" style="color:var(--muted);">포트폴리오 건강도 · <span style="color:${color};">${escapeHtml(data.healthLabel || '-')}</span></div>
           <div class="mt-1 text-2xl font-black" style="color:var(--fg);">${fmt(data.totalAsset)}원</div>
-          <div class="mt-1 text-xs" style="color:var(--muted);">분산도 ${data.diversification?.score ?? '-'}점(${data.diversification?.label || '-'}) 등 여러 기법을 종합한 점수입니다.</div>
+          <div class="mt-1 text-xs" style="color:var(--muted);">분산도 ${data.diversification?.score ?? '-'}점(${escapeHtml(data.diversification?.label || '-')}) 등 여러 기법을 종합한 점수입니다.</div>
         </div>
       </div>
 
-      <div class="mt-5"><h3 class="text-sm font-black" style="color:var(--fg);">자산 배분</h3><div class="mt-3 space-y-3">${allocation.map(item => `<div><div class="flex items-center justify-between text-sm"><span class="font-bold" style="color:var(--fg);"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${item.color};margin-right:6px;"></span>${item.name}</span><span style="color:var(--muted);">${fmt(item.value)}원 · <strong style="color:var(--fg);">${item.weight}%</strong></span></div><div style="height:8px;margin-top:7px;border-radius:var(--radius);background:var(--surface-2);overflow:hidden;"><div style="width:${item.weight}%;height:100%;border-radius:inherit;background:${item.color};"></div></div></div>`).join('')}</div></div>
+      <div class="mt-5"><h3 class="text-sm font-black" style="color:var(--fg);">자산 배분</h3><div class="mt-3 space-y-3">${allocation.map(item => `<div><div class="flex items-center justify-between text-sm"><span class="font-bold" style="color:var(--fg);"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${escapeHtml(item.color)};margin-right:6px;"></span>${escapeHtml(item.name)}</span><span style="color:var(--muted);">${fmt(item.value)}원 · <strong style="color:var(--fg);">${item.weight}%</strong></span></div><div style="height:8px;margin-top:7px;border-radius:var(--radius);background:var(--surface-2);overflow:hidden;"><div style="width:${item.weight}%;height:100%;border-radius:inherit;background:${escapeHtml(item.color)};"></div></div></div>`).join('')}</div></div>
 
       ${stats || leverage.value || data.topSector ? `<div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         ${stats ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">승률 · 평균수익률</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${stats.winRate}%</div><div class="text-xs" style="color:${pnlColor(stats.avgPnlRate)};">${signed(stats.avgPnlRate)}% 평균</div></div>` : ''}
-        ${stats ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최고 · 최저 포지션</div><div class="mt-1 text-sm font-bold" style="color:${pnlColor(stats.best.pnlRate)};">${stats.best.name} ${signed(stats.best.pnlRate)}%</div><div class="text-sm font-bold" style="color:${pnlColor(stats.worst.pnlRate)};">${stats.worst.name} ${signed(stats.worst.pnlRate)}%</div></div>` : ''}
-        ${leverage.value ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">레버리지 노출 · 현금버퍼</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${leverage.ratio}%</div><div class="text-xs" style="color:var(--muted);">현금/노출 ${leverage.cashBufferRatio}%</div></div>` : (data.topSector ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최대 업종 비중</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${data.topSector.name}</div><div class="text-xs" style="color:var(--muted);">주식 내 ${data.topSector.weight}%</div></div>` : '')}
+        ${stats ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최고 · 최저 포지션</div><div class="mt-1 text-sm font-bold" style="color:${pnlColor(stats.best.pnlRate)};">${escapeHtml(stats.best.name)} ${signed(stats.best.pnlRate)}%</div><div class="text-sm font-bold" style="color:${pnlColor(stats.worst.pnlRate)};">${escapeHtml(stats.worst.name)} ${signed(stats.worst.pnlRate)}%</div></div>` : ''}
+        ${leverage.value ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">레버리지 노출 · 현금버퍼</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${leverage.ratio}%</div><div class="text-xs" style="color:var(--muted);">현금/노출 ${leverage.cashBufferRatio}%</div></div>` : (data.topSector ? `<div class=" p-3" style="background:var(--surface-2);"><div class="text-xs font-bold" style="color:var(--muted);">최대 업종 비중</div><div class="mt-1 text-base font-black" style="color:var(--fg);">${escapeHtml(data.topSector.name)}</div><div class="text-xs" style="color:var(--muted);">주식 내 ${data.topSector.weight}%</div></div>` : '')}
       </div>` : ''}
 
       <div class="mt-6"><h3 class="text-sm font-black" style="color:var(--fg);">✦ 어드바이저 체크리스트</h3><div class="mt-3 space-y-2">${checks.map(item => {
         const style = CHECK_STATUS_STYLE[item.status] || CHECK_STATUS_STYLE.good;
-        return `<div class=" p-3" style="border:1px solid ${style.border};background:${style.bg};"><div class="flex items-center gap-2 text-sm font-black" style="color:${style.color};"><span>${style.icon}</span><span>${item.title}</span></div><p class="mt-1 text-sm leading-relaxed" style="color:${style.color};opacity:.9;">${item.message}</p></div>`;
+        return `<div class=" p-3" style="border:1px solid ${style.border};background:${style.bg};"><div class="flex items-center gap-2 text-sm font-black" style="color:${style.color};"><span>${style.icon}</span><span>${escapeHtml(item.title)}</span></div><p class="mt-1 text-sm leading-relaxed" style="color:${style.color};opacity:.9;">${escapeHtml(item.message)}</p></div>`;
       }).join('')}</div></div>
-      <p class="mt-4 text-xs" style="color:var(--muted);">${data.notice || ''}</p>`;
+      <p class="mt-4 text-xs" style="color:var(--muted);">${escapeHtml(data.notice || '')}</p>`;
   } catch {
     content.innerHTML = '<p class="text-sm" style="color:var(--down);">분석 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
   }
@@ -200,7 +200,7 @@ function renderStockSectorSummary(positions, totalEval) {
     const pct = totalEval ? data.evalAmount / totalEval * 100 : 0;
     const color = palette[index % palette.length];
     return `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:9px 10px;background:var(--surface-2);">
-      <div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:var(--fg);"><span>${sector}</span><span>${pct.toFixed(1)}%</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:var(--fg);"><span>${escapeHtml(sector)}</span><span>${pct.toFixed(1)}%</span></div>
       <div style="height:5px;border-radius:var(--radius);background:var(--border);overflow:hidden;margin:7px 0 5px;"><div style="width:${pct}%;height:100%;background:${color};"></div></div>
       <div style="font-size:10px;color:var(--muted);">${data.count}종목 · ${fmt(data.evalAmount)}원</div>
     </div>`;
@@ -283,40 +283,40 @@ function renderHoldTable(holdCryptoList) {
     <tr>
       <td>
         <div class="flex items-center gap-3">
-          <img src="https://static.upbit.com/logos/${h.marketCodeOnlySymbol}.png" alt="" class="h-9 w-9" style="border:1px solid var(--border);">
+          <img src="https://static.upbit.com/logos/${escapeHtml(h.marketCodeOnlySymbol)}.png" alt="" class="h-9 w-9" style="border:1px solid var(--border);">
           <div>
-            <p class="font-bold" style="color:var(--fg);">${h.koreanName}</p>
-            <p class="text-xs font-semibold" style="color:var(--accent);">${h.marketCodeOnlySymbol}</p>
+            <p class="font-bold" style="color:var(--fg);">${escapeHtml(h.koreanName)}</p>
+            <p class="text-xs font-semibold" style="color:var(--accent);">${escapeHtml(h.marketCodeOnlySymbol)}</p>
           </div>
         </div>
       </td>
       <td class="text-right">
-        <span class="font-semibold" style="color:var(--fg);" id="${h.marketCode}-hold-count">${fmtDec(h.holdCount, 8)}</span>
-        <span class="ml-1 text-xs" style="color:var(--muted);">${h.marketCodeOnlySymbol}</span>
+        <span class="font-semibold" style="color:var(--fg);" id="${escapeHtml(h.marketCode)}-hold-count">${fmtDec(h.holdCount, 8)}</span>
+        <span class="ml-1 text-xs" style="color:var(--muted);">${escapeHtml(h.marketCodeOnlySymbol)}</span>
       </td>
       <td class="text-right">
-        <span class="font-semibold" style="color:var(--fg);" id="${h.marketCode}-buy-average">${fmtDec(h.buyAverage, 4)}</span>
+        <span class="font-semibold" style="color:var(--fg);" id="${escapeHtml(h.marketCode)}-buy-average">${fmtDec(h.buyAverage, 4)}</span>
         <span class="ml-1 text-xs" style="color:var(--muted);">KRW</span>
       </td>
       <td class="text-right">
-        <span class="font-semibold" style="color:var(--fg);" id="${h.marketCode}-buy-total-krw">${fmt(h.buyTotalKrw)}</span>
+        <span class="font-semibold" style="color:var(--fg);" id="${escapeHtml(h.marketCode)}-buy-total-krw">${fmt(h.buyTotalKrw)}</span>
         <span class="ml-1 text-xs" style="color:var(--muted);">KRW</span>
       </td>
       <td class="text-right" style="background:var(--accent-light);">
-        <span class="font-bold" style="color:var(--accent);" id="${h.marketCode}-evaluation-krw">-</span>
+        <span class="font-bold" style="color:var(--accent);" id="${escapeHtml(h.marketCode)}-evaluation-krw">-</span>
         <span class="ml-1 text-xs" style="color:var(--muted);">KRW</span>
       </td>
       <td class="text-right">
         <p class="mb-1">
-          <span class="font-bold" id="${h.marketCode}-krw-of-return">-</span>
+          <span class="font-bold" id="${escapeHtml(h.marketCode)}-krw-of-return">-</span>
           <span class="ml-1 text-xs" style="color:var(--muted);">KRW</span>
         </p>
         <p>
-          <span class="font-black text-base" id="${h.marketCode}-rate-of-return">-</span>
+          <span class="font-black text-base" id="${escapeHtml(h.marketCode)}-rate-of-return">-</span>
           <span class="ml-1 text-xs" style="color:var(--muted);">%</span>
         </p>
       </td>
-      <td class="text-right" id="${h.marketCode}-volatility">
+      <td class="text-right" id="${escapeHtml(h.marketCode)}-volatility">
         <span style="color:var(--muted);">불러오는 중…</span>
       </td>
     </tr>`).join('');
@@ -440,7 +440,7 @@ function volatilityBadgeHtml(vol, [low, mid] = [20, 50]) {
 }
 async function loadCryptoVolatility(holdCryptoList) {
   await Promise.all(holdCryptoList.map(async h => {
-    const cell = document.getElementById(`${h.marketCode}-volatility`);
+    const cell = document.getElementById(`${escapeHtml(h.marketCode)}-volatility`);
     if (!cell) return;
     try {
       const res = await fetch(`/upbit-api/candles/days?market=${encodeURIComponent(h.marketCode)}&count=30`);

@@ -1,0 +1,101 @@
+# 공개 배포용 오버레이. 로컬 실습 전용 요소를 빼고 public 프로필로 실행한다.
+#   docker compose --env-file .env.public -f docker-compose.yml -f compose.public.yml --profile local-db up -d --build
+# - 브로커·클라우드 키 파일과 호스트 docker.sock을 어느 서비스에도 마운트하지 않는다.
+# - APP_PROFILE=public: 기본·예시 비밀값, 관리자 주소 미설정, 공유 저장소 없는 레이트 리밋이면
+#   기동하지 않는다(settings.py). 관리자는 `docker compose ... run --rm init flask --app app create-admin`.
+# - 레이트 리밋 저장소로 Redis를 쓴다(Flask-Limiter 문서: memory 저장소는 프로세스별).
+# - nginx는 요청 제한을 두고 업비트 중계를 뺀 설정(docker/nginx.public.conf)을 쓴다.
+# docker-compose.prod.yml(원본 운영 오버레이)은 키·socket 마운트를 그대로 물려받으므로 공개 배포에 쓰지 않는다.
+x-public-backend-environment: &public-backend-environment
+  APP_PROFILE: public
+  DB_HOST: mariadb
+  DB_PORT: "3306"
+  DB_NAME: mockinv
+  DB_USER: ${MARIADB_USER:?set MARIADB_USER}
+  DB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD}
+  QUANT_DATABASE_URL: postgresql+psycopg://${QUANT_DB_USER:?set QUANT_DB_USER}:${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD}@postgres:5432/${QUANT_DB_NAME:?set QUANT_DB_NAME}
+  SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+  ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL}
+  RATELIMIT_STORAGE_URI: redis://redis:6379/0
+  TRUSTED_PROXY_COUNT: "1"
+  SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+  KIS_ENVIRONMENT: paper
+  DEMO_SEED_ENABLED: "false"
+  QDRANT_URL: ":memory:"
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  # AI 리서치(src/deskagent): 기본 꺼짐. 켜면 월 예산(USD)이 필요하고, public은 초대 코드 pepper(32자 이상)도 필요하다.
+  AI_ENABLED: ${AI_ENABLED:-false}
+  AI_MONTHLY_BUDGET_USD: ${AI_MONTHLY_BUDGET_USD:-0}
+  AI_MODEL: ${AI_MODEL:-claude-opus-5}
+  AI_INVITE_PEPPER: ${AI_INVITE_PEPPER:-}
+
+services:
+  frontend:
+    container_name: !reset null
+    volumes:
+      - ./docker/nginx.public.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/real-ip.none.conf:/etc/nginx/snippets/real-ip.conf:ro
+
+  mariadb:
+    container_name: !reset null
+    environment: !override
+      MARIADB_DATABASE: mockinv
+      MARIADB_USER: ${MARIADB_USER:?set MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set MARIADB_ROOT_PASSWORD}
+
+  postgres:
+    container_name: !reset null
+    environment: !override
+      POSTGRES_DB: ${QUANT_DB_NAME:?set QUANT_DB_NAME}
+      POSTGRES_USER: ${QUANT_DB_USER:?set QUANT_DB_USER}
+      POSTGRES_PASSWORD: ${QUANT_DB_PASSWORD:?set QUANT_DB_PASSWORD}
+
+  redis:
+    image: redis:7.4.11-alpine
+    networks:
+      - internal
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  init:
+    environment: !override
+      <<: *public-backend-environment
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        required: true
+      postgres:
+        condition: service_healthy
+        required: true
+
+  python-backend:
+    container_name: !reset null
+    volumes: !reset []
+    # docker.sock을 마운트하지 않으므로 기본 파일의 소켓 그룹 추가도 없앤다.
+    group_add: !reset []
+    environment: !override
+      <<: *public-backend-environment
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    environment: !override
+      <<: *public-backend-environment
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+volumes:
+  lean-data: !reset null
+  lean-results: !reset null

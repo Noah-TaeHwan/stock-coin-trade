@@ -6,7 +6,6 @@
 
   const el = id => document.getElementById(id);
   const won = value => `${Number(value || 0).toLocaleString('ko-KR')}원`;
-  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 
   async function jsonFetch(path, options = {}) {
     const response = await fetch(base + path, { credentials: 'include', ...options });

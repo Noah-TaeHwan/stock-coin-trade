@@ -1,36 +1,9 @@
-# Vulnerabilities pip-audit reported for python-stock-backend/requirements.lock on 2026-09-24.
-# They are known and scheduled for Phase 1-H (dependency upgrades) of the portfolio plan.
-# CI passes these IDs to `pip-audit --ignore-vuln`, so any vulnerability NOT listed here
-# fails the build. Remove an entry when its package is upgraded; never add one without
-# a tracked fix. Format: <ID>  # <package> <version> <CVE> fixed in <version>
-# --- flask 3.0.3 (direct pin in requirements.txt)
-PYSEC-2026-2151  # flask 3.0.3 CVE-2026-27205 fixed in 3.1.3
-# --- flask-cors 4.0.1 (direct pin; 6.0.0 changes behaviour, needs review)
-PYSEC-2024-71  # flask-cors 4.0.1 CVE-2024-6221 fixed in 4.0.2
-PYSEC-2026-1383  # flask-cors 4.0.1 CVE-2024-6866 fixed in 6.0.0
-PYSEC-2026-1384  # flask-cors 4.0.1 CVE-2024-6839 fixed in 6.0.0
-PYSEC-2026-1385  # flask-cors 4.0.1 CVE-2024-6844 fixed in 6.0.0
-# --- pillow 11.3.0 (held below 12 by fastembed 0.7.x <- qdrant-client[fastembed] 1.17.1)
-PYSEC-2026-165  # pillow 11.3.0 CVE-2026-42308 fixed in 12.2.0
-PYSEC-2026-2249  # pillow 11.3.0 CVE-2026-25990 fixed in 12.1.1
-PYSEC-2026-2250  # pillow 11.3.0 CVE-2026-40192 fixed in 12.2.0
-PYSEC-2026-2251  # pillow 11.3.0 CVE-2026-42309 fixed in 12.2.0
-PYSEC-2026-2252  # pillow 11.3.0 CVE-2026-42311 fixed in 12.2.0
-PYSEC-2026-2253  # pillow 11.3.0 CVE-2026-54059 fixed in 12.3.0
-PYSEC-2026-2254  # pillow 11.3.0 CVE-2026-54060 fixed in 12.3.0
-PYSEC-2026-2255  # pillow 11.3.0 CVE-2026-55379 fixed in 12.3.0
-PYSEC-2026-2256  # pillow 11.3.0 CVE-2026-55380 fixed in 12.3.0
-PYSEC-2026-2257  # pillow 11.3.0 CVE-2026-55798 fixed in 12.3.0
-PYSEC-2026-2874  # pillow 11.3.0 CVE-2026-42310 fixed in 12.2.0
-PYSEC-2026-3451  # pillow 11.3.0 CVE-2026-59199 fixed in 12.3.0
-PYSEC-2026-3453  # pillow 11.3.0 CVE-2026-59205 fixed in 12.3.0
-PYSEC-2026-3454  # pillow 11.3.0 CVE-2026-59197 fixed in 12.3.0
-PYSEC-2026-3493  # pillow 11.3.0 CVE-2026-54058 fixed in 12.3.0
-PYSEC-2026-3494  # pillow 11.3.0 CVE-2026-59198 fixed in 12.3.0
-PYSEC-2026-3495  # pillow 11.3.0 CVE-2026-59200 fixed in 12.3.0
-PYSEC-2026-3496  # pillow 11.3.0 CVE-2026-59204 fixed in 12.3.0
-# --- python-dotenv 1.0.1 (direct pin)
-PYSEC-2026-2270  # python-dotenv 1.0.1 CVE-2026-28684 fixed in 1.2.2
-# --- requests 2.32.3 (direct pin)
-PYSEC-2026-1872  # requests 2.32.3 CVE-2024-47081 fixed in 2.32.4
-PYSEC-2026-2275  # requests 2.32.3 CVE-2026-25645 fixed in 2.33.0
+# Known vulnerabilities that CI passes to `pip-audit --ignore-vuln`.
+# Any vulnerability NOT listed here fails the build.
+#
+# Empty since 2026-09-25: the 26 IDs tracked on 2026-09-24 (flask, flask-cors,
+# requests, python-dotenv, pillow) were fixed by upgrading in Phase 1-4; see
+# docs/evidence/containers-nginx-deps-2026-09-25.md.
+#
+# Add an entry only with a tracked fix, one per line:
+# <ID>  # <package> <version> <CVE> fixed in <version>

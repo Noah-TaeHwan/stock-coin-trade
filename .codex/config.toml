@@ -8,3 +8,13 @@ default_tools_approval_mode = "prompt"
 command = "python3"
 args = ["scripts/kis_mcp.py", "trade"]
 startup_timeout_sec = 60
+
+# Noah Trading Desk (src/deskmcp). The API key is read from the shell, never stored here.
+[mcp_servers.noah-desk]
+command = "python3"
+args = ["-m", "deskmcp.server"]
+env_vars = ["DESK_API_KEY", "DESK_BASE_URL"]
+startup_timeout_sec = 30
+
+[mcp_servers.noah-desk.env]
+PYTHONPATH = "src"

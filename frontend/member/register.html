@@ -114,7 +114,7 @@ async function handleRegister(e) {
     if (data.field) showFieldError(data.field, data.error);
     else {
       const el = document.getElementById('globalError');
-      el.textContent = data.error ?? '가입에 실패했습니다.';
+      el.textContent = data.message ?? data.error ?? '가입에 실패했습니다.';
       el.style.display = 'block';
     }
   } catch {

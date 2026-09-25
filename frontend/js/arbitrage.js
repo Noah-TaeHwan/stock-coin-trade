@@ -28,7 +28,7 @@ let arbMatrixSeq = 0;
 let arbMatrixTimer = null;
 
 /* ── 서식 ───────────────────────────────────────────────────────────────── */
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const esc = escapeHtml;
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
 const fmtKrw = v => isNum(v) ? v.toLocaleString('ko-KR', { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 4 }) : '-';
 const fmtPct = (v, d = 2) => isNum(v) ? `${v > 0 ? '+' : ''}${v.toFixed(d)}%` : '-';

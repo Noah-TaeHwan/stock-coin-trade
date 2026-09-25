@@ -43,6 +43,22 @@
 - 의존성을 바꿀 때는 `requirements.txt`를 고치고 lock 두 개를 다시 생성해야 한다. 명령은 `requirements-dev.in` 머리말에 있다.
 - 미검증: `--universal` lock에는 aarch64 휠 해시도 들어 있지만, ARM64(Noah의 Mac Docker) 빌드는 이번에 실행하지 않았다.
 
+## 후속 (2026-09-25, Phase 1-4)
+
+위 표의 업그레이드를 모두 적용했다. 이제 `pip-audit`는 추적 목록 없이 `No known vulnerabilities found`를 출력하고, 추적 목록은 비어 있다. 자세한 내용은 [검증 기록](../evidence/containers-nginx-deps-2026-09-25.md)에 있다.
+
+| 패키지 | 이전 | 이후 |
+|---|---|---|
+| Flask | 3.0.3 | 3.1.3 |
+| flask-cors | 4.0.1 | 6.0.5 |
+| requests | 2.32.3 | 2.34.2 |
+| python-dotenv | 1.0.1 | 1.2.3 |
+| qdrant-client[fastembed] | 1.17.1 | 1.19.1(fastembed 0.7.4 → 0.8.1, pillow 11.3.0 → 12.3.0) |
+
+- qdrant-client 1.19.1에서는 `set_model`·`add`·`query`가 없어졌다. 실제로 초기화가 `AttributeError`로 실패하는 것을 확인했다.
+- 그래서 `qdrant_service`를 README의 로컬 추론 방식(`models.Document` + `upsert` + `query_points`)으로 옮겼다.
+- 같은 질의의 상위 결과와 점수가 옛 클라이언트와 같았다.
+
 ## 근거 (조회일 2026-09-24)
 
 - uv `pip compile`(requirements 입력, 여러 입력 파일, `--universal`) — https://docs.astral.sh/uv/pip/compile/

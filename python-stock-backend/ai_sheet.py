@@ -15,12 +15,13 @@ import subprocess
 import threading
 from datetime import datetime
 from html.parser import HTMLParser
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 from flask import Blueprint, jsonify, request
 
 import stock_market
+from errors import error_response
 
 MONTH_LABEL_RE = re.compile(r"^\d{4}-\d{2}$")
 
@@ -118,6 +119,35 @@ def _to_sheet(parser):
     return headers, rows, "본문"
 
 
+MAX_REDIRECTS = 5
+
+
+class UnsafeRedirectError(ValueError):
+    """A redirect hop pointed at a non-public address."""
+
+
+def _get_public_page(url):
+    """GET `url`, following redirects one hop at a time.
+
+    requests' own redirect handling would contact every hop before we could
+    check it, so an intermediate redirect to an internal address would still
+    be requested. Each hop is checked with _is_public_url first. (The address
+    is resolved again when connecting, so DNS rebinding is not covered; the
+    public profile does not register this route at all.)
+    """
+    for _ in range(MAX_REDIRECTS + 1):
+        if not _is_public_url(url):
+            raise UnsafeRedirectError(url)
+        response = requests.get(url, headers={"User-Agent": "Portfolio-AISheet/1.0"},
+                                timeout=(4, 12), allow_redirects=False, stream=True)
+        if not response.is_redirect:
+            return response
+        location = response.headers.get("Location", "")
+        response.close()
+        url = urljoin(url, location)
+    raise requests.TooManyRedirects(f"more than {MAX_REDIRECTS} redirects")
+
+
 @ai_sheet_bp.post("/crawl")
 def crawl_to_sheet():
     body = request.get_json(silent=True) or {}
@@ -125,10 +155,7 @@ def crawl_to_sheet():
     if not _is_public_url(url):
         return jsonify({"message": "공개 HTTP(S) 주소만 입력할 수 있습니다."}), 400
     try:
-        with requests.get(url, headers={"User-Agent": "Portfolio-AISheet/1.0"},
-                          timeout=(4, 12), allow_redirects=True, stream=True) as response:
-            if not _is_public_url(response.url):
-                return jsonify({"message": "안전하지 않은 리디렉션 주소입니다."}), 400
+        with _get_public_page(url) as response:
             response.raise_for_status()
             content_type = response.headers.get("Content-Type", "").lower()
             if "html" not in content_type:
@@ -146,8 +173,10 @@ def crawl_to_sheet():
                             "sourceUrl": response.url, "sourceType": source_type,
                             "columns": columns, "rows": rows,
                             "notice": "공개 페이지에서 추출한 결과입니다. 숫자와 원문은 저장 전 확인하세요."})
+    except UnsafeRedirectError:
+        return jsonify({"message": "안전하지 않은 리디렉션 주소입니다."}), 400
     except requests.RequestException as exc:
-        return jsonify({"message": f"페이지를 가져오지 못했습니다: {exc}"}), 502
+        return error_response("페이지를 가져오지 못했습니다.", exc, 502, key="message")
 
 
 def _month_labels(months: int) -> list[str]:
@@ -372,7 +401,7 @@ def lean_backtest():
         except subprocess.TimeoutExpired:
             return jsonify({"message": f"LEAN 백테스트가 {LEAN_TIMEOUT_SECONDS}초 안에 끝나지 않았습니다."}), 504
         except Exception as exc:
-            return jsonify({"message": f"LEAN 백테스트 실행에 실패했습니다: {exc}"}), 502
+            return error_response("LEAN 백테스트 실행에 실패했습니다.", exc, 502, key="message")
 
     keys = ["Start Equity", "End Equity", "Net Profit", "Compounding Annual Return",
             "Sharpe Ratio", "Drawdown", "Total Orders"]

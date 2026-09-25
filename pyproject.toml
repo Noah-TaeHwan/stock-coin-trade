@@ -15,7 +15,7 @@ minversion = "9.0"
 # call the live Alpaca API.
 python_files = ["test_*.py"]
 testpaths = ["tests", "scripts"]
-pythonpath = ["python-stock-backend", "src"]
+pythonpath = ["python-stock-backend", "src", "tests"]
 addopts = ["-ra", "--strict-markers", "--import-mode=importlib"]
 markers = [
     "integration: needs real MariaDB and PostgreSQL (CI service containers)",

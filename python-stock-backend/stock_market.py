@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 import requests
 import yfinance as yf
 
+import price_sources
+
 STOCKS = {
     # KOSPI
     "005930": {"name": "삼성전자",          "market": "KOSPI",  "ticker": "005930.KS", "sector": "반도체·IT"},
@@ -94,6 +96,8 @@ def _parse_krx_list(raw: bytes) -> list[dict]:
 
 def get_krx_stocks() -> list[dict]:
     """KRX KIND 공식 상장법인 목록을 가져오고 하루 동안 메모리에 보관한다."""
+    if not price_sources.allowed("krx_kind"):
+        return _builtin_stocks()
     now = time.time()
     cached = _krx_stock_cache["data"]
     if cached and now - _krx_stock_cache["ts"] < KRX_LIST_TTL:
@@ -117,16 +121,16 @@ def get_krx_stocks() -> list[dict]:
                 return cached
             # KIND 다운로드가 차단된 새 컨테이너도 기본 실습 종목과 모의투자 기능을
             # 계속 제공할 수 있도록, 내장된 기준 종목을 최후의 대체 목록으로 쓴다.
-            fallback_stocks = [
-                {"symbol": symbol, **info}
-                for symbol, info in STOCKS.items()
-            ]
-            fallback_stocks.sort(key=lambda stock: (
-                {"KOSPI": 0, "KOSDAQ": 1, "KONEX": 2}.get(stock["market"], 9),
-                stock["symbol"],
-            ))
+            fallback_stocks = _builtin_stocks()
             _krx_stock_cache.update({"ts": now, "data": fallback_stocks})
             return fallback_stocks
+
+
+def _builtin_stocks() -> list[dict]:
+    """내장된 실습 종목 목록(외부 목록을 쓸 수 없을 때)."""
+    stocks = [{"symbol": symbol, **info} for symbol, info in STOCKS.items()]
+    stocks.sort(key=lambda stock: ({"KOSPI": 0, "KOSDAQ": 1, "KONEX": 2}.get(stock["market"], 9), stock["symbol"]))
+    return stocks
 
 
 def list_krx_stocks(limit: int = 30, market: str = "") -> list[dict]:
@@ -201,6 +205,13 @@ def _fetch_naver_quote(symbol: str, info: dict) -> dict:
 
 def get_dashboard_stock_quotes() -> dict[str, dict]:
     """대시보드용 대표 종목 시세를 단일 국내 다종목 요청으로 가져온다."""
+    if not price_sources.allowed("naver_finance"):
+        quotes = {}
+        for symbol, info in STOCKS.items():
+            quote = price_sources.synthetic_quote(symbol)
+            quotes[symbol] = {**quote, "name": info["name"], "market": info["market"],
+                              "tradeAmount": quote["price"] * quote["volume"]}
+        return quotes
     now = time.time()
     cached = _dashboard_quote_cache["data"]
     if cached and now - _dashboard_quote_cache["ts"] < DASHBOARD_QUOTE_TTL:
@@ -239,6 +250,7 @@ def get_dashboard_stock_quotes() -> dict[str, dict]:
                     "changeRate": round(float(row.get("cr") or 0), 2),
                     "volume": _to_number(row.get("aq")),
                     "tradeAmount": _to_number(row.get("aa")),
+                    **price_sources.label("naver_finance"),
                 }
             if not quotes:
                 raise ValueError("다종목 시세 응답이 비어 있습니다.")
@@ -249,6 +261,7 @@ def get_dashboard_stock_quotes() -> dict[str, dict]:
                     "symbol": symbol, "name": info["name"], "market": info["market"],
                     "price": BASE_PRICES[symbol], "prevClose": BASE_PRICES[symbol],
                     "change": 0, "changeRate": 0, "volume": 0, "tradeAmount": 0,
+                    **price_sources.label("simulated"),
                 }
                 for symbol, info in STOCKS.items()
             }
@@ -307,74 +320,102 @@ def _simulated_price(symbol: str) -> int:
 
 def get_quote_cached(symbol: str) -> dict:
     symbol = (symbol or "").upper()
+    info = get_stock_info(symbol)
+    if not info:
+        raise ValueError(f"Unknown symbol: {symbol}")
+    use_yfinance, use_naver = price_sources.allowed("yfinance"), price_sources.allowed("naver_finance")
+    if not (use_yfinance or use_naver):
+        # 약관이 확인된 실시간 소스가 없는 프로필: 결정적 합성 시세를 출처와 함께 준다.
+        return {**price_sources.synthetic_quote(symbol), "name": info["name"], "market": info["market"]}
+
     now = time.time()
     cached = _quote_cache.get(symbol)
     if cached and now - cached["ts"] < QUOTE_TTL:
         return cached["data"]
 
-    info = get_stock_info(symbol)
-    if not info:
-        raise ValueError(f"Unknown symbol: {symbol}")
-
-    try:
-        ticker = yf.Ticker(info["ticker"])
-        hist = ticker.history(period="5d")
-        if hist.empty:
-            raise ValueError("empty history")
-        last = hist.iloc[-1]
-        prev = hist.iloc[-2] if len(hist) >= 2 else last
-        price      = int(last["Close"])
-        prev_close = int(prev["Close"])
-        change     = price - prev_close
-        change_rate = round((change / prev_close * 100) if prev_close else 0, 2)
-        volume     = int(last["Volume"])
-        data = {
-            "symbol":     symbol,
-            "name":       info["name"],
-            "market":     info["market"],
-            "price":      price,
-            "prevClose":  prev_close,
-            "change":     change,
-            "changeRate": change_rate,
-            "volume":     volume,
-        }
-    except Exception:
+    data = None
+    if use_yfinance:
         try:
-            data = _fetch_naver_quote(symbol, info)
-        except Exception as naver_error:
-            # 기존 수업용 종목만 최후의 오프라인 시뮬레이션 시세를 제공한다.
-            # KRX에서 검색한 종목은 가짜 가격으로 주문되지 않게 막는다.
-            if symbol not in STOCKS:
-                raise RuntimeError("실시간 KRX 시세를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.") from naver_error
-            sim = _simulated_price(symbol)
-            base = BASE_PRICES.get(symbol, sim)
+            ticker = yf.Ticker(info["ticker"])
+            hist = ticker.history(period="5d")
+            if hist.empty:
+                raise ValueError("empty history")
+            last = hist.iloc[-1]
+            prev = hist.iloc[-2] if len(hist) >= 2 else last
+            price      = int(last["Close"])
+            prev_close = int(prev["Close"])
+            change     = price - prev_close
             data = {
                 "symbol":     symbol,
                 "name":       info["name"],
                 "market":     info["market"],
-                "price":      sim,
-                "prevClose":  base,
-                "change":     sim - base,
-                "changeRate": round(((sim - base) / base * 100) if base else 0, 2),
-                "volume":     0,
-                "simulated":  True,
+                "price":      price,
+                "prevClose":  prev_close,
+                "change":     change,
+                "changeRate": round((change / prev_close * 100) if prev_close else 0, 2),
+                "volume":     int(last["Volume"]),
+                **price_sources.label("yfinance"),
             }
+        except Exception:
+            data = None
+    naver_error = None
+    if data is None and use_naver:
+        try:
+            data = {**_fetch_naver_quote(symbol, info), **price_sources.label("naver_finance")}
+        except Exception as exc:
+            naver_error = exc
+    if data is None:
+        # 기존 수업용 종목만 최후의 오프라인 시뮬레이션 시세를 제공한다.
+        # KRX에서 검색한 종목은 가짜 가격으로 주문되지 않게 막는다.
+        if symbol not in STOCKS:
+            raise RuntimeError("실시간 KRX 시세를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.") from naver_error
+        sim = _simulated_price(symbol)
+        base = BASE_PRICES.get(symbol, sim)
+        data = {
+            "symbol":     symbol,
+            "name":       info["name"],
+            "market":     info["market"],
+            "price":      sim,
+            "prevClose":  base,
+            "change":     sim - base,
+            "changeRate": round(((sim - base) / base * 100) if base else 0, 2),
+            "volume":     0,
+            "simulated":  True,
+            **price_sources.label("simulated"),
+        }
 
     _quote_cache[symbol] = {"data": data, "ts": now}
     return data
 
 
+VISIBLE_BARS = {"1d": 78, "1w": 40, "1m": 30, "3m": 90, "1y": 52}
+# 합성 시세는 일봉만 있다. 기간별로 보여 줄 일수(이동평균용 여유분은 include_ma에서 더한다).
+SYNTHETIC_CHART_DAYS = {"1d": 30, "1w": 60, "1m": 45, "3m": 130, "1y": 370}
+
+
 def get_chart_cached(symbol: str, period: str, include_ma: bool = False) -> tuple[list, int | None]:
+    ohlcv, visible_from, _source = get_chart_with_source(symbol, period, include_ma)
+    return ohlcv, visible_from
+
+
+def get_chart_with_source(symbol: str, period: str, include_ma: bool = False) -> tuple[list, int | None, str]:
     symbol = (symbol or "").upper()
+    info = get_stock_info(symbol)
+    if not info:
+        raise ValueError(f"Unknown symbol: {symbol}")
+    use_yfinance, use_naver = price_sources.allowed("yfinance"), price_sources.allowed("naver_finance")
+    if not (use_yfinance or use_naver):
+        days = SYNTHETIC_CHART_DAYS.get(period, 45) + (200 if include_ma else 0)
+        ohlcv = price_sources.synthetic_chart(symbol, days)
+        visible = SYNTHETIC_CHART_DAYS.get(period, 45) * 5 // 7
+        visible_from = ohlcv[max(0, len(ohlcv) - visible)]["x"] if include_ma and ohlcv else None
+        return ohlcv, visible_from, "synthetic"
+
     now = time.time()
     key = (symbol, period, include_ma)
     cached = _chart_cache.get(key)
     if cached and now - cached["ts"] < CHART_TTL:
-        return cached["data"], cached.get("visible_from")
-
-    info = get_stock_info(symbol)
-    if not info:
-        raise ValueError(f"Unknown symbol: {symbol}")
+        return cached["data"], cached.get("visible_from"), cached.get("source", "yfinance")
 
     period_map   = {"1d": "1d",  "1w": "5d",  "1m": "1mo", "3m": "3mo", "1y": "1y"}
     ma_period_map = {"1d": "5d", "1w": "2mo", "1m": "1y", "3m": "1y", "1y": "3y"}
@@ -383,7 +424,10 @@ def get_chart_cached(symbol: str, period: str, include_ma: bool = False) -> tupl
     yf_interval = interval_map.get(period, "1d")
 
     ohlcv = []
+    source = "yfinance"
     try:
+        if not use_yfinance:
+            raise ValueError("yfinance is not allowed in this profile")
         ticker = yf.Ticker(info["ticker"])
         hist = ticker.history(period=yf_period, interval=yf_interval)
         if hist.empty:
@@ -400,8 +444,12 @@ def get_chart_cached(symbol: str, period: str, include_ma: bool = False) -> tupl
             })
     except Exception:
         try:
+            if not use_naver:
+                raise ValueError("naver_finance is not allowed in this profile")
             ohlcv = _fetch_naver_chart(symbol, period, include_ma)
+            source = "naver_finance"
         except Exception as naver_error:
+            source = "simulated"
             if symbol not in STOCKS:
                 raise RuntimeError("실시간 KRX 차트 데이터를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.") from naver_error
             # Generate simulated OHLCV when both external providers are unavailable.
@@ -425,13 +473,17 @@ def get_chart_cached(symbol: str, period: str, include_ma: bool = False) -> tupl
                 ts_ms += step_ms
 
     ohlcv.sort(key=lambda candle: candle["x"])
-    visible_bars = {"1d": 78, "1w": 40, "1m": 30, "3m": 90, "1y": 52}.get(period, 30)
+    visible_bars = VISIBLE_BARS.get(period, 30)
     visible_from = ohlcv[max(0, len(ohlcv) - visible_bars)]["x"] if include_ma and ohlcv else None
-    _chart_cache[key] = {"data": ohlcv, "visible_from": visible_from, "ts": now}
-    return ohlcv, visible_from
+    _chart_cache[key] = {"data": ohlcv, "visible_from": visible_from, "ts": now, "source": source}
+    return ohlcv, visible_from, source
 
 
 def get_index_cached(index_sym: str) -> dict:
+    if not price_sources.allowed("yfinance"):
+        quote = price_sources.synthetic_quote(index_sym)
+        return {"price": float(quote["price"]), "change": float(quote["change"]),
+                "changeRate": quote["changeRate"], **price_sources.label("synthetic")}
     now = time.time()
     cached = _index_cache.get(index_sym)
     if cached and now - cached["ts"] < INDEX_TTL:
@@ -451,22 +503,29 @@ def get_index_cached(index_sym: str) -> dict:
         pc    = round(float(prev["Close"]), 2)
         ch    = round(price - pc, 2)
         cr    = round((ch / pc * 100) if pc else 0, 2)
-        data  = {"price": price, "change": ch, "changeRate": cr}
+        data  = {"price": price, "change": ch, "changeRate": cr, **price_sources.label("yfinance")}
     except Exception:
-        data = fallbacks.get(index_sym, {"price": 0.0, "change": 0.0, "changeRate": 0.0})
+        data = {**fallbacks.get(index_sym, {"price": 0.0, "change": 0.0, "changeRate": 0.0}),
+                **price_sources.label("simulated")}
 
     _index_cache[index_sym] = {"data": data, "ts": now}
     return data
 
 
-def current_price(symbol: str) -> int:
+def order_quote(symbol: str) -> tuple[int, bool]:
+    """주문에 쓸 가격과, 그 가격이 오프라인 시뮬레이션 값인지 여부."""
     symbol = (symbol or "").upper()
     try:
-        return get_quote_cached(symbol)["price"]
+        data = get_quote_cached(symbol)
+        return data["price"], bool(data.get("simulated"))
     except Exception:
         if symbol in STOCKS:
-            return _simulated_price(symbol)
+            return _simulated_price(symbol), True
         raise
+
+
+def current_price(symbol: str) -> int:
+    return order_quote(symbol)[0]
 
 
 def cached_price(symbol: str) -> int | None:

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
 
 import stock_trading
 from db import session_scope
@@ -103,7 +103,10 @@ def _place_order(side: str, source: str = "WEB"):
     with session_scope() as db:
         member = db.get(Member, member_id)
         try:
-            result = stock_trading.execute_order(db, member, symbol, side, quantity, source=source)
+            result = stock_trading.execute_order(
+                db, member, symbol, side, quantity, source=source,
+                allow_simulated_price=stock_trading.allows_simulated_price(current_app.config["APP_PROFILE"]),
+            )
         except ValueError as e:
             return jsonify({"message": str(e)}), 400
         return jsonify(result)
