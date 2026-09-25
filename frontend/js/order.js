@@ -127,15 +127,19 @@ document.getElementById('coinPeriodBtns')?.addEventListener('click', async (e) =
 function renderMarketSidebar(markets) {
   const tbody = document.getElementById('marketListBody');
   if (!tbody) return;
-  tbody.innerHTML = markets.map(m => `
-    <tr onclick="selectCoin('${m.market}')" data-market="${m.market}"${m.market === currentMarketCode ? ' class="is-selected"' : ''}>
-      <td class="txt">${m.koreanName}<small>${m.market.replace('KRW-', '')}</small></td>
-      <td id="${m.market}-trade_price">-</td>
-      <td id="${m.market}-signed_change_rate">-</td>
+  tbody.innerHTML = markets.map(m => {
+    const market = escapeHtml(m.market);
+    const name = escapeHtml(m.koreanName);
+    return `
+    <tr onclick="selectCoin(${jsArg(m.market)})" data-market="${market}"${m.market === currentMarketCode ? ' class="is-selected"' : ''}>
+      <td class="txt">${name}<small>${escapeHtml(String(m.market).replace('KRW-', ''))}</small></td>
+      <td id="${market}-trade_price">-</td>
+      <td id="${market}-signed_change_rate">-</td>
       <td style="text-align:center;" onclick="event.stopPropagation()">
-        <button id="${m.market}-watch-btn" class="cry-watch" onclick="toggleCryptoWatch('${m.market}')" aria-label="${m.koreanName} 관심 표시">☆</button>
+        <button id="${market}-watch-btn" class="cry-watch" onclick="toggleCryptoWatch(${jsArg(m.market)})" aria-label="${name} 관심 표시">☆</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   renderCryptoWatchBtns();
 }
 
@@ -473,7 +477,7 @@ async function loadCoinAccount() {
       const isBuy = h.type === 'BUY';
       return `<tr>
         <td style="color:var(--muted);">${new Date(h.ts).toLocaleString('ko-KR', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-        <td class="txt"><strong>${h.koreanName}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${h.marketCode.replace('KRW-', '')}</span></td>
+        <td class="txt"><strong>${escapeHtml(h.koreanName)}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${escapeHtml(String(h.marketCode).replace('KRW-', ''))}</span></td>
         <td style="font-weight:800;color:${isBuy ? 'var(--up)' : 'var(--down)'};">${isBuy ? 'BUY 매수' : 'SELL 매도'}</td>
         <td>${fmtCoin(h.price)}</td>
         <td style="color:var(--fg-2);">${Number(h.quantity).toFixed(8)}</td>
@@ -494,8 +498,8 @@ function renderCoinHoldings() {
     const pnl = evalKrw != null ? Math.round(evalKrw - h.buyTotalKrw) || 0 : null;
     const rate = pnl != null && h.buyTotalKrw ? Math.round(pnl / h.buyTotalKrw * 10000) / 100 || 0 : null;
     const color = priceColor(pnl ?? 0);
-    return `<tr onclick="selectCoin('${h.marketCode}')" style="cursor:pointer;">
-      <td class="txt"><strong>${h.koreanName}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${h.marketCodeOnlySymbol}</span></td>
+    return `<tr onclick="selectCoin(${jsArg(h.marketCode)})" style="cursor:pointer;">
+      <td class="txt"><strong>${escapeHtml(h.koreanName)}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${escapeHtml(h.marketCodeOnlySymbol)}</span></td>
       <td>${Number(h.holdCount).toFixed(8)}</td>
       <td style="color:var(--fg-2);">${fmtCoin(h.buyAverage)}</td>
       <td>${price ? fmtCoin(price) : '-'}</td>

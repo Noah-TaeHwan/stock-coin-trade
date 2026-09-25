@@ -133,6 +133,28 @@ function termAlpha(hex, alpha) {
 }
 
 /* ── API fetch wrapper ───────────────────────────────────────────────────── */
+/* 서버·사용자 값을 innerHTML 템플릿에 넣을 때는 반드시 이 함수를 거친다. */
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* onclick="fn(${jsArg(value)})"처럼 인라인 핸들러의 인자로 값을 넣을 때 쓴다.
+   JSON 문자열 리터럴로 만든 뒤 HTML 속성용으로 이스케이프한다. escapeHtml만 쓰면
+   브라우저가 속성값의 &#39;를 '로 되돌린 뒤 JS로 해석하므로 막히지 않는다. */
+function jsArg(value) {
+  return escapeHtml(JSON.stringify(String(value ?? '')));
+}
+
+/* href에 넣을 주소: http·https만 허용하고, 그 밖(javascript: 등)은 '#'으로 바꾼다. */
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value ?? ''), location.href);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '#';
+  } catch (_) {
+    return '#';
+  }
+}
+
 async function apiFetch(path, options = {}) {
   return fetch(API_BASE + path, { credentials: 'include', ...options });
 }
@@ -239,7 +261,7 @@ function renderHeader(user) {
 
   const userSection = user?.loggedIn
     ? `<div class="term-user">
-         <span class="term-user-name"><i class="fa-solid fa-user" aria-hidden="true"></i> ${user.username}</span>
+         <span class="term-user-name"><i class="fa-solid fa-user" aria-hidden="true"></i> ${escapeHtml(user.username)}</span>
          <button type="button" class="term-icon-btn term-btn-danger" onclick="logout()">로그아웃</button>
        </div>`
     : `<div class="term-user">
@@ -780,10 +802,10 @@ async function runAiAnalysis() {
         <div style="border-left:3px solid var(--info);padding:.45rem .7rem;margin-bottom:.5rem;background:var(--surface-2);border-radius:0 2px 2px 0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:.2rem;">
             <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 6px;border-radius:2px;">${_catLabel(doc.category)}</span>
-            <span style="font-size:11px;font-weight:700;color:var(--fg);">${doc.title}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--fg);">${escapeHtml(doc.title)}</span>
             <span style="font-size:10px;color:var(--muted);margin-left:auto;">유사도 ${(doc.score * 100).toFixed(0)}%</span>
           </div>
-          <p style="font-size:11px;color:var(--fg-2);margin:0;line-height:1.5;">${doc.text.substring(0,120)}...</p>
+          <p style="font-size:11px;color:var(--fg-2);margin:0;line-height:1.5;">${escapeHtml(String(doc.text ?? '').substring(0,120))}...</p>
         </div>`).join('');
     }
   }
@@ -825,7 +847,7 @@ async function runAiAnalysis() {
       box.innerHTML = markdownToHtml(data.analysis ?? '분석 결과가 없습니다.');
     }
   } catch (err) {
-    box.innerHTML = `<p style="color:var(--down);font-size:13px;">오류: ${err.message}</p>`;
+    box.innerHTML = `<p style="color:var(--down);font-size:13px;">오류: ${escapeHtml(err.message)}</p>`;
   } finally {
     btn.disabled    = false;
     btn.textContent = '✨ 다시 분석';
@@ -859,13 +881,13 @@ async function runQdrantSearch() {
       <div style="border:1px solid var(--border);border-left:3px solid var(--info);border-radius:2px;padding:.7rem .9rem;margin-bottom:.5rem;background:var(--surface);">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:.4rem;">
           <span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:2px;">${_catLabel(h.category)}</span>
-          <span style="font-size:12.5px;font-weight:800;color:var(--fg);flex:1;">${h.title}</span>
+          <span style="font-size:12.5px;font-weight:800;color:var(--fg);flex:1;">${escapeHtml(h.title)}</span>
           <div style="font-size:10px;font-weight:800;color:#000;background:${_scoreColor(h.score)};border-radius:2px;padding:1px 7px;font-family:var(--font-mono);">${(h.score*100).toFixed(0)}%</div>
         </div>
-        <p style="font-size:12px;color:var(--fg-2);margin:0;line-height:1.65;">${h.text}</p>
+        <p style="font-size:12px;color:var(--fg-2);margin:0;line-height:1.65;">${escapeHtml(h.text)}</p>
       </div>`).join('');
   } catch (err) {
-    if (res) res.innerHTML = `<p style="color:var(--down);font-size:13px;">오류: ${err.message}</p>`;
+    if (res) res.innerHTML = `<p style="color:var(--down);font-size:13px;">오류: ${escapeHtml(err.message)}</p>`;
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '검색'; }
   }
@@ -882,9 +904,9 @@ async function loadDataset() {
     const data = await r.json();
     if (statsEl) statsEl.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;">
-        <div><span style="color:var(--muted);">컬렉션</span><br><strong style="color:var(--accent-dark);font-size:14px;">${data.collection}</strong></div>
-        <div><span style="color:var(--muted);">문서 수</span><br><strong style="color:var(--accent-dark);font-size:14px;">${data.count}개</strong></div>
-        <div style="grid-column:1/-1;"><span style="color:var(--muted);">임베딩 모델</span><br><code style="font-size:11px;color:var(--fg-2);">${data.model}</code></div>
+        <div><span style="color:var(--muted);">컬렉션</span><br><strong style="color:var(--accent-dark);font-size:14px;">${escapeHtml(data.collection)}</strong></div>
+        <div><span style="color:var(--muted);">문서 수</span><br><strong style="color:var(--accent-dark);font-size:14px;">${escapeHtml(data.count)}개</strong></div>
+        <div style="grid-column:1/-1;"><span style="color:var(--muted);">임베딩 모델</span><br><code style="font-size:11px;color:var(--fg-2);">${escapeHtml(data.model)}</code></div>
       </div>`;
   } catch (e) {
     if (statsEl) statsEl.innerHTML = `<span style="color:var(--down);font-size:12px;">통계 불러오기 실패</span>`;
@@ -899,7 +921,7 @@ async function loadDataset() {
       ? docs.map(d => `
         <div style="display:flex;align-items:baseline;gap:6px;padding:.35rem .5rem;border-radius:2px;margin-bottom:.2rem;background:var(--surface);border:1px solid var(--border);">
           <span style="font-size:11px;font-weight:700;background:var(--accent-light);color:var(--accent-dark);padding:2px 6px;border-radius:2px;white-space:nowrap;">${_catLabel(d.category)}</span>
-          <span style="font-size:13px;font-weight:600;color:var(--fg);flex:1;">${d.title}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--fg);flex:1;">${escapeHtml(d.title)}</span>
         </div>`).join('')
       : '<p style="color:var(--muted);font-size:12px;text-align:center;">문서가 없습니다.</p>';
   } catch (e) {
@@ -953,7 +975,7 @@ function _catLabel(cat) {
     investment_strategy:  '투자전략',
     risk_management:      '리스크',
     custom:               '사용자',
-  }[cat] ?? cat;
+  }[cat] ?? escapeHtml(cat);
 }
 function _scoreColor(s) {
   if (s >= 0.75) return 'var(--up)';
@@ -985,24 +1007,24 @@ async function loadKrxNews() {
     }
 
     listEl.innerHTML = news.map(n => {
-      const href = n.pdf_url ?? n.page_url ?? '#';
+      const href = escapeHtml(safeHttpUrl(n.pdf_url ?? n.page_url));
       const dateStr = _krxFmtDate(n.date);
       return `
         <a href="${href}" target="_blank" rel="noopener noreferrer"
           style="display:block;padding:.45rem 1rem;border-bottom:1px solid var(--border);text-decoration:none;"
           onmouseover="this.style.background='var(--surface-3)'" onmouseout="this.style.background='transparent'">
-          <div style="font-size:12px;font-weight:600;color:var(--fg);line-height:1.45;margin-bottom:3px;">${n.title}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--fg);line-height:1.45;margin-bottom:3px;">${escapeHtml(n.title)}</div>
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:10px;color:var(--info);background:var(--info-bg);border-radius:2px;padding:0 5px;">PDF</span>
-            <span style="font-size:10.5px;color:var(--muted);font-family:var(--font-mono);">${dateStr}</span>
-            <span style="font-size:10px;color:var(--muted);margin-left:auto;">조회 ${n.view_cnt}</span>
+            <span style="font-size:10.5px;color:var(--muted);font-family:var(--font-mono);">${escapeHtml(dateStr)}</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:auto;">조회 ${escapeHtml(n.view_cnt)}</span>
           </div>
         </a>`;
     }).join('');
 
     _krxNewsLoaded = true;
   } catch (err) {
-    listEl.innerHTML = `<p style="color:var(--down);text-align:center;font-size:12px;margin-top:1rem;">오류: ${err.message}</p>`;
+    listEl.innerHTML = `<p style="color:var(--down);text-align:center;font-size:12px;margin-top:1rem;">오류: ${escapeHtml(err.message)}</p>`;
   } finally {
     if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = '↻ 새로고침'; }
   }
@@ -1015,7 +1037,8 @@ function _krxFmtDate(d) {
 }
 
 function markdownToHtml(md) {
-  return md
+  // 먼저 이스케이프하고, 그다음 제한된 마크다운(제목·굵게·기울임·목록)만 태그로 바꾼다.
+  return escapeHtml(md)
     .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:800;color:var(--info);margin:1rem 0 .4rem;">$1</h3>')
     .replace(/^## (.+)$/gm,  '<h2 style="font-size:15px;font-weight:800;color:var(--accent);margin:1.2rem 0 .5rem;">$1</h2>')
     .replace(/^# (.+)$/gm,   '<h1 style="font-size:16px;font-weight:900;color:var(--fg);margin:1.4rem 0 .6rem;">$1</h1>')
@@ -1043,7 +1066,7 @@ function ensureSiteFooter(user) {
       <span><i class="term-dot" id="term-conn-dot" aria-hidden="true"></i><b id="term-conn-text">연결됨</b></span>
       <span>MODE <b>PAPER</b></span>
       <span>SCREEN <b>${terminalScreenCode()}</b></span>
-      <span class="term-status-hide-sm">USER <b>${user?.loggedIn ? user.username : 'GUEST'}</b></span>
+      <span class="term-status-hide-sm">USER <b>${user?.loggedIn ? escapeHtml(user.username) : 'GUEST'}</b></span>
       <span class="term-status-hide-sm">모든 거래 기능은 학습·테스트 용도입니다.</span>
       <span class="term-status-brand">NOAH TRADING DESK</span>
     </div>`;

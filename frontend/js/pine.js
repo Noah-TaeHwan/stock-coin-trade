@@ -67,7 +67,7 @@ function initChart() {
 }
 async function loadStocks() {
   const data = await pineRequest('/api/stocks/list?limit=30'); pineStocks = data.stocks || [];
-  const select = $('pineSymbol'); select.innerHTML = pineStocks.map(stock => `<option value="${stock.symbol}">${stock.name} (${stock.symbol})</option>`).join('');
+  const select = $('pineSymbol'); select.innerHTML = pineStocks.map(stock => `<option value="${escapeHtml(stock.symbol)}">${escapeHtml(stock.name)} (${escapeHtml(stock.symbol)})</option>`).join('');
   const requested = new URLSearchParams(location.search).get('symbol'); if (requested && pineStocks.some(stock => stock.symbol === requested)) select.value = requested;
   select.addEventListener('change', loadChart); await loadChart();
 }

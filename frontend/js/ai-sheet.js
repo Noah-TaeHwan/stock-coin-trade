@@ -27,11 +27,7 @@ initPage();
 loadSectors();
 restoreFromStorage();
 
-function esc(value) {
-  return String(value ?? '').replace(/[&<>"']/g, char => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  })[char]);
-}
+function esc(value) { return escapeHtml(value); }
 function draw() {
   const quantCols = quantActive ? [1, 2] : [];
   table.innerHTML = `<thead><tr>${model.columns.map((column, i) => `<th><input aria-label="${i + 1}번째 열 제목" value="${esc(column)}"></th>`).join('')}</tr></thead><tbody>${model.rows.map(row => `<tr>${model.columns.map((_, i) => `<td${quantCols.includes(i) ? ' class="quant-col"' : ''}><input value="${esc(row[i] ?? '')}"></td>`).join('')}</tr>`).join('')}</tbody>`;

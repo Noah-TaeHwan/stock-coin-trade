@@ -199,7 +199,7 @@
       document.getElementById('ohlcv-average-rows').textContent = totals.ticker_count ? (Number(totals.ohlcv_rows) / Number(totals.ticker_count)).toFixed(1) + '건' : '–';
       document.getElementById('ohlcv-data-year').textContent = totals.last_date ? date(totals.last_date).slice(0, 4) + '년' : '–';
       document.getElementById('ohlcv-data-range').textContent = `${date(totals.first_date)} ~ ${date(totals.last_date)}`;
-      document.getElementById('ohlcv-year-summary').innerHTML = yearly.map(row => `<tr><td>${row.year}</td><td>${number(row.row_count)}</td><td>${number(row.ticker_count)}</td><td>${Number(row.average_rows).toFixed(1)}</td><td>${date(totals.first_date)} ~ ${date(totals.last_date)}</td></tr>`).join('');
+      document.getElementById('ohlcv-year-summary').innerHTML = yearly.map(row => `<tr><td>${escapeHtml(row.year)}</td><td>${number(row.row_count)}</td><td>${number(row.ticker_count)}</td><td>${Number(row.average_rows).toFixed(1)}</td><td>${date(totals.first_date)} ~ ${date(totals.last_date)}</td></tr>`).join('');
       const marketText = markets.map(row => `${row.market} ${number(row.ticker_count)}종목`).join(' · ');
       document.getElementById('ohlcv-quality-note').textContent = `검증 격리 ${number(quality.quarantined_rows)}건 (${number(quality.affected_tickers)}종목) · 시장별 ${marketText}`;
     }
@@ -211,7 +211,7 @@
       const start = data.total ? data.offset + 1 : 0;
       const end = Math.min(data.offset + data.rows.length, data.total);
       document.getElementById('ohlcv-ticker-count').textContent = `${number(data.total)}개 중 ${number(start)}–${number(end)}개 표시`;
-      document.getElementById('ohlcv-ticker-summary').innerHTML = data.rows.map(row => `<tr><td><code>${row.ticker_code}</code>${row.name ? ` · ${row.name}` : ''}</td><td>${row.market || '–'}</td><td>${number(row.total_rows)}</td><td>${Object.entries(row.yearly_rows || {}).sort(([a], [b]) => a.localeCompare(b)).map(([year, count]) => `${year}: ${number(count)}`).join('<br>')}</td><td>${date(row.first_date)}</td><td>${date(row.last_date)}</td></tr>`).join('') || '<tr><td colspan="6">일치하는 종목 코드가 없습니다.</td></tr>';
+      document.getElementById('ohlcv-ticker-summary').innerHTML = data.rows.map(row => `<tr><td><code>${escapeHtml(row.ticker_code)}</code>${row.name ? ` · ${escapeHtml(row.name)}` : ''}</td><td>${escapeHtml(row.market || '–')}</td><td>${number(row.total_rows)}</td><td>${Object.entries(row.yearly_rows || {}).sort(([a], [b]) => a.localeCompare(b)).map(([year, count]) => `${year}: ${number(count)}`).join('<br>')}</td><td>${date(row.first_date)}</td><td>${date(row.last_date)}</td></tr>`).join('') || '<tr><td colspan="6">일치하는 종목 코드가 없습니다.</td></tr>';
       document.getElementById('ohlcv-page-prev').disabled = data.offset === 0;
       document.getElementById('ohlcv-page-next').disabled = data.offset + data.rows.length >= data.total;
     }

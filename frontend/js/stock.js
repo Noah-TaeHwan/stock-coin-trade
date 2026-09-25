@@ -116,7 +116,7 @@ function updatePortfolioMini(positions, cash) {
   const colors = TERM_PALETTE;
   const stockBars = positions.map((p, i) => {
     const pct = Math.round((p.evalAmount || 0) / total * 100);
-    return `<div title="${p.name} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
+    return `<div title="${escapeHtml(p.name)} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
   stockBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
 
@@ -128,11 +128,11 @@ function updatePortfolioMini(positions, cash) {
   const sectorItems = Object.entries(sectors).sort((a, b) => b[1] - a[1]);
   const sectorBars = sectorItems.map(([sector, amount], i) => {
     const pct = Math.round(amount / total * 100);
-    return `<div title="${sector} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
+    return `<div title="${escapeHtml(sector)} ${pct}%" style="flex:${pct};background:${colors[i % colors.length]};min-width:3px;"></div>`;
   });
   if (cashPct) sectorBars.push(`<div title="현금 ${cashPct}%" style="flex:${cashPct};background:#5B616C;min-width:3px;"></div>`);
   const sectorLabels = sectorItems.map(([sector, amount], i) =>
-    `<span style="display:inline-flex;align-items:center;gap:3px;"><i style="width:6px;height:6px;background:${colors[i % colors.length]};display:inline-block;"></i>${sector} ${Math.round(amount / total * 100)}%</span>`
+    `<span style="display:inline-flex;align-items:center;gap:3px;"><i style="width:6px;height:6px;background:${colors[i % colors.length]};display:inline-block;"></i>${escapeHtml(sector)} ${Math.round(amount / total * 100)}%</span>`
   ).join(' · ');
 
   el.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:6px;">종목별 비중</div>
@@ -322,8 +322,8 @@ function renderStockMarketList() {
   tbody.innerHTML = lastPositions.map(position => {
     const pnl = Number(position.pnl ?? 0);
     const color = colorByVal(pnl);
-    return `<tr onclick="selectStockFromList('${position.symbol}')"${position.symbol === selectedSymbol ? ' class="is-selected"' : ''}>
-      <td class="txt">${position.name}<small>${position.symbol}</small></td>
+    return `<tr onclick="selectStockFromList(${jsArg(position.symbol)})"${position.symbol === selectedSymbol ? ' class="is-selected"' : ''}>
+      <td class="txt">${escapeHtml(position.name)}<small>${escapeHtml(position.symbol)}</small></td>
       <td>${Number(position.quantity).toLocaleString('ko-KR')}</td>
       <td style="color:${color};">${pnl >= 0 ? '+' : ''}${Number(pnl).toLocaleString('ko-KR')}</td>
     </tr>`;
@@ -346,8 +346,8 @@ function renderStockWatchList() {
     const live = liveStockPrices[stock.symbol] ?? {};
     const rate = Number(live.changeRate ?? 0);
     const color = colorByVal(rate);
-    return `<tr onclick="selectStockFromList('${stock.symbol}')"${stock.symbol === selectedSymbol ? ' class="is-selected"' : ''}>
-      <td class="txt">${escapeHtml(stock.name)}<small>${stock.symbol}${watchlist.has(stock.symbol) ? ' ★' : ''}</small></td>
+    return `<tr onclick="selectStockFromList(${jsArg(stock.symbol)})"${stock.symbol === selectedSymbol ? ' class="is-selected"' : ''}>
+      <td class="txt">${escapeHtml(stock.name)}<small>${escapeHtml(stock.symbol)}${watchlist.has(stock.symbol) ? ' ★' : ''}</small></td>
       <td style="color:${color};">${live.price ? Number(live.price).toLocaleString('ko-KR') : '-'}</td>
       <td style="color:${color};">${live.price ? `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%` : '-'}</td>
     </tr>`;
@@ -392,9 +392,6 @@ async function loadStockList() {
   }
 }
 
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
-}
 
 function addStockToPicker(stock) {
   if (!stock?.symbol || allStocks.some(item => item.symbol === stock.symbol)) return;
@@ -638,9 +635,9 @@ async function loadPositions() {
   tbody.innerHTML = lastPositions.map(pos => {
     const pnl   = Number(pos.pnl ?? 0);
     const color = colorByVal(pnl);
-    return `<tr onclick="selectStockFromList('${pos.symbol}')" style="cursor:pointer;">
-      <td class="txt"><strong>${pos.name}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${pos.symbol}</span></td>
-      <td class="txt" style="color:var(--muted);">${pos.sector || '기타'}</td>
+    return `<tr onclick="selectStockFromList(${jsArg(pos.symbol)})" style="cursor:pointer;">
+      <td class="txt"><strong>${escapeHtml(pos.name)}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${escapeHtml(pos.symbol)}</span></td>
+      <td class="txt" style="color:var(--muted);">${escapeHtml(pos.sector || '기타')}</td>
       <td>${Number(pos.quantity).toLocaleString('ko-KR')}</td>
       <td style="color:var(--fg-2);">${fmtKrw(pos.avgPrice)}</td>
       <td>${fmtKrw(pos.evalAmount)}</td>
@@ -670,7 +667,7 @@ async function loadHistory() {
       const dt    = new Date(h.ts).toLocaleTimeString('ko-KR', { hour12: false });
       return `<tr>
         <td style="color:var(--muted);">${dt}</td>
-        <td class="txt"><strong>${h.name}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${h.symbol}</span></td>
+        <td class="txt"><strong>${escapeHtml(h.name)}</strong> <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px;">${escapeHtml(h.symbol)}</span></td>
         <td style="font-weight:800;color:${color};">${isBuy ? 'BUY 매수' : 'SELL 매도'}</td>
         <td style="color:var(--fg-2);">${Number(h.quantity).toLocaleString('ko-KR')}주</td>
         <td>${fmtKrw(h.amount)}</td>

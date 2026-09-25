@@ -434,7 +434,6 @@ function runFinancialSimulation(item) {
   document.querySelector('.result-note').innerHTML = issues.length ? `<strong>검토 항목:</strong> ${issues.join('<br>')}` : '<strong>정합성 양호:</strong> 손익계산서·재무상태표·현금흐름표의 관계가 기본 등식에 맞습니다.';
   if (issues.length) openFinanceValidationModal(issues);
 }
-function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[char]); }
 function jsonValueType(value) { return value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value; }
 function jsonParseErrorLocation(source, error) {
   const position = Number(error.message.match(/position (\d+)/i)?.[1]);
@@ -573,7 +572,7 @@ function renderQuantDay5() {
   document.querySelector('[data-quant-backtest]').addEventListener('click', renderQuantBacktest); document.querySelector('[data-quant-seasonality]').addEventListener('click', renderSeasonality); document.querySelector('[data-pine-check]').addEventListener('click', checkPineScript);
   document.querySelector('[data-pine-template]').addEventListener('change', event => { const editor=document.querySelector('[data-quant-field="pine-code"]'); editor.value=pineTemplates[event.target.value]; editor.dispatchEvent(new Event('input')); });
 }
-function quantEscape(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[char]); }
+function quantEscape(value) { return escapeHtml(value); }
 function quantTable(rows, columns) {
   if (!rows?.length) return '<p class="quant-db-empty">조회 결과가 없습니다.</p>';
   return `<div class="quant-db-table-wrap"><table class="quant-db-table"><thead><tr>${columns.map(([key,label]) => `<th>${label}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${columns.map(([key]) => `<td>${quantEscape(typeof row[key] === 'number' ? row[key].toLocaleString(undefined,{maximumFractionDigits:4}) : row[key])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -603,7 +602,7 @@ async function runDatabaseBacktest() {
   try {
     const response=await fetch('/api/quant/backtests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol,fast:20,slow:50,quantity:10,feeRate:.00015,slippage:.0005})});
     const data=await response.json(); if (!response.ok) throw new Error(data.message || '실행 실패');
-    output.innerHTML=`<strong>전략 #${data.strategyId} 저장 완료</strong> · 체결 ${data.tradeCount}건 · 실현 손익 ${Number(data.realizedPnl).toLocaleString()} · 수익률 ${data.totalReturn}%<br><small>${data.message}</small>`;
+    output.innerHTML=`<strong>전략 #${data.strategyId} 저장 완료</strong> · 체결 ${data.tradeCount}건 · 실현 손익 ${Number(data.realizedPnl).toLocaleString()} · 수익률 ${data.totalReturn}%<br><small>${quantEscape(data.message)}</small>`;
   } catch (error) { output.innerHTML=`<span class="quant-db-error">${quantEscape(error.message)}</span>`; }
 }
 async function renderQuantDatabase() {

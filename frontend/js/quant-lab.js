@@ -1,5 +1,5 @@
 const $ = selector => document.querySelector(selector);
-const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[char]);
+const esc = escapeHtml;
 const sqlFor = kind => ({
   market: `SELECT symbol, trade_time, open, high, low, close, volume, adjusted_close\nFROM market_data WHERE symbol = :symbol\nORDER BY trade_time DESC LIMIT :limit;`,
   signal: `WITH ma AS (SELECT trade_time, adjusted_close,\n AVG(adjusted_close) OVER (ORDER BY trade_time ROWS BETWEEN 19 PRECEDING AND CURRENT ROW) fast_ma,\n AVG(adjusted_close) OVER (ORDER BY trade_time ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) slow_ma FROM market_data WHERE symbol = :symbol)\nSELECT *, CASE WHEN fast_ma > slow_ma THEN 'BUY' ELSE 'SELL' END signal FROM ma;`,
@@ -20,7 +20,7 @@ async function showStrategy(key) {
 }
 async function runFactorAnalysis() {
   const symbol=$('[data-symbol]').value.trim().toUpperCase() || '005930', output=$('[data-factor-result]'); output.textContent='알파 · 베타와 팩터 노출도를 계산 중…';
-  try { const response=await fetch(`/api/quant/factor-analysis?symbol=${encodeURIComponent(symbol)}`), data=await response.json(); if (!response.ok) throw new Error(data.message || '분석 실패'); const capm=data.capm; const exposures=data.multiFactor.exposures.map(item => `<li><span>${item.label}</span><b>${item.loading >= 0 ? '+' : ''}${item.loading}</b></li>`).join(''); output.innerHTML=`<div class="factor-metrics"><span><small>연환산 알파</small><b>${capm.alphaAnnual >= 0 ? '+' : ''}${capm.alphaAnnual}%</b></span><span><small>시장 베타</small><b>${capm.beta}</b></span><span><small>CAPM 설명력</small><b>${(capm.rSquared * 100).toFixed(1)}%</b></span><span><small>관측치</small><b>${capm.observations}일</b></span></div><p><b>쉽게 해석하면:</b> 베타가 1이면 시장과 비슷하게 움직인다는 뜻이며, 1보다 크면 시장 움직임에 더 민감합니다. 알파는 시장 요인을 뺀 뒤 남은 수익의 추정치입니다.</p><ul class="factor-exposures">${exposures}</ul><small>${esc(data.notice)}</small>`; } catch (error) { output.innerHTML=`<span class="error">${esc(error.message)}</span>`; }
+  try { const response=await fetch(`/api/quant/factor-analysis?symbol=${encodeURIComponent(symbol)}`), data=await response.json(); if (!response.ok) throw new Error(data.message || '분석 실패'); const capm=data.capm; const exposures=data.multiFactor.exposures.map(item => `<li><span>${esc(item.label)}</span><b>${item.loading >= 0 ? '+' : ''}${item.loading}</b></li>`).join(''); output.innerHTML=`<div class="factor-metrics"><span><small>연환산 알파</small><b>${capm.alphaAnnual >= 0 ? '+' : ''}${capm.alphaAnnual}%</b></span><span><small>시장 베타</small><b>${capm.beta}</b></span><span><small>CAPM 설명력</small><b>${(capm.rSquared * 100).toFixed(1)}%</b></span><span><small>관측치</small><b>${capm.observations}일</b></span></div><p><b>쉽게 해석하면:</b> 베타가 1이면 시장과 비슷하게 움직인다는 뜻이며, 1보다 크면 시장 움직임에 더 민감합니다. 알파는 시장 요인을 뺀 뒤 남은 수익의 추정치입니다.</p><ul class="factor-exposures">${exposures}</ul><small>${esc(data.notice)}</small>`; } catch (error) { output.innerHTML=`<span class="error">${esc(error.message)}</span>`; }
 }
 function table(rows, columns) {
   if (!rows?.length) return '<p class="empty">조회 결과가 없습니다.</p>';

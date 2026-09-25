@@ -24,6 +24,7 @@ from flask_cors import CORS  # noqa: E402
 from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: E402
 
 import bootstrap  # noqa: E402
+from authz import is_admin_member  # noqa: E402
 from admin import admin_bp  # noqa: E402
 from ai import ai_bp  # noqa: E402
 from ai_sheet import ai_sheet_bp  # noqa: E402
@@ -67,6 +68,21 @@ BLUEPRINTS = (
     quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp,
 )
 
+# Classroom labs that need broker or cloud credentials, the host Docker socket,
+# or an external database. The public profile does not register them.
+LOCAL_ONLY_BLUEPRINTS = frozenset({
+    crypto_exchange_test_bp, alpaca_test_bp, aws_alpaca_test_bp, broker_test_bp, kis_explorer_bp,
+    kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp,  # broker labs (KIS, KB, Alpaca, AWS SSM, exchanges)
+    ai_sheet_bp,  # page crawler and LEAN backtest through the host Docker socket
+    ohlcv_db_bp,  # external OHLCV database with a hardcoded default DSN
+    alternative_bp,  # futures/options P&L model not yet reviewed
+})
+
+# Exact origins, not prefixes: flask-cors treats these strings as regular
+# expressions matched from the start, so "http://localhost:*" also matched
+# "http://localhost.evil.example".
+LOCAL_DEV_ORIGINS = [r"^http://localhost(:\d+)?$", r"^http://127\.0\.0\.1(:\d+)?$"]
+
 _API_USAGE_PREFIXES = (
     "/api/broker-test/", "/api/kis-chart/", "/api/kis-explorer/", "/api/kis-real/", "/api/aws-broker-test/",
     "/api/alpaca-test/", "/api/aws-alpaca-test/", "/api/crypto-exchange-test/",
@@ -87,13 +103,16 @@ def create_app(settings: Settings | None = None) -> Flask:
     CORS(
         app,
         resources={
-            r"/api/*": {"origins": ["http://localhost:*", "http://127.0.0.1:*"]},
-            r"/openapi/*": {"origins": "*"},
+            # The public site serves the frontend and the API from one origin.
+            r"/api/*": {"origins": [] if settings.is_public else LOCAL_DEV_ORIGINS, "supports_credentials": True},
+            # API-key clients from anywhere; no cookies, so no credentials.
+            r"/openapi/*": {"origins": "*", "supports_credentials": False},
         },
-        supports_credentials=True,
     )
 
     for blueprint in BLUEPRINTS:
+        if settings.is_public and blueprint in LOCAL_ONLY_BLUEPRINTS:
+            continue
         app.register_blueprint(blueprint)
     app.register_blueprint(core_bp)
 
@@ -322,7 +341,10 @@ def market_cap_rankings():
 def ai_qdrant_search():
     data  = request.get_json(silent=True) or {}
     query = str(data.get("query", "")).strip()
-    limit = max(1, min(int(data.get("limit", 5)), 10))
+    try:
+        limit = max(1, min(int(data.get("limit", 5)), 10))
+    except (TypeError, ValueError):
+        return jsonify({"error": "limit must be an integer"}), 400
     if not query:
         return jsonify({"error": "query is required"}), 400
     try:
@@ -353,10 +375,13 @@ def ai_qdrant_list():
 
 @core_bp.post("/api/stocks/ai/qdrant/add")
 def ai_qdrant_add():
+    # 추가한 문서는 모든 방문자의 검색 결과와 AI 프롬프트에 들어간다. 관리자만 추가한다.
+    if not is_admin_member(session.get("member_id")):
+        return jsonify({"error": "관리자만 지식 베이스에 문서를 추가할 수 있습니다."}), 403
     data     = request.get_json(silent=True) or {}
     text     = str(data.get("text", "")).strip()
-    title    = str(data.get("title", "")).strip()
-    category = str(data.get("category", "custom")).strip() or "custom"
+    title    = str(data.get("title", "")).strip()[:200]
+    category = str(data.get("category", "custom")).strip()[:50] or "custom"
     if not text:
         return jsonify({"error": "text is required"}), 400
     if len(text) > 2000:
