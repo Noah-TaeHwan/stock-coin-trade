@@ -10,10 +10,13 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Any, Callable
 
 import requests
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
+
+from errors import log_exception
 
 arb_bp = Blueprint("arbitrage", __name__, url_prefix="/api/arb")
 
@@ -405,6 +408,137 @@ def _float_arg(name: str, default: float, low: float, high: float) -> float:
     return min(max(value, low), high)
 
 
+# ── 빗썸 공지 레이더 (src/deskjev/notices.py) ─────────────────────────────
+# 입출금 상태 API(assetsstatus)에 아직 안 잡힌 예정 중단, 거래유의 지정·거래지원 종료, 전체 자산 중단,
+# 외부 거래소 대상 출금 주의를 공지 제목에서 찾는다. 규칙이 먼저고, 규칙이 못 정한 제목만 Jev에 묻는다.
+
+NOTICE_URL = "https://api.bithumb.com/v1/notices"  # feed-api.bithumb.com으로 302, requests가 따라간다
+NOTICE_TTL = 60  # 한도는 IP당 초당 1회. 목록은 60초에 한 번만 받는다(실패도 60초 캐시)
+NOTICE_LINK = "https://feed.bithumb.com/"
+NOTICE_ATTRIBUTION = "공지 출처: 빗썸"
+
+
+def _notices_allowed() -> bool:
+    import price_sources
+
+    return price_sources.allowed("bithumb_notices")
+
+
+def _now() -> datetime:
+    from deskjev.notices import KST
+
+    return datetime.now(KST)
+
+
+@lru_cache(maxsize=512)  # ponytail: 프로세스별 제목 캐시. 같은 제목은 다시 과금하지 않는다.
+def _ask_jev(title: str, categories: tuple[str, ...]) -> tuple[Any, int]:
+    """캐시를 놓친 제목만 Jev에 묻고 원장에 적는다(캐시 적중은 과금되지 않았으므로 적지 않는다)."""
+    import jev_usage
+    from deskjev import notices
+
+    # 김프 화면은 사람이 기다린다. 짧게 끊고 재시도하지 않는다(실패하면 규칙으로 판정).
+    client = jev_usage.client(timeout=2.0, max_retries=0)
+    answers, tokens = notices.ask(client, {"title": title, "categories": list(categories)})
+    try:
+        jev_usage.record(tokens)
+    except Exception as exc:  # 원장 기록 실패가 이미 받은 판정을 버리게 하지 않는다
+        log_exception("jev_usage.record (notices)", exc)
+    return answers, tokens
+
+
+def _jev_state() -> str | None:
+    """Jev를 쓸 수 없는 이유(off·budget·unavailable). 쓸 수 있으면 None."""
+    import jev_usage
+
+    if not current_app.config.get("JEV_ENABLED"):
+        return "off"
+    try:
+        if jev_usage.over_budget(current_app.config.get("JEV_MONTHLY_BUDGET_USD", 0)):
+            return "budget"
+    except Exception as exc:  # 원장을 못 읽으면 쓰지 않는다
+        log_exception("jev_usage.over_budget (notices)", exc)
+        return "unavailable"
+    return None
+
+
+def _notice_exchange(title: str) -> str | None:
+    """외부 거래소 대상 주의 공지가 가리키는 우리 거래소(빗썸 제외). 없으면 None."""
+    lowered = title.lower()
+    for code, meta in EXCHANGES.items():
+        if code != "BITHUMB" and (meta["name"].lower() in lowered or code.lower() in lowered):
+            return code
+    return None
+
+
+def _load_notices() -> dict[str, Any]:
+    """최신 빗썸 공지 20건을 판정해 위험 공지만 남긴다. 실패해도 예외를 올리지 않는다."""
+    from deskjev import notices
+
+    meta = {"status": "ok", "judge": "rules", "reason": None, "attribution": NOTICE_ATTRIBUTION}
+    if not _notices_allowed():
+        return {**meta, "status": "disabled", "items": []}
+    try:
+        rows = _get_json(NOTICE_URL, {"count": 20})
+        if not isinstance(rows, list):
+            raise SourceError("error", "응답 형식이 목록이 아님")
+    except SourceError as exc:
+        return {**meta, "status": exc.status, "message": str(exc), "items": []}
+
+    reason = _jev_state()
+    now = _now()
+    items = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        ask = None if reason else (lambda n: _ask_jev(str(n.get("title") or ""), tuple(n.get("categories") or ())))
+        try:
+            verdict = notices.judge(row, now, ask)
+        except Exception as exc:  # Jev 장애·시간 초과·잘못된 선택지: 이 목록의 나머지는 규칙으로만 판정한다
+            log_exception("notice judge", exc)
+            reason = "unavailable"
+            verdict = notices.judge(row, now)
+        if not verdict.risk:
+            continue
+        title = str(row.get("title") or "")
+        exchange = _notice_exchange(title) if verdict.kind == "external" else None
+        if verdict.kind == "external" and exchange is None:
+            continue  # 김프 화면 경로에 없는 거래소 대상 주의는 상관없다
+        url = row.get("pc_url")
+        items.append(
+            {
+                "title": title,
+                "url": url if isinstance(url, str) and url.startswith(NOTICE_LINK) else None,
+                "publishedAt": row.get("published_at"),
+                "kind": verdict.kind,
+                "coins": verdict.coins,
+                "network": verdict.network,
+                "probability": verdict.probability,
+                "by": verdict.by,
+                "exchange": exchange,
+                "source": NOTICE_ATTRIBUTION,
+            }
+        )
+    return {**meta, "judge": "rules" if reason else "jev", "reason": reason, "items": items}
+
+
+def _notice_applies(item: dict[str, Any], symbol: str) -> bool:
+    coins = item["coins"]
+    if not isinstance(coins, list):  # ALL·UNKNOWN은 모든 코인에 띄운다(대상 불명도 확인 필요)
+        return True
+    return symbol in coins or (item["network"] and NETWORKS[symbol]["bithumbNet"] in coins)
+
+
+def _notices_for(symbol: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """이 코인에 해당하는 위험 공지와 공지 조회 상태. 공지는 부가 정보라 매트릭스를 실패시키지 않는다."""
+    try:
+        data = _cached("notices", NOTICE_TTL, _load_notices)
+    except Exception as exc:
+        log_exception("notices", exc)
+        data = {"status": "error", "judge": "rules", "reason": None, "attribution": NOTICE_ATTRIBUTION, "items": []}
+    status = {k: v for k, v in data.items() if k != "items"}
+    return [item for item in data["items"] if _notice_applies(item, symbol)], status
+
+
 @arb_bp.get("/<symbol>/matrix")
 def matrix(symbol: str):
     symbol = symbol.upper()
@@ -448,6 +582,7 @@ def matrix(symbol: str):
 
     viable = [p for p in pairs if p.get("ok")]
     best = max(viable, key=lambda p: p["netKrw"], default=None)
+    notice_items, notice_status = _notices_for(symbol)
     return jsonify({
         "symbol": symbol,
         "sizeKrw": size_krw,
@@ -459,6 +594,8 @@ def matrix(symbol: str):
         "best": {"buy": best["buy"], "sell": best["sell"], "netKrw": best["netKrw"], "netPct": best["netPct"]} if best else None,
         "transfer": transfer_info(symbol),
         "wallet": {code: wallet.get(code, {"deposit": "unknown", "withdraw": "unknown"}) for code in EXCHANGES},
+        "notices": notice_items,
+        "noticeStatus": notice_status,
         "sources": status,
         "fetchedAt": int(time.time() * 1000),
     })
