@@ -15,6 +15,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable
+from typing import Any
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -53,7 +54,8 @@ class Recorder:
     def __init__(self, feature_id: str, root: Path = ARTIFACTS):
         """@param feature_id 기능 ID(F1 등) @param root 증거 최상위 폴더"""
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        self.dir = Path(root) / f"{stamp}-{feature_id}"
+        # 같은 초에 여러 번 실행해도 증거가 덮이지 않게 무작위 네 글자를 붙인다.
+        self.dir = Path(root) / f"{stamp}-{secrets.token_hex(2)}-{feature_id}"
         self.dir.mkdir(parents=True, exist_ok=True)
         self.steps: list[dict] = []
 
@@ -85,7 +87,7 @@ class Client:
         self.base = base
         self._opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
-    def call(self, method: str, path: str, body: dict | None = None) -> tuple[int, object]:
+    def call(self, method: str, path: str, body: dict | None = None) -> tuple[int, Any]:
         """요청을 보내고 (상태, JSON 본문)을 돌려준다. @param method HTTP 메서드 @param path 경로 @param body JSON 본문"""
         data = json.dumps(body).encode("utf-8") if body is not None else None
         request = urllib.request.Request(self.base + path, data=data, method=method,

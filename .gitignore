@@ -52,7 +52,8 @@ __pycache__/
 
 .venv/
 venv/
-.claude/
+.claude/*
+!.claude/skills/
 
 *.pem
 *.key

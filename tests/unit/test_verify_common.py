@@ -40,3 +40,9 @@ def test_recorder_writes_redacted_transcript(tmp_path):
     assert data["steps"][0]["body"]["csrfToken"] == "***"
     assert "secret-pw" not in path.read_text(encoding="utf-8")
     assert path.parent.name.endswith("-F9")
+
+
+def test_recorders_started_in_the_same_second_keep_separate_evidence(tmp_path):
+    first, second = common.Recorder("F9", root=tmp_path), common.Recorder("F9", root=tmp_path)
+    assert first.dir != second.dir
+    assert first.dir.name.endswith("-F9") and second.dir.name.endswith("-F9")
