@@ -7,6 +7,7 @@ from sqlalchemy import text
 
 import bootstrap
 import db
+import member_delete
 import member_sessions
 from app import create_app
 from settings import Settings
@@ -37,8 +38,7 @@ def email():
     yield address
     with db.engine.begin() as conn:
         member_id = conn.execute(text("SELECT member_id FROM member WHERE email = :e"), {"e": address}).scalar()
-        for table in ("system_error_log", "member_session", "member"):
-            conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": member_id})
+        member_delete.delete_member(member_id)
 
 
 def _login(address):
@@ -60,8 +60,7 @@ def test_signup_starts_a_session_after_the_member_row_is_committed():
     finally:
         with db.engine.begin() as conn:
             member_id = conn.execute(text("SELECT member_id FROM member WHERE email = :e"), {"e": address}).scalar()
-            for table in ("system_error_log", "member_session", "member"):
-                conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": member_id})
+            member_delete.delete_member(member_id)
 
 
 def test_the_server_keeps_only_a_hash_of_the_session_token(email):

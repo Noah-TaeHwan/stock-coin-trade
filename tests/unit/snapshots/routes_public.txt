@@ -48,6 +48,7 @@ POST /api/agent/redeem research_agent.redeem
 POST /api/error-analysis/client error_analysis.collect_client_error
 POST /api/intent intent.resolve
 POST /api/member/api-keys api_keys.create_key
+POST /api/member/delete member_account.delete_account
 POST /api/member/login member.login
 POST /api/member/logout member.logout
 POST /api/member/logout-all member.logout_all

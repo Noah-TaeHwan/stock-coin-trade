@@ -6,6 +6,7 @@ from flask import Blueprint, current_app, jsonify, request, session
 from sqlalchemy import text
 
 import mailer
+import member_delete
 import member_sessions
 import member_tokens
 import passwords
@@ -137,4 +138,21 @@ def change_password():
         conn.execute(text("DELETE FROM member_session WHERE member_id = :m"), {"m": member_id})
         conn.commit()
     member_sessions.start(member_id)
+    return jsonify({"success": True})
+
+
+@account_bp.post("/delete")
+@limiter.limit("10 per hour", key_func=_member_key)
+def delete_account():
+    """현재 비밀번호를 확인하고 회원과 소유 데이터를 즉시 지운다."""
+    member_id = session.get("member_id")
+    if not member_id:
+        return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    password = (request.get_json(silent=True) or {}).get("password") or ""
+    with engine.connect() as conn:
+        stored = conn.execute(text("SELECT password FROM member WHERE member_id = :m"), {"m": member_id}).scalar()
+    if not passwords.verify(password, stored):
+        return jsonify({"field": "password", "error": "비밀번호가 맞지 않습니다."}), 400
+    member_delete.delete_member(member_id)
+    session.clear()
     return jsonify({"success": True})

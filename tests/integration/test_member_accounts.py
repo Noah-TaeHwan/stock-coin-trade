@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 import bootstrap
 import db
+import member_delete
 import members
 from accounts import UNUSABLE_PASSWORD
 from app import create_app
@@ -38,8 +39,7 @@ def _delete_member(email):
         member_id = conn.execute(text("SELECT member_id FROM member WHERE email = :e"), {"e": email}).scalar()
         if member_id is None:
             return
-        for table in ("api_key", "system_error_log", "member_session", "member"):
-            conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": member_id})
+        member_delete.delete_member(member_id)
 
 
 def test_member_email_has_a_unique_index():
