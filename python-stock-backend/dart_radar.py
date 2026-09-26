@@ -348,15 +348,18 @@ def list_disclosures():
     except ValueError:
         return jsonify({"message": "date는 YYYY-MM-DD 형식이어야 합니다."}), 400
     symbol = args.get("symbol", "").strip() or None
-    if symbol and not re.fullmatch(r"\d{6}", symbol):
+    # 종목코드는 ASCII 숫자만(\d는 전각·아라비아 숫자도 받는다).
+    if symbol and not re.fullmatch(r"[0-9]{6}", symbol):
         return jsonify({"message": "symbol은 6자리 종목코드여야 합니다."}), 400
     raw_symbols = args.get("symbols", "").strip()
+    if len(raw_symbols) > MAX_SYMBOLS * 8:  # 긴 목록은 나누기 전에 거절한다
+        return jsonify({"message": f"symbols는 6자리 종목코드 {MAX_SYMBOLS}개 이하여야 합니다."}), 400
     if symbol and raw_symbols:
         return jsonify({"message": "symbol과 symbols는 함께 쓸 수 없습니다."}), 400
     symbols = tuple(dict.fromkeys(code.strip() for code in raw_symbols.split(",") if code.strip()))
     if symbol:
         symbols = (symbol,)
-    if len(symbols) > MAX_SYMBOLS or any(not re.fullmatch(r"\d{6}", code) for code in symbols):
+    if len(symbols) > MAX_SYMBOLS or any(not re.fullmatch(r"[0-9]{6}", code) for code in symbols):
         return jsonify({"message": f"symbols는 6자리 종목코드 {MAX_SYMBOLS}개 이하여야 합니다."}), 400
     kind = args.get("kind", "").strip() or None
     if kind and kind not in KINDS:

@@ -314,6 +314,9 @@ def test_api_reads_filters_and_shows_kst_time_link_and_source(client, monkeypatc
         "symbols=123456,ABCDEF",
         "symbols=" + ",".join(f"{n:06d}" for n in range(21)),
         "symbol=123456&symbols=654321",
+        "symbols=１２３４５６",
+        "symbol=١٢٣٤٥٦",
+        "symbols=" + "1" * 200,
     ],
 )
 def test_api_rejects_bad_input(client, monkeypatch, query_string):
