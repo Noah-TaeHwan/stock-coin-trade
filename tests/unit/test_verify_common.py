@@ -15,7 +15,10 @@ _SPEC.loader.exec_module(common)
 def test_redact_masks_secret_keys_at_any_depth():
     body = {"csrfToken": "abc", "profile": "local", "nested": [{"password": "p", "username": "u"}], "Set-Cookie": "s=1"}
     assert common.redact(body) == {
-        "csrfToken": "***", "profile": "local", "nested": [{"password": "***", "username": "u"}], "Set-Cookie": "***",
+        "csrfToken": "***",
+        "profile": "local",
+        "nested": [{"password": "***", "username": "u"}],
+        "Set-Cookie": "***",
     }
 
 
@@ -71,3 +74,10 @@ def test_run_turns_unexpected_errors_into_recorded_failures(tmp_path):
     assert common.run("F9", steps, root=tmp_path) == common.FAIL
     data = json.loads(next(tmp_path.glob("*-F9/transcript.json")).read_text(encoding="utf-8"))
     assert data["verdict"] == "FAIL" and "AttributeError" in data["steps"][-1]["body"]
+
+
+def test_run_refuses_to_drive_anything_but_the_verify_stack(tmp_path, monkeypatch):
+    monkeypatch.setattr(common, "BASE_URL", "http://127.0.0.1:3333")
+    called = []
+    assert common.run("F9", lambda client, rec: called.append(1), root=tmp_path) == common.UNMET
+    assert called == []

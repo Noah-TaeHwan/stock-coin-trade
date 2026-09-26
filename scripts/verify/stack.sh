@@ -8,7 +8,6 @@ PROJECT=stockdesk-verify
 PORT=3334
 ENV_FILE=.env.verify
 ART=.verify-artifacts
-OWNER="$ART/owner"   # 이 스택을 띄운 체크아웃의 절대 경로
 HERE=$(pwd -P)
 # ponytail: 검증 스택은 한 번에 한 체크아웃만 쓴다. 병렬 검증이 필요해지면 프로젝트 이름·포트를 체크아웃별로 나눈다.
 
@@ -23,7 +22,12 @@ compose() {
 
 dangling() { docker volume ls -qf dangling=true | wc -l | tr -d ' '; }
 running() { [ -n "$(docker ps -aq --filter "label=com.docker.compose.project=$PROJECT")" ]; }
-mine() { [ "$(cat "$OWNER" 2>/dev/null)" = "$HERE" ]; }
+# docker compose가 컨테이너에 붙이는 working_dir 라벨 = 스택을 띄운 체크아웃 경로
+owner() {
+  docker ps -aq --filter "label=com.docker.compose.project=$PROJECT" | head -1 |
+    xargs docker inspect -f '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' 2>/dev/null
+}
+mine() { [ "$(owner)" = "$HERE" ]; }
 
 # 처음 한 번 무작위 값으로 .env.verify를 만든다(권한 600, 값은 출력하지 않음).
 make_env() {
@@ -53,7 +57,7 @@ service_id() {
 case "${1:-}" in
   up)
     if running && ! mine; then
-      echo "up: ${PROJECT}가 다른 체크아웃($(cat "$OWNER" 2>/dev/null || echo 기록 없음))에서 쓰는 중입니다. 그쪽에서 down한 뒤 다시 실행하세요"
+      echo "up: ${PROJECT}가 다른 체크아웃($(owner))에서 쓰는 중입니다. 그쪽에서 down한 뒤 다시 실행하세요"
       exit 2
     fi
     mkdir -p "$ART"
@@ -61,13 +65,12 @@ case "${1:-}" in
     make_env
     # worker는 외부 시세 사이트를 부르는 주기 작업이라 띄우지 않는다. frontend가 backend·init·DB를 끌어온다.
     compose up -d --build --wait frontend
-    printf '%s\n' "$HERE" > "$OWNER"
     echo "up: ok project=$PROJECT port=$PORT"
     ;;
   doctor)
     frontend=$(docker ps -q --filter "label=com.docker.compose.project=$PROJECT" --filter "label=com.docker.compose.service=frontend")
     [ -n "$frontend" ] || { echo "doctor: $PROJECT frontend 컨테이너가 없습니다"; exit 2; }
-    mine || { echo "doctor: 이 체크아웃이 띄운 스택이 아닙니다($(cat "$OWNER" 2>/dev/null || echo 소유 기록 없음))"; exit 2; }
+    mine || { echo "doctor: 이 체크아웃이 띄운 스택이 아닙니다($(owner))"; exit 2; }
     published=$(docker port "$frontend" 80/tcp | head -1)
     [ "$published" = "127.0.0.1:$PORT" ] || { echo "doctor: 포트 ${PORT}가 이 프로젝트 것이 아닙니다(${published})"; exit 2; }
     curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null || { echo "doctor: /health 실패"; exit 2; }
@@ -82,11 +85,10 @@ case "${1:-}" in
     ;;
   down)
     if running; then
-      mine || { echo "down: 이 체크아웃이 띄운 스택이 아닙니다($(cat "$OWNER" 2>/dev/null || echo 소유 기록 없음)). 띄운 쪽에서 정리하세요"; exit 2; }
+      mine || { echo "down: 이 체크아웃이 띄운 스택이 아닙니다($(owner)). 띄운 쪽에서 정리하세요"; exit 2; }
       [ -f "$ENV_FILE" ] || { echo "down: $ENV_FILE 없이는 compose로 정리할 수 없습니다"; exit 1; }
       compose down -v --remove-orphans
     fi
-    rm -f "$OWNER"
     after=$(dangling)
     if [ -f "$ART/pre-dangling.txt" ]; then
       before=$(cat "$ART/pre-dangling.txt")

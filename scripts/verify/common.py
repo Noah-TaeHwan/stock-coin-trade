@@ -14,6 +14,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 from collections.abc import Callable
 from typing import Any
 from datetime import datetime, timezone
@@ -21,7 +22,9 @@ from pathlib import Path
 
 PASS, FAIL, UNMET = 0, 1, 2
 PROJECT = "stockdesk-verify"
-BASE_URL = os.environ.get("VERIFY_BASE_URL", "http://127.0.0.1:3334")
+VERIFY_NETLOC = "127.0.0.1:3334"
+# 경로만 바꿔 전제 불충족을 시험할 때 쓴다. 호스트·포트가 검증 스택이 아니면 run()이 주행을 거부한다.
+BASE_URL = os.environ.get("VERIFY_BASE_URL", f"http://{VERIFY_NETLOC}")
 ARTIFACTS = Path(os.environ.get("VERIFY_ARTIFACTS", ".verify-artifacts"))
 _SECRET_KEY = re.compile(r"(?i)(token|password|secret|cookie|sid|csrf)")
 # 자유 문장(예외 메시지 등) 속 "키: 값", "키=값"의 값. 앞이 영문자면 다른 단어의 일부(inside 등)로 본다.
@@ -86,9 +89,9 @@ def _json(raw: bytes):
 class Client:
     """쿠키를 유지하는 최소 HTTP 클라이언트."""
 
-    def __init__(self, base: str = BASE_URL):
-        """@param base 대상 기본 URL"""
-        self.base = base
+    def __init__(self, base: str | None = None):
+        """@param base 대상 기본 URL(기본: BASE_URL)"""
+        self.base = base or BASE_URL
         self._opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
     def call(self, method: str, path: str, body: dict | None = None) -> tuple[int, Any]:
@@ -131,6 +134,8 @@ def run(feature_id: str, steps: Callable[[Client, Recorder], None], root: Path =
     """
     recorder, client = Recorder(feature_id, root), Client()
     try:
+        if urlparse(client.base).netloc != VERIFY_NETLOC:
+            raise ConnectionError(f"검증 스택({VERIFY_NETLOC})이 아닌 곳은 주행하지 않습니다: {client.base}")
         steps(client, recorder)
         verdict, code = "PASS", PASS
     except AssertionError as exc:
