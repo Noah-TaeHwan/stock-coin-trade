@@ -12,7 +12,7 @@ GET api.bithumb.com/v1/notices?count=20  (302 → feed-api.bithumb.com, 60초 �
           위험 확률 = suspend+caution+external 확률 합 ≥ RISK_MIN(0.4) → 경고(by="jev", 확률 표시)
        3. Jev 꺼짐·예산 초과·장애·시간 초과(2초)·잘못된 선택지 → fallback(): 입출금·거래유의·점검 분류면 "종류 불명" 경고
   └ matrix 응답 notices[]: 이 코인·네트워크 계열·ALL·UNKNOWN 대상 위험 공지, noticeStatus: {status, judge, reason, attribution}
-프런트(renderSimulator): 매수·매도 쪽에 빗썸이 있으면 "빗썸 공지: <제목> — 확인 필요 (제목 규칙 판정|모델 판단 확률 N%)" + 원문 링크
+프런트(renderSimulator): 매수·매도 쪽에 빗썸이 있으면 "빗썸 공지: <제목> — 확인 필요 (MM/DD HH:mm 게시 · 제목 규칙 판정|모델 판단 확률 N%)" + 원문 링크
 ```
 
 | 결정 | 이유 |
@@ -49,10 +49,10 @@ oracle: Jev 정책의 재현율·정밀도·종류·코인 정확도가 모두 1
 
 | 명령 | 결과 |
 |---|---|
-| `docker run --rm -v "$PWD":/repo -w /repo sct-test:dev python -m pytest -q -m "not integration" tests/unit tests/policy` | 292 passed, 1 skipped (네트워크 테스트) |
+| `docker run --rm -v "$PWD":/repo -w /repo sct-test:dev python -m pytest -q -m "not integration"` (tests/unit·policy·scripts 전부) | PM 검수(6eb37b5): 322 passed, 1 skipped. 게시 시각 표시 수정 뒤 워커 재실행: 322 passed, 1 skipped (skip은 네트워크 테스트) |
 | `.venv/bin/ruff check python-stock-backend src tests` | All checks passed |
 | `ruff format --check` (새 파일 3개) | 통과. `arbitrage.py`는 이 작업 전부터 미정렬(손 정렬 표)이라 새 코드만 맞췄다 |
-| `node --check frontend/js/arbitrage.js` | 통과 |
+| `node --check frontend/js/arbitrage.js` | 통과(게시 시각 표시 수정 뒤 재실행) |
 
 `tests/unit/test_notices.py`가 다루는 것은 다음과 같다.
 - 규칙 판정(실제 제목), 위험 확률 합, 선택지 밖 답 거부, 분포 우선, 모델 고정과 보내는 필드
@@ -61,6 +61,23 @@ oracle: Jev 정책의 재현율·정밀도·종류·코인 정확도가 모두 1
 - Jev 장애·꺼짐·예산 초과 시 규칙 폴백, 소스 비허용 시 외부 호출 0회, 공지 실패에도 매트릭스 200
 - 빗썸 외 링크 차단, 평가 라벨의 oracle 일치, live의 `--max-usd` 필수
 
+## PM 검수 (6eb37b5)
+
+**브라우저**: 로컬 스택을 이 브랜치 6eb37b5로 빌드하고 `JEV_ENABLED=true`로 `/arbitrage.html?symbol=BTC`를 열었다.
+- 최적 경로가 업비트→OKX일 때는 공지 경고가 없다(빗썸이 경로에 없음).
+- 매수 거래소를 빗썸으로 바꾸면(매도 Binance) "빗썸 공지: 가상자산 정기실사를 위한 가상자산 입출금 일시 중지 안내 — 확인 필요 (제목 규칙 판정) 원문"이 뜬다.
+- 원문 링크는 `https://feed.bithumb.com/notice/1654966`이고 `rel="noopener noreferrer"`, `target="_blank"`가 붙는다.
+- 콘솔 오류·경고는 0건이다.
+- `noticeStatus` = `{status: ok, judge: jev, reason: null}`.
+
+![빗썸 공지 경고(게시 시각 표시 전 화면)](jev-notices-warning.png)
+
+게시 시각 표시 전 화면이다. 입출금 상태는 "빗썸 출금 가능"인데 날짜 없는 정기실사 중단 공지가 경고로 떠서, 지난 공지인지 판단할 수 있도록 경고 줄에 게시 시각(예: "09/23 13:00 게시")을 붙였다(`noticeWarnHtml`, `publishedAt`의 MM/DD HH:mm, 형식이 다르면 생략).
+
+**PM 독립 live 재실행**(같은 155건, $0.005754)
+- 규칙+Jev: 재현율 98.7%·오경보 5.1%로 워커 실행과 같다. 종류·코인 정확도는 98.7%로 워커 실행(100%)과 달랐는데, 실행마다 생기는 흔들림이다.
+- Jev만: 오경보 30.4%, ECE 0.088.
+
 ## 한계
 
 - 라벨은 에이전트가 달았고 노아 검수 전이다. 합성 135건은 실제 공지 분포와 다르다.
@@ -68,7 +85,6 @@ oracle: Jev 정책의 재현율·정밀도·종류·코인 정확도가 모두 1
 - 제목만 본다. 날짜 없는 중단 공지는 끝났는지 모르므로 "확인 필요"로 남는다(입출금 상태 API와 함께 본다).
 - API는 최신 20건만 준다. 오래된 중단 공지는 목록에서 밀려나면 사라진다.
 - 외부 거래소 대상 주의는 김프 화면의 거래소(업비트·코인원·코빗·OKX·Binance)를 제목에서 찾을 때만 남긴다. 비트겟 같은 다른 거래소는 띄우지 않는다.
-- 브라우저 확인은 하지 않았다(PM 몫).
 
 ## 하지 않은 것
 

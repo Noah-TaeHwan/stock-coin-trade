@@ -37,7 +37,7 @@ PYTHONPATH=src:python-stock-backend TYPESAFE_API_KEY=... python -m deskjev.eval_
 
 이 Mac에서는 `.venv` 파이썬이 네이티브 확장 import에서 멈춰 `sct-test:dev` 컨테이너로 돌렸다(`docker run --rm -e TYPESAFE_API_KEY -v "$PWD":/repo -w /repo -e PYTHONPATH=src:python-stock-backend sct-test:dev python -m deskjev.eval_notices ...`).
 
-결과는 `results/<mode>.json`(요약 + 사례별 행). `results/live-risk_min-0.3.json`은 임계값을 정하기 전 첫 live 실행(RISK_MIN 0.3)이고, `results/live.json`은 0.4로 정한 뒤 다시 돌린 결과다.
+실행하면 `results/<mode>.json`(요약 + 사례별 행)에 쓴다. 저장소에는 live 결과만 둔다. oracle은 구성상 100%이고, 규칙만 정책의 지표는 `live.json`의 `policies.rules`에 있다. `results/live-risk_min-0.3.json`은 임계값을 정하기 전 첫 live 실행(RISK_MIN 0.3)이고, `results/live.json`은 0.4로 정한 뒤 다시 돌린 결과다.
 
 ## 정책과 채점
 

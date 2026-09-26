@@ -242,7 +242,7 @@ function walletText(state, verb) {
 
 /**
  * 빗썸 위험 공지 한 건을 경고 줄 HTML로 만든다. 제목·링크는 이스케이프하고, 링크는 빗썸 공지 도메인만 허용한다.
- * @param {object} n matrix 응답의 notices 항목({title, url, kind, coins, probability, by})
+ * @param {object} n matrix 응답의 notices 항목({title, url, publishedAt, kind, coins, probability, by})
  * @returns {string} 경고 줄 HTML
  */
 function noticeWarnHtml(n) {
@@ -257,7 +257,10 @@ function noticeWarnHtml(n) {
     ? `모델 판단 확률 ${Math.round(n.probability * 100)}%`
     : '제목 규칙 판정';
   const target = n.coins === 'UNKNOWN' ? ' · 대상 코인 불명' : '';
-  return `빗썸 공지: ${esc(n.title)} — 확인 필요 (${how}${target})${link}`;
+  // publishedAt은 KST "yyyy-MM-dd HH:mm:ss". 날짜 없는 중단 공지가 지난 것인지 보이도록 MM/DD HH:mm만 붙인다.
+  const t = /^\d{4}-(\d{2})-(\d{2}) (\d{2}):(\d{2})/.exec(n.publishedAt || '');
+  const posted = t ? `${t[1]}/${t[2]} ${t[3]}:${t[4]} 게시 · ` : '';
+  return `빗썸 공지: ${esc(n.title)} — 확인 필요 (${posted}${how}${target})${link}`;
 }
 
 function renderSimulator() {
