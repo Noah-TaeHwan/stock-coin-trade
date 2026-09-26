@@ -16,4 +16,6 @@
 - G1 `innerHTML` 새 대입 금지, G3 금액·수량 `Column(Float` 신규 금지, G6 `docker rm`은 `-v`와 함께: `tests/policy/test_guards.py`(기준값 `guard_baseline.json`, 줄기만 할 수 있다).
 - 외부 HTTP 호출의 timeout 필수: ruff `S113`(`pyproject.toml`).
 - 셸 스크립트에서 한글 등 비ASCII 문자 바로 앞의 변수는 `${VAR}`로 감싼다: G7(`tests/policy/test_guards.py`).
+- 화면에서 Tailwind Play CDN 금지, 새 Tailwind 클래스를 쓰면 `scripts/build-css.sh`로 `frontend/css/tw.css`를 다시 만들어 함께 커밋: G8(`tests/policy/test_guards.py`).
+- 테스트는 개발자 PC의 `.env`를 읽지 않는다(`tests/conftest.py`가 `load_env_file`을 막음). CI와 로컬 결과가 같아야 한다.
 - main 직접 푸시 금지(6번): GitHub 브랜치 보호로 강제(PR 필수, CI 3개 통과 필수, 관리자 포함).
