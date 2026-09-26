@@ -7,8 +7,8 @@ S1 계정·신뢰 기반의 앞부분(가입 닫기·서버 세션·비밀번호
 | PR | 내용 | 단위 | 통합(`stack.sh itest`) | 검증 스킬 | CI |
 |---|---|---|---|---|---|
 | #25 A | `itest` 도구, 공개 가입 게이트, `SESSION_COOKIE_SECURE` 강제 | 411 passed | 55 passed | F1 PASS(`signupOpen: true`, local) | 3개 통과, 머지 `443854f` |
-| #26 B | 서버 세션 표, 로그아웃·모든 기기 로그아웃 | 414 passed | 62 passed(새 7) | F1 PASS(복사 쿠키 거부·모든 기기 로그아웃 단계 추가) | 3개 통과 |
-| C | 비밀번호 정책·해시 형식·로그인 제한, 교차 검토 반영 | 420 passed | 67 passed(새 5) | F1·F2 PASS(짧은 비밀번호 거절 단계 추가) | — |
+| #26 B | 서버 세션 표, 로그아웃·모든 기기 로그아웃 | 414 passed | 62 passed(새 7) | F1 PASS(복사 쿠키 거부·모든 기기 로그아웃 단계 추가) | 3개 통과, 머지 |
+| #27 C | 비밀번호 정책·해시 형식·로그인 제한, 교차 검토 반영 | 420 passed | 67 passed(새 5) | F1·F2 PASS(짧은 비밀번호 거절 단계 추가) | 3개 통과, 머지 `af267cc` |
 
 ## 2. 공개 배포 확인 (PR A, 배포 실행 36222221070, `443854f`)
 
@@ -21,6 +21,16 @@ SSM Run Command로 서버 안에서 Caddy 호스트를 `--resolve`로 불렀다.
 | `POST /api/member/register`(Origin 포함) | 403 `SIGNUP_CLOSED` |
 
 배포 전에 SSM 파라미터 이름만 조회해 `SESSION_COOKIE_SECURE`를 덮어쓰는 값이 없음을 확인했다(`compose.public.yml` 기본값 true). 새 기동 검사로 공개 서버가 멈출 위험이 없었다.
+
+### PR B·C 배포 뒤 (배포 실행 36223388296, `af267cc`)
+
+| 확인 | 결과 |
+|---|---|
+| `/health` | 200 |
+| `GET /api/member/me` | `signupOpen: false`, `profile: public` |
+| `POST /api/member/register` | 403 |
+| 옛 형식 쿠키(`member_id`만, `sid` 없음. 서버 안에서 서버 비밀키로 서명해 만들고 값은 출력하지 않음) | `loggedIn: false` |
+| `member_session` 표 | 있음(행 0, 공개 서버에 로그인한 사람 없음) |
 
 ## 3. 테스트가 진짜로 잡는지 (돌연변이 확인)
 
