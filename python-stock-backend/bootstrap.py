@@ -7,7 +7,7 @@ already exist), so they can run once per deployment from the Flask CLI:
     flask --app app seed-demo
 """
 
-import bcrypt
+from sqlalchemy import text
 
 from alternatives import ensure_tables as ensure_alternative_tables
 from api_usage import ensure_api_usage_table
@@ -19,6 +19,7 @@ from kis_practice import ensure_kis_practice_tables
 from market_bots import ensure_bot_accounts
 from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
+import passwords
 from member_sessions import ensure_session_table
 from models import Member
 from jev_usage import ensure_jev_tables
@@ -57,9 +58,6 @@ def seed_demo_data() -> None:
     ensure_bot_accounts()
 
 
-MIN_ADMIN_PASSWORD_LENGTH = 12
-
-
 def create_admin(email: str, password: str, username: str = "admin") -> str:
     """Create the admin member, or reset its password if it exists.
 
@@ -69,13 +67,16 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
     email = email.strip().lower()
     if "@" not in email:
         raise ValueError("ADMIN_EMAIL is not an email address.")
-    if len(password) < MIN_ADMIN_PASSWORD_LENGTH:
-        raise ValueError(f"Admin password must be at least {MIN_ADMIN_PASSWORD_LENGTH} characters.")
-    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    weak = passwords.problem(password, email=email, nickname=username)
+    if weak:
+        raise ValueError(weak)
+    hashed = passwords.hash_password(password)
     with session_scope() as db:
         member = db.query(Member).filter(Member.email == email).first()
         if member:
             member.password = hashed
+            # 새 비밀번호와 기존 세션 폐기를 한 트랜잭션으로 커밋한다(탈취된 옛 쿠키가 남지 않게).
+            db.execute(text("DELETE FROM member_session WHERE member_id = :m"), {"m": member.member_id})
             return "updated"
         db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET))
         return "created"

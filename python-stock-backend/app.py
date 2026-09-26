@@ -139,9 +139,10 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.register_blueprint(core_bp)
 
     got_request_exception.connect(_capture_unhandled_exception, app, weak=False)
-    app.before_request(_reject_cross_site_requests)
-    # 교차 사이트 요청을 먼저 거른 뒤, 쿠키 세션이 서버에 살아 있는지 확인한다(로그아웃한 쿠키 재사용 차단).
+    # 쿠키 세션이 서버에 살아 있는지 먼저 확인한다(로그아웃한 쿠키 재사용 차단). 교차 사이트 차단보다 앞에 두어
+    # 거절된 요청의 오류 기록에도 검증된 회원 ID만 남게 한다.
     app.before_request(member_sessions.validate)
+    app.before_request(_reject_cross_site_requests)
     app.before_request(_start_api_usage_timer)
     app.after_request(_record_failed_response)
     app.after_request(_add_request_id_header)

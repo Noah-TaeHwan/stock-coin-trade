@@ -189,10 +189,12 @@ def test_public_profile_refuses_insecure_session_cookie():
         Settings.from_env({**PUBLIC_OK, "SESSION_COOKIE_SECURE": "false"})
 
 
-def test_public_signup_stays_closed_until_mail_is_configured():
+def test_public_signup_opens_only_when_asked_and_mail_is_configured():
     assert Settings.from_env(PUBLIC_OK).signup_enabled is False
     ready = {**PUBLIC_OK, "SMTP_HOST": "smtp.example.test", "PUBLIC_BASE_URL": "https://desk.example.test/"}
-    settings = Settings.from_env(ready)
+    # 메일 설정만으로는 열리지 않는다(인증 흐름이 준비된 배포에서 사람이 연다).
+    assert Settings.from_env(ready).signup_enabled is False
+    settings = Settings.from_env({**ready, "SIGNUP_ENABLED": "true"})
     assert settings.signup_enabled is True
     assert settings.public_base_url == "https://desk.example.test"
 

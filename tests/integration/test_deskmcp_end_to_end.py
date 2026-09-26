@@ -65,10 +65,15 @@ def desk():
     email = f"mcp-{uuid.uuid4().hex[:10]}@example.com"
     registered = browser.post(
         "/api/member/register",
-        json={"username": "mcp", "email": email, "password": "pw-123456", "password2": "pw-123456"},
+        json={
+            "username": "mcp",
+            "email": email,
+            "password": "pw-long-passphrase-for-tests",
+            "password2": "pw-long-passphrase-for-tests",
+        },
     )
     assert registered.status_code in (200, 201), registered.get_data(as_text=True)
-    browser.post("/api/member/login", json={"email": email, "password": "pw-123456"})
+    browser.post("/api/member/login", json={"email": email, "password": "pw-long-passphrase-for-tests"})
     created = browser.post("/api/member/api-keys", json={"label": "mcp test"})
     assert created.status_code in (200, 201), created.get_data(as_text=True)
     api = DeskAPI("http://desk.test", created.get_json()["apiKey"], session=FlaskSession(application.test_client()))

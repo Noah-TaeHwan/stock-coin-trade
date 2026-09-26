@@ -34,7 +34,7 @@ x-public-backend-environment: &public-backend-environment
   TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
   # 공시 레이더(OpenDART) 수집기 키. 비어 있으면 수집 작업을 걸지 않는다.
   DART_API_KEY: ${DART_API_KEY:-}
-  # 가입 게이트(settings.py): SMTP_HOST와 https PUBLIC_BASE_URL이 모두 있어야 가입이 열린다.
+  # 가입 게이트(settings.py): SIGNUP_ENABLED=true에 SMTP_HOST와 https PUBLIC_BASE_URL이 모두 있어야 가입이 열린다.
   SIGNUP_ENABLED: ${SIGNUP_ENABLED:-}
   SMTP_HOST: ${SMTP_HOST:-}
   PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}

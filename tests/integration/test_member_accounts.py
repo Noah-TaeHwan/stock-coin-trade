@@ -99,7 +99,15 @@ def test_api_keys_are_capped_per_member():
     email = f"keys-{uuid.uuid4().hex[:10]}@example.test"
     client = _client("local")
     try:
-        client.post("/api/member/register", json={"username": "k", "email": email, "password": "pw", "password2": "pw"})
+        client.post(
+            "/api/member/register",
+            json={
+                "username": "k",
+                "email": email,
+                "password": "pw-long-passphrase-for-tests",
+                "password2": "pw-long-passphrase-for-tests",
+            },
+        )
         codes = [client.post("/api/member/api-keys", json={"label": f"k{i}"}).status_code for i in range(6)]
         assert codes == [200] * 5 + [400]
         keys = client.get("/api/member/api-keys").get_json()["keys"]
@@ -122,5 +130,8 @@ def test_create_admin_makes_an_account_that_can_sign_in_and_is_admin():
         assert client.post("/api/member/login", json={"email": email, "password": password + "!"}).status_code == 200
         assert client.get("/api/member/me").get_json()["isAdmin"] is True
         assert client.get("/api/admin/me").status_code == 200
+        # 비밀번호를 다시 설정하면 기존 관리자 세션은 같은 트랜잭션에서 끝난다.
+        assert bootstrap.create_admin(email, password + "?") == "updated"
+        assert client.get("/api/member/me").get_json()["loggedIn"] is False
     finally:
         _delete_member(email)

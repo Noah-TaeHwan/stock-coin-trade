@@ -5,7 +5,7 @@ DEMO_EMAIL_DOMAIN = "@sample-investor.local"
 BOT_EMAIL_DOMAIN = "@system-bot.local"
 RESERVED_EMAIL_DOMAINS = (DEMO_EMAIL_DOMAIN, BOT_EMAIL_DOMAIN)
 
-# bcrypt 해시가 아니므로 어떤 비밀번호와도 일치하지 않는다(members._check_password가 False).
+# bcrypt 해시가 아니므로 어떤 비밀번호와도 일치하지 않는다(passwords.verify가 False).
 UNUSABLE_PASSWORD = "!unusable"
 
 
