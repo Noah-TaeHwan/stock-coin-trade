@@ -46,3 +46,14 @@ def test_only_synthetic_data_is_public_until_terms_are_checked(reg):
 
 def test_every_source_has_an_attribution_text(reg):
     assert all(source.attribution.strip() for source in reg.sources.values())
+
+
+def test_noah_terms_decisions_2026_09_26_are_recorded(reg):
+    """노아 판정(docs/evidence/data-rights-2026-09-26.md §8)이 레지스트리에 반영돼 있다."""
+    dart = reg.sources["dart"]
+    assert dart.status == "verified" and "노아" in dart.checked_by and dart.terms_url.startswith("https://opendart")
+    assert not dart.allowed_in("public"), "공개는 S3에서 정확성 비보장 고지를 붙인 뒤 켠다"
+    for scraped in ("naver_finance", "krx_kind"):
+        assert not reg.sources[scraped].allowed_in("local"), f"{scraped}: 약관이 자동 수집을 금지해 로컬에서도 끈다"
+    assert reg.sources["upbit"].commercial_use == "forbidden"
+    assert reg.sources["upbit"].redistribution == "forbidden"
