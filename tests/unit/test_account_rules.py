@@ -37,3 +37,13 @@ def test_privacy_page_shows_the_version_recorded_at_signup():
 
     page = Path(__file__).resolve().parents[2] / "frontend" / "privacy.html"
     assert f"버전 {PRIVACY_VERSION}" in page.read_text(encoding="utf-8")
+
+
+def test_privacy_page_says_ai_research_is_off_until_it_is_covered():
+    from pathlib import Path
+
+    from settings import AI_TRANSFER_IN_PRIVACY_POLICY
+
+    page = (Path(__file__).resolve().parents[2] / "frontend" / "privacy.html").read_text(encoding="utf-8")
+    assert AI_TRANSFER_IN_PRIVACY_POLICY or "Anthropic, 미국)은 현재 쓰지 않습니다" in page
+    assert "관심 종목 목록과 일부 화면 설정은 이용자 기기의 브라우저 저장소에만 두고 서버로 보내지 않습니다" not in page

@@ -53,15 +53,12 @@ async function redeem() {
   if (response.ok) loadStatus();
 }
 
-const AI_CONSENT_KEY = 'aiConsentVersion';
-
-function readAiConsent() {
-  try { return localStorage.getItem(AI_CONSENT_KEY) || ''; } catch (_) { return ''; }
-}
-
-function saveAiConsent(version) {
-  try { localStorage.setItem(AI_CONSENT_KEY, version); } catch (_) { /* 저장 못 하면 다음에 다시 묻는다 */ }
-}
+/**
+ * 이 페이지에서 받은 AI 국외 이전 동의 버전. 브라우저 저장소에 남기지 않는다:
+ * 같은 브라우저를 다른 회원이 쓰면 앞 사람의 동의로 질문이 나가기 때문이다. 페이지를 새로 열면 다시 묻는다.
+ * @type {string}
+ */
+let aiConsentVersion = '';
 
 /**
  * 국외 이전 안내를 보여 주고 동의 여부를 받는다(질문 칸 아래 안내 상자, innerHTML 없이 DOM으로).
@@ -104,13 +101,13 @@ async function ask() {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question, consent }),
     });
-    let response = await send(readAiConsent());
+    let response = await send(aiConsentVersion);
     let data = await response.json().catch(() => ({}));
     if (response.ok && data.consentRequired) {
       // 질문은 미국 Anthropic으로 간다. 처음 한 번 알리고 동의를 받는다(처리방침 4절).
       const agreed = await confirmAiTransfer();
       if (!agreed) { status.textContent = '보내지 않았습니다. 동의하면 질문을 AI에게 보낼 수 있습니다.'; return; }
-      saveAiConsent(data.consentVersion);
+      aiConsentVersion = data.consentVersion;
       response = await send(data.consentVersion);
       data = await response.json().catch(() => ({}));
     }

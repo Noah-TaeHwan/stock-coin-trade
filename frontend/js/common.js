@@ -660,7 +660,7 @@ function renderJevConsent(text, first, version) {
   decline.type = 'button';
   decline.className = 'term-consent-btn';
   decline.textContent = '보내지 않기';
-  decline.addEventListener('click', () => { closeTerminalHelp(); fallbackCommand(text, first); });
+  decline.addEventListener('click', () => closeTerminalHelp());  // 거절하면 문장을 어디로도 보내지 않는다
   const policy = document.createElement('a');
   policy.href = '/privacy.html';
   policy.textContent = '개인정보 처리방침';
@@ -670,7 +670,7 @@ function renderJevConsent(text, first, version) {
   box.replaceChildren(
     line('Jev', '자연어 명령은 뜻을 해석하려고 미국 TypeSafe AI, Inc.로 보냅니다.'),
     line('보내는 것', '입력한 문장(최대 200자)만 보냅니다. 회원 정보는 보내지 않고, 이 서비스는 문장을 저장하지 않습니다.'),
-    line('주의', '명령 바에 이름·연락처 같은 개인정보를 입력하지 마세요. 동의하지 않으면 메뉴 검색으로 찾습니다.'),
+    line('주의', '명령 바에 이름·연락처 같은 개인정보를 입력하지 마세요. 동의하지 않으면 문장을 보내지 않습니다. 메뉴 이름이나 종목코드는 동의 없이도 됩니다.'),
     actions,
   );
   box.classList.add('open');
@@ -817,7 +817,7 @@ document.addEventListener('click', event => {
    인라인 핸들러를 쓰지 않아야 화면에 script-src 'self' CSP를 걸 수 있다. */
 const HEADER_ACTIONS = {
   logout: () => logout(),
-  go: el => { closeOffcanvas(); location.href = el.dataset.href; },
+  go: el => { closeOffcanvas(); if (intentPath(el.dataset.href)) location.href = el.dataset.href; },
   'toggle-oc': el => toggleOcGroup(Number(el.dataset.index)),
   'toggle-right': el => toggleRightGroup(Number(el.dataset.index)),
   'open-oc': () => openOffcanvas(),
@@ -826,7 +826,7 @@ const HEADER_ACTIONS = {
   'close-ai': () => closeAiPanel(),
 };
 document.addEventListener('click', event => {
-  const el = event.target.closest?.('[data-action]');
+  const el = event.target.closest?.('#header-mount [data-action]');
   const run = el && HEADER_ACTIONS[el.dataset.action];
   if (run) run(el);
 });

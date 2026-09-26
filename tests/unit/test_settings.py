@@ -175,13 +175,20 @@ def test_ai_is_off_by_default_and_needs_a_budget_when_on():
     assert on.ai_enabled and on.ai_monthly_budget_usd == 5.0 and on.ai_model == "claude-opus-5-5"
 
 
-def test_public_ai_needs_a_real_invite_pepper():
+def test_public_ai_needs_a_real_invite_pepper(monkeypatch):
+    monkeypatch.setattr("settings.AI_TRANSFER_IN_PRIVACY_POLICY", True)
     base = {**PUBLIC_ENV, "AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "10"}
     with pytest.raises(SettingsError, match="AI_INVITE_PEPPER"):
         Settings.from_env(base)
     with pytest.raises(SettingsError, match="AI_INVITE_PEPPER"):
         Settings.from_env({**base, "AI_INVITE_PEPPER": "short"})
     assert Settings.from_env({**base, "AI_INVITE_PEPPER": "p" * 40}).ai_invite_pepper == "p" * 40
+
+
+def test_public_ai_stays_off_until_the_privacy_policy_covers_it():
+    env = {**PUBLIC_ENV, "AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "10", "AI_INVITE_PEPPER": "p" * 40}
+    with pytest.raises(SettingsError, match="privacy policy"):
+        Settings.from_env(env)
 
 
 def test_dart_key_is_read_trimmed_and_kept_out_of_flask_config():
