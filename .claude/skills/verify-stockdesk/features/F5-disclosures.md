@@ -16,9 +16,10 @@
 
 ## 주행
 
-전제 조건: `scripts/verify/stack.sh doctor`가 `ok`. 검증 스택은 DART 수집(worker)을 띄우지 않으므로 공시 행이 없다. 필요하면 검증 스택 MariaDB에 `[검증용 예시]` 제목의 행을 몇 개 넣고 주행 뒤 지운다.
+전제 조건: `scripts/verify/stack.sh doctor`가 `ok`. 검증 스택은 DART 수집(worker)을 띄우지 않으므로 공시 행이 없다.
 
-- **API.** `curl -s 'http://127.0.0.1:3334/api/disclosures?symbols=005930,000660'`가 두 종목 행만 주고, `notice`에 "정확성"이 있다.
+- **API.** `python3 scripts/verify/f5_disclosures.py`. `[검증용 예시]` 행 3개(005930·000660·대조 035720)를 넣는다. 그 뒤 출처·"정확성" 고지, 중복을 넣은 `symbols`가 두 종목만 주는지, 잘못된 코드·`symbol`+`symbols`·21개가 400인지 확인하고 예시 행을 지운다(남은 0개 확인).
+- 화면을 볼 때는 스크립트의 예시 행이 필요하므로, 같은 INSERT를 `common.mariadb_scalar`로 다시 넣고 끝나면 함정 절의 DELETE로 지운다.
 - **화면.** 쿠키 없는 Playwright로 `localStorage.stockWatchlist`에 `["005930","000660"]`를 넣고 `/events.html?watch=1`을 연다. 제목이 "내 관심 종목 2개 최근 30일 공시"이고, 다른 종목 행이 없으며, 행마다 백테스트 링크가 있다. 링크를 누르면 `/quant.html?symbol=…`의 종목 칸이 채워진다. 캡처는 `s3-watchlist-disclosures.png`.
 
 ## 함정
