@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 검증 전용 스택(stockdesk-verify, 127.0.0.1:3334)을 올리고·점검하고·내린다.
-# 사용법: scripts/verify/stack.sh up|doctor|down   종료 코드: 0 통과, 1 실패, 2 전제 불충족
+# 사용법: scripts/verify/stack.sh up|doctor|itest [pytest 인자]|down   종료 코드: 0 통과, 1 실패, 2 전제 불충족
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -83,6 +83,18 @@ case "${1:-}" in
     [ "$jev" = false ] || { echo "doctor: 과금 기능 Jev가 꺼져 있지 않습니다(jev=$jev)"; exit 2; }
     echo "doctor: ok profile=$profile jev=$jev port=$PORT"
     ;;
+  itest)
+    mine || { echo "itest: 이 체크아웃이 띄운 검증 스택이 없습니다. 먼저 up 하세요"; exit 2; }
+    shift
+    set -a; . "./$ENV_FILE"; set +a
+    # 비밀 값은 docker 인자에 넣지 않고 -e 이름만 넘긴다(ps에 값이 보이지 않게).
+    DB_USER="$MARIADB_USER" DB_PASSWORD="$MARIADB_PASSWORD" \
+    QUANT_DATABASE_URL="postgresql+psycopg://${QUANT_DB_USER}:${QUANT_DB_PASSWORD}@postgres:5432/${QUANT_DB_NAME}" \
+      docker run --rm --network "${PROJECT}_internal" -v "$HERE":/repo -w /repo \
+        -e RUN_INTEGRATION=1 -e DB_HOST=mariadb -e DB_PORT=3306 -e DB_NAME=mockinv \
+        -e DB_USER -e DB_PASSWORD -e QUANT_DATABASE_URL \
+        sct-test:dev python -m pytest -q -m integration "$@"
+    ;;
   down)
     if running; then
       mine || { echo "down: 이 체크아웃이 띄운 스택이 아닙니다($(owner)). 띄운 쪽에서 정리하세요"; exit 2; }
@@ -99,5 +111,5 @@ case "${1:-}" in
     fi
     ;;
   *)
-    echo "사용법: $0 up|doctor|down"; exit 2 ;;
+    echo "사용법: $0 up|doctor|itest|down"; exit 2 ;;
 esac

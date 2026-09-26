@@ -13,6 +13,7 @@ PUBLIC_ENV = {
     "DB_PASSWORD": "a-real-db-password",
     "ADMIN_EMAIL": "owner@example.com",
     "RATELIMIT_STORAGE_URI": "redis://redis:6379/0",
+    "SESSION_COOKIE_SECURE": "true",
 }
 ENV_EXAMPLE = Path(__file__).resolve().parents[2] / ".env.example"
 
@@ -103,6 +104,7 @@ PUBLIC_OK = {
     "DB_PASSWORD": "db-password-from-secret-store",
     "ADMIN_EMAIL": "owner@example.com",
     "RATELIMIT_STORAGE_URI": "redis://redis:6379/0",
+    "SESSION_COOKIE_SECURE": "true",
 }
 
 
@@ -151,6 +153,8 @@ def test_flask_config_keeps_the_original_session_settings():
         "AI_INVITE_PEPPER": "dev-invite-pepper-change-me",
         "JEV_ENABLED": False,
         "JEV_MONTHLY_BUDGET_USD": 0.0,
+        "SIGNUP_ENABLED": True,
+        "PUBLIC_BASE_URL": "",
     }
 
 
@@ -178,3 +182,25 @@ def test_dart_key_is_read_trimmed_and_kept_out_of_flask_config():
     assert settings.dart_api_key == "dart-test"
     assert "dart-test" not in str(settings.flask_config())
     assert Settings.from_env({}).dart_api_key == ""
+
+
+def test_public_profile_refuses_insecure_session_cookie():
+    with pytest.raises(SettingsError, match="SESSION_COOKIE_SECURE"):
+        Settings.from_env({**PUBLIC_OK, "SESSION_COOKIE_SECURE": "false"})
+
+
+def test_public_signup_stays_closed_until_mail_is_configured():
+    assert Settings.from_env(PUBLIC_OK).signup_enabled is False
+    ready = {**PUBLIC_OK, "SMTP_HOST": "smtp.example.test", "PUBLIC_BASE_URL": "https://desk.example.test/"}
+    settings = Settings.from_env(ready)
+    assert settings.signup_enabled is True
+    assert settings.public_base_url == "https://desk.example.test"
+
+
+def test_public_refuses_forcing_signup_open_without_mail():
+    with pytest.raises(SettingsError, match="SIGNUP_ENABLED"):
+        Settings.from_env({**PUBLIC_OK, "SIGNUP_ENABLED": "true"})
+
+
+def test_local_signup_is_open_by_default():
+    assert Settings.from_env({"APP_PROFILE": "local"}).signup_enabled is True

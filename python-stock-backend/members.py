@@ -44,18 +44,19 @@ def _check_password(password: str, hashed: str | None) -> bool:
 @member_bp.get("/me")
 def me():
     member_id = session.get("member_id")
-    # profile lets the menu hide screens whose APIs this deployment does not register.
-    profile = current_app.config.get("APP_PROFILE", "local")
+    # profile은 이 배포가 등록하지 않은 화면을 메뉴에서 숨기는 데, signupOpen은 가입 화면 안내에 쓴다.
+    base = {"csrfToken": csrf_token(), "profile": current_app.config.get("APP_PROFILE", "local"),
+            "signupOpen": bool(current_app.config.get("SIGNUP_ENABLED", True))}
     if not member_id:
-        return jsonify({"loggedIn": False, "csrfToken": csrf_token(), "profile": profile})
+        return jsonify({"loggedIn": False, **base})
     with session_scope() as db:
         member = db.get(Member, member_id)
         if not member:
-            return jsonify({"loggedIn": False, "csrfToken": csrf_token(), "profile": profile})
+            return jsonify({"loggedIn": False, **base})
         return jsonify({
             "loggedIn": True, "username": member.username, "asset": member.asset,
             "isAdmin": is_admin_member(member_id, db), "canUseKisAccount": can_use_kis_account(member_id, db),
-            "csrfToken": csrf_token(), "profile": profile,
+            **base,
         })
 
 
@@ -430,6 +431,8 @@ def login():
 @member_bp.post("/register")
 @limiter.limit("5 per hour")
 def register():
+    if not current_app.config.get("SIGNUP_ENABLED", True):
+        return jsonify({"error": "SIGNUP_CLOSED", "message": "공개 베타 준비 중이라 가입을 잠시 닫았습니다."}), 403
     body = request.get_json(silent=True) or {}
     username = (body.get("username") or "").strip()
     email = (body.get("email") or "").strip()
