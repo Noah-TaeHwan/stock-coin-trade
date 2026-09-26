@@ -621,17 +621,73 @@ function intentPath(href) {
   return terminalIsPublic && PUBLIC_HIDDEN_HREFS.has(_hrefPath(path)) ? null : path;
 }
 
-async function routeByIntent(text, first) {
+// 자연어 명령은 미국 TypeSafe로 가는 국외 이전이라, 처리방침 버전에 동의한 브라우저만 보낸다.
+const JEV_CONSENT_KEY = 'jevConsentVersion';
+
+function readJevConsent() {
+  try { return localStorage.getItem(JEV_CONSENT_KEY) || ''; } catch (_) { return ''; }
+}
+
+function saveJevConsent(version) {
+  try { localStorage.setItem(JEV_CONSENT_KEY, version); } catch (_) { /* 저장 못 하면 이번 한 번만 보낸다 */ }
+}
+
+/**
+ * 명령 바 아래에 국외 이전 안내와 동의 버튼을 보여 준다(innerHTML 없이 DOM으로 만든다).
+ * @param {string} text 사용자가 입력한 명령 문장
+ * @param {string} first 첫 단어(대문자)
+ * @param {string} version 서버가 요구한 처리방침 버전
+ * @returns {void}
+ */
+function renderJevConsent(text, first, version) {
+  const box = document.getElementById('term-cmd-help');
+  if (!box) { fallbackCommand(text, first); return; }
+  const line = (label, body) => {
+    const row = document.createElement('div');
+    const b = document.createElement('b');
+    b.textContent = label;
+    const span = document.createElement('span');
+    span.textContent = body;
+    row.append(b, span);
+    return row;
+  };
+  const agree = document.createElement('button');
+  agree.type = 'button';
+  agree.className = 'term-consent-btn';
+  agree.textContent = '동의하고 보내기';
+  agree.addEventListener('click', () => { saveJevConsent(version); closeTerminalHelp(); routeByIntent(text, first, version); });
+  const decline = document.createElement('button');
+  decline.type = 'button';
+  decline.className = 'term-consent-btn';
+  decline.textContent = '보내지 않기';
+  decline.addEventListener('click', () => { closeTerminalHelp(); fallbackCommand(text, first); });
+  const policy = document.createElement('a');
+  policy.href = '/privacy.html';
+  policy.textContent = '개인정보 처리방침';
+  const actions = document.createElement('div');
+  actions.className = 'term-consent-actions';
+  actions.append(agree, decline, policy);
+  box.replaceChildren(
+    line('Jev', '자연어 명령은 뜻을 해석하려고 미국 TypeSafe AI, Inc.로 보냅니다.'),
+    line('보내는 것', '입력한 문장(최대 200자)만 보냅니다. 회원 정보는 보내지 않고, 이 서비스는 문장을 저장하지 않습니다.'),
+    line('주의', '명령 바에 이름·연락처 같은 개인정보를 입력하지 마세요. 동의하지 않으면 메뉴 검색으로 찾습니다.'),
+    actions,
+  );
+  box.classList.add('open');
+}
+
+async function routeByIntent(text, first, consent = readJevConsent()) {
   const input = document.getElementById('term-cmd-input');
   if (input) { input.disabled = true; input.placeholder = 'Jev가 명령을 해석하는 중…'; }
   let result = null;
   try {
     const res = await apiFetch('/api/intent', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, consent }),
     });
     if (res.ok) result = await res.json();
   } catch (_) { /* 기존 동작으로 */ }
   if (input) input.disabled = false;
+  if (result?.consentRequired) { renderJevConsent(text, first, result.consentVersion); return; }
   if (!result?.enabled) { fallbackCommand(text, first); return; }
 
   const target = intentPath(result.href);
