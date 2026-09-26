@@ -49,9 +49,14 @@ def _member(client):
     email = f"agent-{uuid.uuid4().hex[:10]}@example.com"
     client.post(
         "/api/member/register",
-        json={"username": "agent", "email": email, "password": "pw-123456", "password2": "pw-123456"},
+        json={
+            "username": "agent",
+            "email": email,
+            "password": "pw-long-passphrase-for-tests",
+            "password2": "pw-long-passphrase-for-tests",
+        },
     )
-    client.post("/api/member/login", json={"email": email, "password": "pw-123456"})
+    client.post("/api/member/login", json={"email": email, "password": "pw-long-passphrase-for-tests"})
     return email
 
 

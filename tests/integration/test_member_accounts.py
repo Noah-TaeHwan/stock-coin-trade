@@ -99,7 +99,15 @@ def test_api_keys_are_capped_per_member():
     email = f"keys-{uuid.uuid4().hex[:10]}@example.test"
     client = _client("local")
     try:
-        client.post("/api/member/register", json={"username": "k", "email": email, "password": "pw", "password2": "pw"})
+        client.post(
+            "/api/member/register",
+            json={
+                "username": "k",
+                "email": email,
+                "password": "pw-long-passphrase-for-tests",
+                "password2": "pw-long-passphrase-for-tests",
+            },
+        )
         codes = [client.post("/api/member/api-keys", json={"label": f"k{i}"}).status_code for i in range(6)]
         assert codes == [200] * 5 + [400]
         keys = client.get("/api/member/api-keys").get_json()["keys"]

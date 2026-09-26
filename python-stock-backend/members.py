@@ -1,4 +1,3 @@
-import bcrypt
 import requests
 import threading
 import time
@@ -17,6 +16,7 @@ from authz import admin_email, can_use_kis_account, is_admin_member
 from extensions import limiter
 from security import csrf_token
 import member_sessions
+import passwords
 from stock_market import cached_price
 
 LEVERAGED_ALT_CATEGORIES = {"선물", "옵션", "파생상품"}
@@ -27,19 +27,6 @@ RANKING_CACHE_TTL = 30
 _ranking_cache = {"ts": 0.0, "data": None}
 _ranking_cache_lock = threading.Lock()
 _crypto_price_cache = {"ts": 0.0, "prices": {}}
-
-
-def _hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-
-def _check_password(password: str, hashed: str | None) -> bool:
-    if not hashed:
-        return False
-    try:
-        return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
-    except ValueError:
-        return False
 
 
 @member_bp.get("/me")
@@ -405,8 +392,19 @@ def investor_rankings():
         return jsonify(result)
 
 
+def _login_email_key() -> str:
+    """이메일 기준 로그인 제한 키(실패만 센다).
+
+    @returns "login:<소문자 이메일>"
+    """
+    body = request.get_json(silent=True) or {}
+    return "login:" + str(body.get("email") or "").strip().lower()
+
+
 @member_bp.post("/login")
 @limiter.limit("10 per minute")
+# 한 계정을 여러 IP에서 추측하는 공격을 막는다. 성공은 세지 않아 정상 사용자는 잠기지 않는다.
+@limiter.limit("30 per hour", key_func=_login_email_key, deduct_when=lambda response: response.status_code == 401)
 def login():
     body = request.get_json(silent=True) or {}
     email = (body.get("email") or "").strip()
@@ -416,12 +414,12 @@ def login():
 
     with session_scope() as db:
         member = db.query(Member).filter(Member.email == email).first()
-        if (
-            not member
-            or not can_sign_in(member.email, current_app.config["APP_PROFILE"])
-            or not _check_password(password, member.password)
-        ):
+        # 없는 계정도 bcrypt를 한 번 돌려 응답 시간으로 가입 여부가 드러나지 않게 한다.
+        matched = passwords.verify(password, member.password if member else passwords.dummy_hash())
+        if not (member and matched and can_sign_in(member.email, current_app.config["APP_PROFILE"])):
             return jsonify({"error": "아이디 또는 비밀번호가 맞지 않습니다."}), 401
+        if passwords.needs_rehash(member.password):
+            member.password = passwords.hash_password(password)
         member_id, username, asset = member.member_id, member.username, member.asset
 
     member_sessions.start(member_id)
@@ -454,12 +452,15 @@ def register():
     reserved_admin = current_app.config["APP_PROFILE"] == "public" and email.lower() == admin_email()
     if is_reserved_email(email) or reserved_admin:
         return jsonify({"field": "email", "error": "사용할 수 없는 이메일입니다."}), 400
+    weak = passwords.problem(password, email=email, nickname=username)
+    if weak:
+        return jsonify({"field": "password", "error": weak}), 400
 
     with session_scope() as db:
         if db.query(Member).filter(Member.email == email).first():
             return jsonify({"field": "email", "error": "이미 존재하는 회원입니다."}), 400
 
-        member = Member(username=username, email=email, password=_hash_password(password), asset=INITIAL_ASSET)
+        member = Member(username=username, email=email, password=passwords.hash_password(password), asset=INITIAL_ASSET)
         db.add(member)
         try:
             db.flush()

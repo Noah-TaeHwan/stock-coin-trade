@@ -7,7 +7,6 @@ already exist), so they can run once per deployment from the Flask CLI:
     flask --app app seed-demo
 """
 
-import bcrypt
 
 from alternatives import ensure_tables as ensure_alternative_tables
 from api_usage import ensure_api_usage_table
@@ -19,6 +18,8 @@ from kis_practice import ensure_kis_practice_tables
 from market_bots import ensure_bot_accounts
 from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
+import member_sessions
+import passwords
 from member_sessions import ensure_session_table
 from models import Member
 from jev_usage import ensure_jev_tables
@@ -57,9 +58,6 @@ def seed_demo_data() -> None:
     ensure_bot_accounts()
 
 
-MIN_ADMIN_PASSWORD_LENGTH = 12
-
-
 def create_admin(email: str, password: str, username: str = "admin") -> str:
     """Create the admin member, or reset its password if it exists.
 
@@ -69,13 +67,18 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
     email = email.strip().lower()
     if "@" not in email:
         raise ValueError("ADMIN_EMAIL is not an email address.")
-    if len(password) < MIN_ADMIN_PASSWORD_LENGTH:
-        raise ValueError(f"Admin password must be at least {MIN_ADMIN_PASSWORD_LENGTH} characters.")
-    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    weak = passwords.problem(password, email=email)
+    if weak:
+        raise ValueError(weak)
+    hashed = passwords.hash_password(password)
     with session_scope() as db:
         member = db.query(Member).filter(Member.email == email).first()
         if member:
             member.password = hashed
-            return "updated"
-        db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET))
-        return "created"
+            member_id = member.member_id
+        else:
+            db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET))
+            return "created"
+    # 비밀번호를 바꿨으니 이 관리자의 기존 세션을 모두 끝낸다.
+    member_sessions.end_all(member_id)
+    return "updated"

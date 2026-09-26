@@ -30,6 +30,8 @@ print('fastembed model ready')" \
 COPY python-stock-backend/*.py .
 # KIS API 탐색기 카탈로그(공식 예제에서 생성한 JSON)
 COPY python-stock-backend/kis_api_catalog.json .
+# 흔한 비밀번호 차단 목록(passwords.py가 ./data에서 읽는다)
+COPY python-stock-backend/data/ ./data/
 # Noah가 새로 쓴 패키지(src/)와 데이터 소스 레지스트리(config/). marketdata.registry는
 # /app/src/marketdata 기준 두 단계 위의 config/data_sources.toml을 읽는다.
 COPY src/ ./src/

@@ -8,6 +8,7 @@ import pytest
 import accounts
 import app as app_module
 import members
+import passwords
 from app import create_app
 from settings import Settings
 
@@ -155,9 +156,9 @@ def test_who_can_sign_in(email, profile, allowed):
 
 
 def test_unusable_password_matches_nothing():
-    assert members._check_password("", accounts.UNUSABLE_PASSWORD) is False
-    assert members._check_password("!unusable", accounts.UNUSABLE_PASSWORD) is False
-    assert members._check_password("anything", None) is False
+    assert passwords.verify("", accounts.UNUSABLE_PASSWORD) is False
+    assert passwords.verify("!unusable", accounts.UNUSABLE_PASSWORD) is False
+    assert passwords.verify("anything", None) is False
 
 
 @pytest.mark.parametrize("email", ["x@sample-investor.local", "x@SYSTEM-BOT.local"])
@@ -179,7 +180,7 @@ def test_create_admin_command_reports_validation_errors(app):
     runner = app.test_cli_runner()
     result = runner.invoke(args=["create-admin", "--email", "owner@example.com", "--password", "short"])
     assert result.exit_code != 0
-    assert "at least 12 characters" in result.output
+    assert "15자 이상" in result.output
 
 
 def test_create_admin_command_calls_bootstrap(app):

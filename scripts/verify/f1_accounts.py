@@ -20,6 +20,11 @@ def steps(client: common.Client, rec: common.Recorder) -> None:
         raise ConnectionError(f"/health가 백엔드 응답이 아님: {status}")
 
     email, password = common.unique_email(), "verify-" + secrets.token_hex(8)
+    # 15자 미만 비밀번호는 가입 단계에서 거절된다(NIST SP 800-63B-4, passwords.py).
+    status, body = client.call("POST", "/api/member/register",
+                               {"username": "검증", "email": email, "password": "fourteen-chars", "password2": "fourteen-chars"})
+    rec.add("register-short-password", {"username": "검증", "email": email, "password": "fourteen-chars"}, status, body)
+    assert status == 400 and body.get("field") == "password", f"짧은 비밀번호 기대 400/password, 실제 {status}/{body}"
     status, body = client.call("POST", "/api/member/register",
                                {"username": "검증", "email": email, "password": password, "password2": password})
     rec.add("register", {"username": "검증", "email": email, "password": password}, status, body)
