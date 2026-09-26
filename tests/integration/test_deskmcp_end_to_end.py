@@ -70,9 +70,14 @@ def desk():
             "email": email,
             "password": "pw-long-passphrase-for-tests",
             "password2": "pw-long-passphrase-for-tests",
+            "agreeAge": True,
+            "agreePrivacy": True,
         },
     )
-    assert registered.status_code in (200, 201), registered.get_data(as_text=True)
+    # public은 메일 인증 모드다. 이 테스트는 인증 흐름이 대상이 아니므로 DB에서 인증 표시만 한다.
+    assert registered.status_code == 202, registered.get_data(as_text=True)
+    with db.engine.begin() as conn:
+        conn.execute(text("UPDATE member SET email_verified_at = NOW() WHERE email = :e"), {"e": email})
     browser.post("/api/member/login", json={"email": email, "password": "pw-long-passphrase-for-tests"})
     created = browser.post("/api/member/api-keys", json={"label": "mcp test"})
     assert created.status_code in (200, 201), created.get_data(as_text=True)
@@ -80,7 +85,15 @@ def desk():
     yield api
     with db.engine.begin() as conn:
         member_id = conn.execute(text("SELECT member_id FROM member WHERE email = :e"), {"e": email}).scalar()
-        for table in ("stock_order", "stock_position", "api_key", "system_error_log", "member_session", "member"):
+        for table in (
+            "stock_order",
+            "stock_position",
+            "api_key",
+            "system_error_log",
+            "member_session",
+            "member_token",
+            "member",
+        ):
             conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": member_id})
 
 

@@ -7,7 +7,7 @@ already exist), so they can run once per deployment from the Flask CLI:
     flask --app app seed-demo
 """
 
-from sqlalchemy import text
+from sqlalchemy import func, text
 
 from alternatives import ensure_tables as ensure_alternative_tables
 from api_usage import ensure_api_usage_table
@@ -21,6 +21,7 @@ from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
 import passwords
 from member_sessions import ensure_session_table
+from member_tokens import ensure_token_table
 from models import Member
 from jev_usage import ensure_jev_tables
 from research_agent import ensure_ai_tables
@@ -33,6 +34,7 @@ def create_tables() -> None:
     ensure_alternative_tables()
     ensure_member_tables()
     ensure_session_table()
+    ensure_token_table()
     ensure_kis_practice_tables()
     ensure_crypto_tables()
     ensure_error_analysis_table()
@@ -75,8 +77,10 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
         member = db.query(Member).filter(Member.email == email).first()
         if member:
             member.password = hashed
+            member.email_verified_at = member.email_verified_at or func.now()
             # 새 비밀번호와 기존 세션 폐기를 한 트랜잭션으로 커밋한다(탈취된 옛 쿠키가 남지 않게).
             db.execute(text("DELETE FROM member_session WHERE member_id = :m"), {"m": member.member_id})
             return "updated"
-        db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET))
+        # CLI로 만드는 관리자는 운영자 본인이므로 메일 인증을 거친 것으로 본다.
+        db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET, email_verified_at=func.now()))
         return "created"

@@ -38,6 +38,12 @@ x-public-backend-environment: &public-backend-environment
   SIGNUP_ENABLED: ${SIGNUP_ENABLED:-}
   SMTP_HOST: ${SMTP_HOST:-}
   PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+  # 메일(SES SMTP 등)은 S5에서 SSM으로 넣는다. public은 STARTTLS를 끌 수 없다.
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
 
 services:
   frontend:

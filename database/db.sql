@@ -174,6 +174,10 @@ CREATE TABLE IF NOT EXISTS `member` (
   `email` varchar(255) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
   `username` varchar(255) DEFAULT NULL,
+  `email_verified_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `consent_version` varchar(20) DEFAULT NULL,
+  `consented_at` datetime DEFAULT NULL,
   PRIMARY KEY (`member_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
@@ -363,6 +367,19 @@ CREATE TABLE IF NOT EXISTS `member_session` (
   PRIMARY KEY (`token_hash`),
   KEY `idx_member_session_member` (`member_id`),
   CONSTRAINT `fk_member_session_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 메일 인증·비밀번호 재설정 1회용 토큰(python-stock-backend/member_tokens.py가 같은 DDL로 만든다). SHA-256만 둔다.
+-- 인증 24시간·재설정 30분, 새로 발급하면 같은 목적의 이전 토큰을 지운다. 시각은 UTC.
+CREATE TABLE IF NOT EXISTS `member_token` (
+  `token_hash` char(64) NOT NULL,
+  `member_id` bigint(20) NOT NULL,
+  `purpose` enum('verify','reset') NOT NULL,
+  `expires_at` datetime NOT NULL COMMENT 'UTC',
+  `used_at` datetime DEFAULT NULL COMMENT 'UTC',
+  PRIMARY KEY (`token_hash`),
+  KEY `idx_member_token_member` (`member_id`,`purpose`),
+  CONSTRAINT `fk_member_token_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

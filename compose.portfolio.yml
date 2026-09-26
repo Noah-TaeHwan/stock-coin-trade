@@ -21,6 +21,12 @@ x-portfolio-backend-environment: &portfolio-backend-environment
   TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
   # 공시 레이더(OpenDART) 수집기 키. 비어 있으면 수집 작업을 걸지 않는다.
   DART_API_KEY: ${DART_API_KEY:-}
+  # 로컬·검증 스택의 메일은 Mailpit이 받는다(밖으로 나가지 않음). 켜져 있으면 가입에 메일 인증이 필요하다.
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  SMTP_STARTTLS: "false"
+  SMTP_FROM: no-reply@stockdesk.local
+  PUBLIC_BASE_URL: http://127.0.0.1:${FRONTEND_PORT:-3333}
 
 services:
   frontend:
@@ -64,6 +70,18 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  mailpit:
+    image: axllent/mailpit:v1.31.2
+    networks:
+      - internal
+    # 웹 UI·API(8025)만 127.0.0.1의 임의 포트로 연다(PM 스택과 검증 스택이 함께 떠도 충돌하지 않게).
+    # 실제 포트: docker port <컨테이너> 8025/tcp
+    ports:
+      - "127.0.0.1::8025"
+    restart: unless-stopped
 
   worker:
     environment: !override

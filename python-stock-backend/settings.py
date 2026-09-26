@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 import sys
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 
@@ -94,6 +94,22 @@ class Settings:
     smtp_host: str = ""
     # 메일 속 링크의 기준 주소. 요청의 Host 헤더로 링크를 만들지 않는다(재설정 링크 변조 방지).
     public_base_url: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    # 비밀 값이라 repr에 넣지 않는다.
+    smtp_password: str = field(default="", repr=False)
+    # 보내는 주소. 메일을 쓰면 반드시 정한다.
+    smtp_from: str = ""
+    # public은 STARTTLS를 끌 수 없다(인증서 검증은 mailer가 기본 SSL 컨텍스트로 한다).
+    smtp_starttls: bool = True
+
+    @property
+    def email_verification(self) -> bool:
+        """메일 인증을 마쳐야 로그인하는 배포인지. public은 항상, local은 SMTP_HOST가 있을 때.
+
+        @returns 메일 인증 사용 여부
+        """
+        return self.is_public or bool(self.smtp_host)
 
     @property
     def is_public(self) -> bool:
@@ -145,12 +161,24 @@ class Settings:
         smtp_host = (env.get("SMTP_HOST") or "").strip()
         public_base_url = (env.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
         mail_ready = bool(smtp_host) and public_base_url.startswith("https://")
+        try:
+            smtp_port = int(env.get("SMTP_PORT") or "587")
+        except ValueError:
+            raise SettingsError("SMTP_PORT must be an integer.") from None
+        smtp_from = (env.get("SMTP_FROM") or "").strip()
+        smtp_starttls = (env.get("SMTP_STARTTLS") or "true").strip().lower() == "true"
+        if smtp_host and not public_base_url:
+            raise SettingsError("SMTP_HOST needs PUBLIC_BASE_URL for the links in mail.")
+        if smtp_host and not smtp_from:
+            raise SettingsError("SMTP_HOST needs SMTP_FROM.")
         signup_default = "true" if profile == "local" else "false"
         signup_enabled = (env.get("SIGNUP_ENABLED") or signup_default).strip().lower() == "true"
         if profile == "public":
             problems = []
             if env.get("SESSION_COOKIE_SECURE", "false").strip().lower() != "true":
                 problems.append("SESSION_COOKIE_SECURE must be true")
+            if smtp_host and not smtp_starttls:
+                problems.append("SMTP_STARTTLS must stay on")
             if signup_enabled and not mail_ready:
                 problems.append("SIGNUP_ENABLED needs SMTP_HOST and an https:// PUBLIC_BASE_URL")
             if ai_enabled and (
@@ -197,6 +225,11 @@ class Settings:
             signup_enabled=signup_enabled,
             smtp_host=smtp_host,
             public_base_url=public_base_url,
+            smtp_port=smtp_port,
+            smtp_user=(env.get("SMTP_USER") or "").strip(),
+            smtp_password=env.get("SMTP_PASSWORD") or "",
+            smtp_from=smtp_from,
+            smtp_starttls=smtp_starttls,
         )
 
     def flask_config(self) -> dict[str, object]:
@@ -218,4 +251,11 @@ class Settings:
             "JEV_MONTHLY_BUDGET_USD": self.jev_monthly_budget_usd,
             "SIGNUP_ENABLED": self.signup_enabled,
             "PUBLIC_BASE_URL": self.public_base_url,
+            "SMTP_HOST": self.smtp_host,
+            "SMTP_PORT": self.smtp_port,
+            "SMTP_USER": self.smtp_user,
+            "SMTP_PASSWORD": self.smtp_password,
+            "SMTP_FROM": self.smtp_from,
+            "SMTP_STARTTLS": self.smtp_starttls,
+            "EMAIL_VERIFICATION": self.email_verification,
         }

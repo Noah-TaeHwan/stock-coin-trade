@@ -52,6 +52,7 @@ description: stock-coin-trade 앱(Flask + nginx + MariaDB + PostgreSQL)을 전�
 ## 함정
 
 - 샌드박스 안의 에이전트(예: Codex `workspace-write`)는 `~/.docker/buildx`에 쓸 수 없어 `up`이 실패할 수 있다. 그때는 `mkdir -p /private/tmp/stockdesk-verify-buildx-$UID && BUILDX_CONFIG=/private/tmp/stockdesk-verify-buildx-$UID scripts/verify/stack.sh up`으로 올린다.
+- 검증 스택에는 Mailpit이 있어 가입에 메일 인증이 필요하다. 메일은 `common.mail_link(주소, 경로)`로 읽는다(UI 포트는 `docker port`로 찾는 임의 포트).
 - 브라우저를 띄울 수 없는 환경이면 화면 확인은 "미검증"으로 보고한다. API 스크립트의 판정은 그대로 유효하지만, 화면까지 "통과"라고 쓰지 않는다.
 
 ## Helpers
@@ -61,6 +62,7 @@ description: stock-coin-trade 앱(Flask + nginx + MariaDB + PostgreSQL)을 전�
 | `scripts/verify/stack.sh up\|doctor\|down` | 스택 수명주기 |
 | `scripts/verify/stack.sh itest [pytest 인자]` | 검증 스택 DB로 통합 테스트(`-m integration`) |
 | `python3 scripts/verify/f1_accounts.py` | F1 회원 |
+| `common.mail_link(to, path)` | 검증 스택 Mailpit에서 링크 찾기 |
 | `python3 scripts/verify/f2_backtest.py` | F2 백테스트 영수증 |
 | `scripts/verify/common.py` | 공용 도구(직접 실행하지 않음) |
 

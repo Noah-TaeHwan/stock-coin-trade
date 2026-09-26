@@ -177,6 +177,7 @@ def seed_demo_investors() -> int:
                     email=_demo_email(index),
                     password=password_hash,
                     asset=max(300_000, INITIAL_ASSET - stock_cost - crypto_cost),
+                    email_verified_at=now,
                 )
                 db.add(member)
                 db.flush()

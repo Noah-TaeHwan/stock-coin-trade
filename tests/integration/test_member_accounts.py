@@ -102,7 +102,7 @@ def test_api_keys_are_capped_per_member():
         client.post(
             "/api/member/register",
             json={
-                "username": "k",
+                "username": "키키",
                 "email": email,
                 "password": "pw-long-passphrase-for-tests",
                 "password2": "pw-long-passphrase-for-tests",

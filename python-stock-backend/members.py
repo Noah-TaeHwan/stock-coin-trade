@@ -4,18 +4,20 @@ import time
 from datetime import datetime, timedelta
 from flask import Blueprint, current_app, jsonify, request, session
 
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 import stock_trading
 from db import engine, session_scope
 from models import AlternativeOrder, CryptoOrder, HoldCrypto, HtsWatchMemo, Member, StockOrder, StockPosition, UpbitMarket
 from alternatives import get_positions as get_alternative_positions, position_value
-from accounts import can_sign_in, is_reserved_email
+from accounts import PRIVACY_VERSION, can_sign_in, email_problem, is_reserved_email, nickname_problem, normalize_nickname
 from authz import admin_email, can_use_kis_account, is_admin_member
 from extensions import limiter
 from security import csrf_token
+import mailer
 import member_sessions
+import member_tokens
 import passwords
 from stock_market import cached_price
 
@@ -107,6 +109,28 @@ def ensure_member_tables() -> None:
     with engine.begin() as conn:
         conn.execute(text(statement))
     ensure_unique_member_email()
+    ensure_member_columns()
+
+
+MEMBER_COLUMNS = {
+    "email_verified_at": "DATETIME NULL",
+    "created_at": "DATETIME NULL DEFAULT CURRENT_TIMESTAMP",
+    "consent_version": "VARCHAR(20) NULL",
+    "consented_at": "DATETIME NULL",
+}
+
+
+def ensure_member_columns() -> None:
+    """메일 인증·동의 기록 열을 더한다(멱등). 이 열이 생기기 전 계정은 인증된 것으로 본다."""
+    with engine.begin() as conn:
+        present = set(conn.execute(text(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'member'"
+        )).scalars())
+        for name, ddl in MEMBER_COLUMNS.items():
+            if name not in present:
+                conn.execute(text(f"ALTER TABLE member ADD COLUMN {name} {ddl}"))
+        if "email_verified_at" not in present:
+            conn.execute(text("UPDATE member SET email_verified_at = NOW()"))
 
 
 MEMBER_EMAIL_INDEX = "uq_member_email"
@@ -427,7 +451,10 @@ def login():
         member = db.query(Member).filter(Member.email == email).first()
         # 없는 계정도 bcrypt를 한 번 돌려 응답 시간으로 가입 여부가 드러나지 않게 한다.
         matched = passwords.verify(password, member.password if member else passwords.dummy_hash())
-        if not (member and matched and can_sign_in(member.email, current_app.config["APP_PROFILE"])):
+        # 메일 인증을 쓰는 배포는 인증 전 계정을 잘못된 비밀번호와 똑같이 거절한다(남의 주소 선점 방지).
+        verified = member is not None and (
+            member.email_verified_at is not None or not current_app.config.get("EMAIL_VERIFICATION"))
+        if not (member and matched and verified and can_sign_in(member.email, current_app.config["APP_PROFILE"])):
             return jsonify({"error": "아이디 또는 비밀번호가 맞지 않습니다."}), 401
         if passwords.needs_rehash(member.password):
             member.password = passwords.hash_password(password)
@@ -437,51 +464,92 @@ def login():
     return jsonify({"username": username, "asset": asset})
 
 
+CHECK_EMAIL = {"status": "check_email"}
+
+
 @member_bp.post("/register")
 @limiter.limit("5 per hour")
 def register():
     if not current_app.config.get("SIGNUP_ENABLED", True):
         return jsonify({"error": "SIGNUP_CLOSED", "message": "공개 베타 준비 중이라 가입을 잠시 닫았습니다."}), 403
     body = request.get_json(silent=True) or {}
-    username = (body.get("username") or "").strip()
-    email = (body.get("email") or "").strip()
+    username = normalize_nickname(body.get("username"))
+    email = str(body.get("email") or "").strip()
     password = body.get("password") or ""
     password2 = body.get("password2") or ""
 
-    if not username:
-        return jsonify({"field": "username", "error": "이름을 입력해주세요."}), 400
-    if not email or "@" not in email:
-        return jsonify({"field": "email", "error": "올바른 이메일을 입력해주세요."}), 400
+    problem = nickname_problem(username)
+    if problem:
+        return jsonify({"field": "username", "error": problem}), 400
+    problem = email_problem(email)
+    if problem:
+        return jsonify({"field": "email", "error": problem}), 400
     if not password:
         return jsonify({"field": "password", "error": "비밀번호를 입력해주세요."}), 400
-    if not password2:
-        return jsonify({"field": "password2", "error": "비밀번호 확인을 입력해주세요."}), 400
     if password != password2:
         return jsonify({"field": "password2", "error": "패스워드가 일치하지 않습니다."}), 400
-    # 시스템 계정 도메인과, 공개 배포의 관리자 주소는 가입으로 만들 수 없다.
-    # 공개 배포의 관리자는 `flask --app app create-admin`으로 만든다.
-    reserved_admin = current_app.config["APP_PROFILE"] == "public" and email.lower() == admin_email()
-    if is_reserved_email(email) or reserved_admin:
+    public = current_app.config["APP_PROFILE"] == "public"
+    silent = is_reserved_email(email) or (public and email.lower() == admin_email())
+    if not current_app.config.get("EMAIL_VERIFICATION"):
+        return _register_without_mail(username, email, password, silent)
+
+    if not (body.get("agreeAge") is True and body.get("agreePrivacy") is True):
+        return jsonify({"field": "consent", "error": "필수 동의 항목을 확인해 주세요."}), 400
+    weak = passwords.problem(password, email=email, nickname=username)
+    if weak:
+        return jsonify({"field": "password", "error": weak}), 400
+    # 여기부터는 모든 경우가 같은 응답이다. bcrypt도 경우마다 한 번씩 돌려 응답 시간을 맞춘다.
+    hashed = passwords.hash_password(password)
+    if silent or body.get("website"):
+        return jsonify(CHECK_EMAIL), 202
+    created_id = existing_email = None
+    with session_scope() as db:
+        existing = db.query(Member).filter(Member.email == email).first()
+        if existing:
+            existing_email = existing.email
+        else:
+            member = Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET,
+                            consent_version=PRIVACY_VERSION, consented_at=func.now())
+            db.add(member)
+            try:
+                db.flush()
+                created_id = member.member_id
+            except IntegrityError:
+                db.rollback()
+                existing_email = email
+    if created_id:
+        mailer.queue("verify", email, member_tokens.issue(created_id, "verify"))
+    elif existing_email:
+        mailer.queue("exists", existing_email)
+    return jsonify(CHECK_EMAIL), 202
+
+
+def _register_without_mail(username: str, email: str, password: str, reserved: bool):
+    """메일이 없는 로컬 실습: 예전처럼 바로 만들고 인증된 계정으로 로그인한다.
+
+    @param username 닉네임
+    @param email 이메일
+    @param password 비밀번호
+    @param reserved 예약·관리자 주소 여부
+    @returns Flask 응답
+    """
+    if reserved:
         return jsonify({"field": "email", "error": "사용할 수 없는 이메일입니다."}), 400
     weak = passwords.problem(password, email=email, nickname=username)
     if weak:
         return jsonify({"field": "password", "error": weak}), 400
-
     with session_scope() as db:
         if db.query(Member).filter(Member.email == email).first():
             return jsonify({"field": "email", "error": "이미 존재하는 회원입니다."}), 400
-
-        member = Member(username=username, email=email, password=passwords.hash_password(password), asset=INITIAL_ASSET)
+        member = Member(username=username, email=email, password=passwords.hash_password(password),
+                        asset=INITIAL_ASSET, email_verified_at=func.now())
         db.add(member)
         try:
             db.flush()
         except IntegrityError:
-            # 동시에 같은 이메일로 가입한 요청이 먼저 커밋됐다(uq_member_email).
             db.rollback()
             return jsonify({"field": "email", "error": "이미 존재하는 회원입니다."}), 400
         member_id = member.member_id
-
-    # 회원 행이 커밋된 뒤에 세션을 발급한다(트랜잭션 안에서 넣으면 FK 잠금을 기다린다).
     member_sessions.start(member_id)
     return jsonify({"username": username})
 

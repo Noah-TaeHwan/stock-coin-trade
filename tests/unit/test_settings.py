@@ -155,6 +155,13 @@ def test_flask_config_keeps_the_original_session_settings():
         "JEV_MONTHLY_BUDGET_USD": 0.0,
         "SIGNUP_ENABLED": True,
         "PUBLIC_BASE_URL": "",
+        "SMTP_HOST": "",
+        "SMTP_PORT": 587,
+        "SMTP_USER": "",
+        "SMTP_PASSWORD": "",
+        "SMTP_FROM": "",
+        "SMTP_STARTTLS": True,
+        "EMAIL_VERIFICATION": False,
     }
 
 
@@ -191,7 +198,12 @@ def test_public_profile_refuses_insecure_session_cookie():
 
 def test_public_signup_opens_only_when_asked_and_mail_is_configured():
     assert Settings.from_env(PUBLIC_OK).signup_enabled is False
-    ready = {**PUBLIC_OK, "SMTP_HOST": "smtp.example.test", "PUBLIC_BASE_URL": "https://desk.example.test/"}
+    ready = {
+        **PUBLIC_OK,
+        "SMTP_HOST": "smtp.example.test",
+        "SMTP_FROM": "no-reply@example.test",
+        "PUBLIC_BASE_URL": "https://desk.example.test/",
+    }
     # 메일 설정만으로는 열리지 않는다(인증 흐름이 준비된 배포에서 사람이 연다).
     assert Settings.from_env(ready).signup_enabled is False
     settings = Settings.from_env({**ready, "SIGNUP_ENABLED": "true"})
@@ -206,3 +218,43 @@ def test_public_refuses_forcing_signup_open_without_mail():
 
 def test_local_signup_is_open_by_default():
     assert Settings.from_env({"APP_PROFILE": "local"}).signup_enabled is True
+
+
+def test_email_verification_is_on_for_public_and_for_local_with_mail():
+    assert Settings.from_env({}).email_verification is False
+    local_mail = {
+        "SMTP_HOST": "mailpit",
+        "SMTP_PORT": "1025",
+        "SMTP_STARTTLS": "false",
+        "SMTP_FROM": "no-reply@stockdesk.local",
+        "PUBLIC_BASE_URL": "http://127.0.0.1:3334",
+    }
+    settings = Settings.from_env(local_mail)
+    assert settings.email_verification is True and settings.smtp_port == 1025 and settings.smtp_starttls is False
+    assert Settings.from_env(PUBLIC_OK).email_verification is True
+
+
+def test_local_mail_needs_a_base_url_for_links():
+    with pytest.raises(SettingsError, match="PUBLIC_BASE_URL"):
+        Settings.from_env({"SMTP_HOST": "mailpit", "SMTP_FROM": "no-reply@stockdesk.local"})
+
+
+def test_public_mail_requires_starttls_and_a_sender():
+    mail = {**PUBLIC_OK, "SMTP_HOST": "smtp.example.test", "PUBLIC_BASE_URL": "https://desk.example.test"}
+    with pytest.raises(SettingsError, match="SMTP_STARTTLS"):
+        Settings.from_env({**mail, "SMTP_FROM": "no-reply@example.test", "SMTP_STARTTLS": "false"})
+    with pytest.raises(SettingsError, match="SMTP_FROM"):
+        Settings.from_env(mail)
+    assert Settings.from_env({**mail, "SMTP_FROM": "no-reply@example.test"}).smtp_starttls is True
+
+
+def test_smtp_password_is_kept_out_of_the_settings_repr():
+    settings = Settings.from_env(
+        {
+            "SMTP_HOST": "mailpit",
+            "SMTP_PASSWORD": "smtp-secret-value",
+            "SMTP_FROM": "a@b.test",
+            "PUBLIC_BASE_URL": "http://127.0.0.1:3334",
+        }
+    )
+    assert "smtp-secret-value" not in repr(settings)

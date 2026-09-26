@@ -23,6 +23,7 @@ member (1)
  ├──< hts_watch_memo       관심종목 개인 메모(주식 화면 메모 탭, 옛 HTS 화면에서 이어 씀)
  ├──< api_key              이 웹앱 Open API용 해시된 키
  ├──< member_session       로그인 세션(토큰 해시만)
+ ├──< member_token         메일 인증·재설정 1회용 토큰(해시만)
  ├──< api_usage_log        외부 API 테스트 호출·결과 이력 (선택 관계)
  └──< system_error_log     서버·브라우저 오류 분석 로그 (선택 관계)
 
@@ -43,6 +44,22 @@ dart_disclosures           DART 공시 목록과 교육용 유형·위험 판정
 | `request_meta` | 민감값을 제외한 입력값(예: 종목코드) |
 | `http_status`, `success`, `duration_ms` | HTTP 결과, 성공 여부, 서버 처리시간 |
 | `result_summary`, `response_body` | 마스킹·길이 제한을 적용한 결과 요약과 응답 상세 |
+
+### 회원 인증·동의 기록 (`member`의 추가 열)
+
+| 필드 | 설명 |
+| --- | --- |
+| `email_verified_at` | 메일 인증 시각. 비어 있으면 로그인할 수 없다(메일 인증을 쓰는 배포). 이 열이 생기기 전 계정은 이전 때 채웠다 |
+| `created_at` | 가입 시각. 7일 미인증 정리에 쓴다 |
+| `consent_version`, `consented_at` | 동의한 개인정보 처리방침 버전(`accounts.PRIVACY_VERSION`)과 시각. 새 가입 흐름에서만 채운다 |
+
+### 메일 토큰 (`member_token`)
+
+| 필드 | 설명 |
+| --- | --- |
+| `token_hash` | 토큰의 SHA-256(기본 키). 원본은 메일 링크의 프래그먼트(`#t=`)에만 있다 |
+| `member_id`, `purpose` | 회원과 목적(`verify` 24시간, `reset` 30분) |
+| `expires_at`, `used_at` | 만료·사용 시각(UTC). 사용은 `used_at IS NULL AND expires_at > now`인 행 하나를 원자적으로 바꿀 때만 성공한다 |
 
 ### 로그인 세션 (`member_session`)
 

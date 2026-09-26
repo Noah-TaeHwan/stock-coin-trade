@@ -14,6 +14,7 @@ import secrets
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from urllib.parse import urlparse
 from collections.abc import Callable
@@ -134,6 +135,39 @@ def mariadb_scalar(sql: str) -> str:
     script = 'MYSQL_PWD="$MARIADB_PASSWORD" mariadb -u"$MARIADB_USER" mockinv -N -e "$0"'
     return subprocess.run(["docker", "exec", container, "sh", "-c", script, sql],
                           check=True, capture_output=True, text=True).stdout.strip()
+
+
+def mail_link(to: str, path: str, wait: float = 15.0) -> str:
+    """검증 스택 Mailpit에서 to에게 온 가장 최근 메일의 링크(path를 포함)를 찾는다.
+
+    @param to 받는 주소
+    @param path 링크 경로 앞부분(예: "/member/verify.html#t=")
+    @param wait 메일을 기다릴 최대 초
+    @returns 링크 전체 문자열
+    """
+    container = subprocess.run(
+        ["docker", "ps", "-q", "--filter", f"label=com.docker.compose.project={PROJECT}",
+         "--filter", "label=com.docker.compose.service=mailpit"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    if not container:
+        raise RuntimeError("검증 스택에 Mailpit이 없습니다")
+    port = subprocess.run(["docker", "port", container, "8025/tcp"], check=True, capture_output=True,
+                          text=True).stdout.split(":")[-1].strip()
+    api = f"http://127.0.0.1:{port}/api/v1"
+    pattern = re.compile(r"https?://\S+" + re.escape(path) + r"\S*")
+    deadline = time.monotonic() + wait
+    while time.monotonic() < deadline:
+        query = urllib.parse.quote(f'to:"{to}"')
+        with urllib.request.urlopen(f"{api}/search?query={query}", timeout=10) as response:
+            messages = json.loads(response.read()).get("messages") or []
+        for message in messages:  # 최신 순
+            with urllib.request.urlopen(f"{api}/message/{message['ID']}", timeout=10) as response:
+                match = pattern.search(json.loads(response.read()).get("Text", ""))
+            if match:
+                return match.group(0)
+        time.sleep(0.5)
+    raise AssertionError(f"{wait}초 안에 {path} 링크 메일이 오지 않음")
 
 
 def run(feature_id: str, steps: Callable[[Client, Recorder], None], root: Path = ARTIFACTS) -> int:
