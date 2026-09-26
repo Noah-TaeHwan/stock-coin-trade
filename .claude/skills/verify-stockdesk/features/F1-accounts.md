@@ -1,6 +1,6 @@
 # F1 회원
 
-사용자가 가입하고 메일로 인증한 뒤 로그인·로그아웃하고, 메일로 비밀번호를 재설정하고, 로그인한 채 비밀번호를 바꾼다. 탈퇴는 S1b PR E에서 더한다.
+사용자가 가입하고 메일로 인증한 뒤 로그인·로그아웃하고, 메일로 비밀번호를 재설정하고, 로그인한 채 비밀번호를 바꾼다. 마지막에 탈퇴하고, `member_id`를 가진 모든 표에서 0행인지 확인한다.
 
 ## 하위 기능
 
@@ -13,19 +13,21 @@
 - `f1-login`: 같은 이메일·비밀번호로 다시 로그인한다.
 - `f1-reset`: 재설정 요청은 늘 202. 메일의 `/member/reset.html#t=…`로 새 비밀번호를 정하면 옛 비밀번호는 401, 새 비밀번호는 200.
 - `f1-change`: 로그인한 채 현재 비밀번호를 확인하고 바꾸면 이 기기는 로그인 상태를 유지한다.
+- `f1-delete`: 틀린 비밀번호 탈퇴는 400. 맞으면 200이고, `information_schema`로 찾은 모든 `member_id` 표에서 0행이다.
 
 ## 사용자 경로
 
-- 화면: `/member/register.html`, `/member/login.html`, 상단 메뉴의 로그아웃.
-- API: `POST /api/member/register`, `/verify`, `/verify/resend`, `/login`, `/logout`, `/logout-all`, `/password/reset-request`, `/password/reset`, `/password/change`, `GET /api/member/me`.
+- 화면: `/member/register.html`, `login.html`, `verify.html`, `reset-request.html`, `reset.html`, `account.html`, `/privacy.html`. 모두 외부 스크립트 없이 CSP 강제.
+- API: `POST /api/member/register`, `/verify`, `/verify/resend`, `/login`, `/logout`, `/logout-all`, `/password/reset-request`, `/password/reset`, `/password/change`, `/delete`, `GET /api/member/me`.
 - 메일: 검증 스택 Mailpit(`common.mail_link`로 읽음).
 
 ## 주행
 
 전제 조건: `scripts/verify/stack.sh doctor`가 `ok`, 프로필 `local`.
 
-- **전체 흐름.** 가입 → 메일 인증 → 로그인·로그아웃(복사 쿠키 거부)·모든 기기 로그아웃 → 메일 재설정 → 비밀번호 변경을 한 번에 돈다(22단계). `python3 scripts/verify/f1_accounts.py`를 실행한다. `F1: PASS`와 증거 경로가 출력되고, `member` 행이 1개다. 증거에는 토큰·비밀번호가 `***`로만 남는다.
-- **화면 확인.** 쿠키 없는 Playwright로 `http://127.0.0.1:3334/member/login.html`을 연다. 이메일과 비밀번호 칸이 있고 로그인 버튼이 보인다. 캡처는 같은 증거 폴더에 `login.png`로 저장한다.
+- **전체 흐름.** 가입 → 메일 인증 → 로그인·로그아웃(복사 쿠키 거부)·모든 기기 로그아웃 → 메일 재설정 → 비밀번호 변경 → 탈퇴·DB 스캔을 한 번에 돈다(26단계). `python3 scripts/verify/f1_accounts.py`를 실행한다. `F1: PASS`와 증거 경로가 출력되고, `member` 행이 1개다. 증거에는 토큰·비밀번호가 `***`로만 남는다.
+- **화면 확인.** 쿠키 없는 Playwright로 인증 화면을 연다. 화면마다 네트워크 요청이 `127.0.0.1:3334` 밖으로 나가지 않고, 콘솔에 CSP 위반(`Refused to`)이 없어야 한다. `reset.html#t=abc`를 열면 주소창에서 `#t=`가 사라져야 한다. 로그아웃 상태로 `account.html`을 열면 로그인 화면으로 간다.
+- **화면 주행.** 가입(동의 체크) → 안내 문구 → `common.mail_link`로 받은 인증 링크를 브라우저로 열기 → 로그인 → `account.html`에서 탈퇴. 캡처는 F1 증거 폴더에 `register.png`·`verified.png`·`privacy.png`·`deleted.png`.
 
 ## 함정
 
