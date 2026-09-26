@@ -2,13 +2,14 @@ const API_BASE = window.APP_CONFIG?.apiBase ?? '';
 
 // 모든 화면의 JavaScript 오류를 진단 API에 best-effort로 전달한다.
 // 폼 값·쿠키·요청 헤더는 전송하지 않으며, 상세 열람은 관리자만 가능하다.
+// 주소의 쿼리·프래그먼트(메일 링크 토큰 등)는 보내지 않고 경로만 보낸다.
 if (!window.__errorReporterInstalled) {
   window.__errorReporterInstalled = true;
   let reportedErrorCount = 0;
   const reportClientError = payload => {
     if (reportedErrorCount >= 20 || location.pathname === '/error-analysis.html') return;
     reportedErrorCount += 1;
-    const body = JSON.stringify({ ...payload, url: location.href });
+    const body = JSON.stringify({ ...payload, url: location.origin + location.pathname });
     const url = API_BASE + '/api/error-analysis/client';
     try {
       if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
