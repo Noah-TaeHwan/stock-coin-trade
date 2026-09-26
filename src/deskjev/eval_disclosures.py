@@ -9,7 +9,7 @@
 - live: 규칙 + 실제 Jev. --max-usd가 없으면 거부하고, 다음 호출이 상한을 넘을 수 있으면 멈춘다.
 
 채점은 코드로만 한다. 유형은 정답 또는 허용 대안(kind_alt)이면 맞다. 위험은 정답(True/False)과 비교한다.
-하루 호출 수는 2026-09-23 전체 목록(volume_20260923.jsonl, 683건)에서 규칙이 비우는 상장사 공시 수로 센다.
+하루 호출 어림은 실측 숫자로 README에 적었다(2026-09-23: 전체 683, 상장사 420, Jev 23).
 """
 
 from __future__ import annotations
@@ -29,8 +29,6 @@ from deskjev import disclosures
 from deskjev.eval import load_cases  # 같은 jsonl 읽기
 
 EVAL_DIR = Path(__file__).resolve().parents[2] / "evals" / "jev_disclosures"
-BUSINESS_DAYS_PER_MONTH = 21
-TOKENS_IF_UNMEASURED = 700  # oracle·rules 모드의 월 비용 추정용. live는 실측 평균을 쓴다.
 
 
 class OracleClient:
@@ -82,23 +80,11 @@ def _share(rows: list[dict], key: str) -> float | None:
     return round(statistics.mean(r[key] for r in rows), 3) if rows else None
 
 
-def daily_calls(path: Path = EVAL_DIR / "volume_20260923.jsonl") -> dict:
-    """하루 목록에서 Jev를 불러야 하는(규칙이 비우는) 상장사 공시 수.
-
-    @param path 하루 전체 목록(jsonl)
-    @returns {"day_total", "listed", "jev_calls"}
-    """
-    rows = load_cases(path)
-    listed = [r for r in rows if r["corp_cls"] in "YKN"]
-    open_ = [r for r in listed if None in disclosures.by_rules(r["report_nm"])]
-    return {"day_total": len(rows), "listed": len(listed), "jev_calls": len(open_)}
-
-
 def summarize(rows: list[dict]) -> dict:
     """사례별 행을 요약한다.
 
     @param rows run의 결과
-    @returns 정확도·재현율·정밀도·ECE·지연·하루 호출 추정
+    @returns 정확도·재현율·정밀도·ECE·지연
     """
     n = len(rows)
     if not n:  # --max-usd가 첫 호출 비용보다 작으면 한 건도 돌지 않는다
@@ -109,10 +95,6 @@ def summarize(rows: list[dict]) -> dict:
     jev_kind = [r for r in by_jev if r["kind_prob"] is not None]
     jev_risk = [r for r in by_jev if r["risk_prob"] is not None]
     called = sorted(r["ms"] for r in by_jev)
-    volume = daily_calls()
-    billed = [r["input_tokens"] for r in by_jev if r["input_tokens"]]
-    tokens_per_call = statistics.mean(billed) if billed else TOKENS_IF_UNMEASURED
-    per_call = pricing.cost_usd(disclosures.MODEL, pricing.Usage(input_tokens=round(tokens_per_call)))
     strata = ("fixed", "free", "risk_open")
     return {
         "cases": n,
@@ -152,13 +134,6 @@ def summarize(rows: list[dict]) -> dict:
             else None
         ),
         "input_tokens": sum(r["input_tokens"] for r in rows),
-        "projection": {
-            **volume,
-            "tokens_per_call": round(tokens_per_call),
-            "tokens_measured": bool(billed),
-            "usd_per_day": round(volume["jev_calls"] * per_call, 6),
-            "usd_per_month": round(volume["jev_calls"] * per_call * BUSINESS_DAYS_PER_MONTH, 4),
-        },
     }
 
 

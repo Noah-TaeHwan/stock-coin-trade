@@ -88,6 +88,13 @@ def build_scheduler(scheduler_cls: type[BaseScheduler] = BackgroundScheduler) ->
         # docs/evidence/jev-disclosures-2026-09-26.md
         scheduler.add_job(collect, IntervalTrigger(minutes=5), id="dart_collect")
         scheduler.add_job(collect, CronTrigger(minute=30, timezone="Asia/Seoul"), kwargs={"full": True}, id="dart_sweep")
+        # 23:30 이후 올라온 공시는 날짜가 바뀌면 오늘 목록에 없다. 00:10에 전날을 한 번 더 훑는다(약 7회).
+        scheduler.add_job(
+            collect,
+            CronTrigger(hour=0, minute=10, timezone="Asia/Seoul"),
+            kwargs={"full": True, "days_ago": 1},
+            id="dart_prev_day",
+        )
     return scheduler
 
 

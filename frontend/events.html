@@ -27,7 +27,17 @@
     .disc-filters .risk-toggle { display:inline-flex; align-items:center; gap:4px; color:var(--fg-2); font-size:12px; font-weight:600; }
     .disc-count { margin-left:auto; color:var(--muted); font-family:var(--font-mono); font-size:11px; }
 
-    .disc-list td { vertical-align:top; }
+    /* 1200px 폭에서도 유형·위험·판정 열이 보이게: 고정 배치, 좁은 열은 폭 지정, 제목만 남는 폭을 쓰며 줄바꿈. */
+    .disc-list { table-layout:fixed; }
+    /* style.css가 이 블록보다 뒤에 오므로 .term-table과 겹쳐 써서 이긴다. */
+    .term-table.disc-list th, .term-table.disc-list td { text-align:left; vertical-align:top; }
+    .disc-list .c-date { width:84px; }
+    .disc-list .c-time { width:88px; }
+    .disc-list .c-corp { width:140px; }
+    .disc-list .c-kind { width:108px; }
+    .disc-list .c-risk { width:64px; }
+    .disc-list .c-by { width:132px; }
+    .disc-list td.txt { white-space:normal; overflow-wrap:anywhere; }
     .disc-list td.txt a { color:var(--fg); text-decoration:none; }
     .disc-list td.txt a:hover { color:var(--info); text-decoration:underline; }
     .disc-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
@@ -36,7 +46,7 @@
     /* 위험 공시는 색과 함께 글자 표시(⚠)로도 구분한다. */
     .disc-list tr.is-risk { background:var(--down-bg); box-shadow:inset 3px 0 0 var(--down); }
     .disc-list .flag { color:var(--down); font-weight:800; white-space:nowrap; }
-    .disc-list .by { color:var(--muted); font-family:var(--font-mono); font-size:10.5px; white-space:nowrap; }
+    .disc-list .by { color:var(--muted); font-family:var(--font-mono); font-size:10.5px; white-space:normal; }
 
     .kind-sum { width:100%; border-collapse:collapse; font-size:12px; }
     .kind-sum td { padding:3px 10px; border-bottom:1px solid var(--border); }
@@ -81,14 +91,15 @@
         <div class="term-panel__body">
           <table class="term-table disc-list">
             <thead><tr>
-              <th>처음 본 시각</th>
-              <th>회사</th>
+              <th class="c-date" id="colDate" hidden>접수일</th>
+              <th class="c-time">처음 본 시각</th>
+              <th class="c-corp">회사</th>
               <th>공시 제목</th>
-              <th>유형</th>
-              <th>위험</th>
-              <th title="규칙 표로 정했는지, Jev(TypeSafe) 모델이 정했는지">판정</th>
+              <th class="c-kind">유형</th>
+              <th class="c-risk">위험</th>
+              <th class="c-by" title="규칙 표로 정했는지, Jev(TypeSafe) 모델이 정했는지">판정</th>
             </tr></thead>
-            <tbody id="discBody"><tr><td class="empty" colspan="6">로딩 중...</td></tr></tbody>
+            <tbody id="discBody"><tr><td class="empty" colspan="7">로딩 중...</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -108,7 +119,7 @@
           <p><b>교육용 분류이며 투자 권유가 아닙니다.</b> 유형과 위험 표시는 공시 제목만 보고 정한 것이라 본문과 다를 수 있습니다. 원문은 제목을 눌러 DART에서 확인하세요.</p>
           <p><b>⚠ 매매 불가 위험</b>은 거래정지·상장폐지·관리종목·실질심사·회생·파산처럼 주식을 사고팔 수 없게 되었거나 그럴 우려가 있다는 뜻입니다.</p>
           <p>판정이 <b>규칙</b>이면 서식명 표로 정한 것이고, <b>Jev</b>이면 자유 서식이라 모델(TypeSafe Jev)이 고른 것입니다. 옆의 %는 모델 판단 확률입니다.</p>
-          <p><small>DART는 접수 시각을 주지 않아 이 서버가 처음 본 시각(KST)을 보여 줍니다. <span id="discSource">공시 출처: 금융감독원 전자공시시스템(DART)</span></small></p>
+          <p><small>DART는 접수 시각을 주지 않아 이 서버가 처음 본 시각(KST)을 보여 줍니다. 접수일과 다른 날 처음 봤으면 날짜(MM/DD)를 함께 적습니다. 날짜 없이 종목만 고르면 최근 30일을 보여 줍니다. <span id="discSource">공시 출처: 금융감독원 전자공시시스템(DART)</span></small></p>
         </div>
       </section>
     </div>

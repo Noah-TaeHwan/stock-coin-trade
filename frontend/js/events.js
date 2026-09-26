@@ -10,6 +10,7 @@ const disc = {
   riskOnly: false,
   kinds: {},        // 유형 id → 화면 이름(서버가 준다)
   items: [],
+  range: null,      // 서버가 답한 {date, from, to}. date가 null이면 종목 최근 30일 모드
 };
 let discTimer = null;
 
@@ -49,6 +50,8 @@ async function loadDisclosures() {
     if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
     disc.items = Array.isArray(body.items) ? body.items : [];
     disc.kinds = body.kinds || disc.kinds;
+    disc.range = { date: body.date ?? null, from: body.from, to: body.to };
+    document.getElementById('day').value = body.date || '';
     if (body.attribution) document.getElementById('discSource').textContent = body.attribution;
     live?.classList.remove('is-off');
     renderKindOptions();
@@ -56,7 +59,7 @@ async function loadDisclosures() {
   } catch (err) {
     live?.classList.add('is-off');
     document.getElementById('discBody').innerHTML =
-      `<tr><td class="empty" colspan="6">공시를 불러오지 못했습니다: ${discEsc(err.message)}</td></tr>`;
+      `<tr><td class="empty" colspan="7">공시를 불러오지 못했습니다: ${discEsc(err.message)}</td></tr>`;
   }
 }
 
@@ -86,7 +89,12 @@ function renderDisclosures() {
   const riskCount = disc.items.filter(item => item.risk).length;
   document.getElementById('discCount').textContent =
     `${rows.length}건 표시 · 전체 ${disc.items.length}건 · 위험 ${riskCount}건`;
-  document.getElementById('discTitle').textContent = `${disc.day || kstToday()} 공시${disc.symbol ? ` · ${disc.symbol}` : ''}`;
+  // 날짜 없이 종목만 고르면 서버가 최근 30일을 준다(주말·휴일에도 비지 않게). 그때는 접수일 열을 보인다.
+  const spanMode = Boolean(disc.range && !disc.range.date);
+  document.getElementById('colDate').hidden = !spanMode;
+  document.getElementById('discTitle').textContent = spanMode
+    ? `${disc.symbol} 최근 30일 공시 (${disc.range.from} ~ ${disc.range.to})`
+    : `${disc.range?.date || disc.day || kstToday()} 공시${disc.symbol ? ` · ${disc.symbol}` : ''}`;
 
   document.getElementById('discBody').innerHTML = rows.length ? rows.map(item => {
     const code = /^\d{6}$/.test(item.stockCode || '') ? item.stockCode : '';
@@ -96,6 +104,7 @@ function renderDisclosures() {
       ? `<a href="${link}" target="_blank" rel="noopener noreferrer">${discEsc(item.reportName)}</a>`
       : discEsc(item.reportName);
     return `<tr class="${item.risk ? 'is-risk' : ''}">
+      ${spanMode ? `<td>${discEsc(item.date || '-')}</td>` : ''}
       <td>${discEsc(item.firstSeenKst || '-')}</td>
       <td class="txt who">${discEsc(item.corpName)}<small>${discEsc(item.market || '')}${code ? ` · <a href="/events.html?symbol=${code}">${code}</a>` : ''}</small></td>
       <td class="txt">${title}${item.corrected ? '<small>정정 공시</small>' : ''}</td>
@@ -103,7 +112,7 @@ function renderDisclosures() {
       <td>${item.risk ? '<span class="flag">⚠ 위험</span>' : '-'}</td>
       <td>${judgedCell(item)}</td>
     </tr>`;
-  }).join('') : '<tr><td class="empty" colspan="6">조건에 맞는 공시가 없습니다. 휴일이거나 수집기가 아직 돌지 않았을 수 있습니다.</td></tr>';
+  }).join('') : '<tr><td class="empty" colspan="7">조건에 맞는 공시가 없습니다. 휴일이거나 수집기가 아직 돌지 않았을 수 있습니다.</td></tr>';
 
   const counts = {};
   for (const item of disc.items) counts[item.kind] = (counts[item.kind] || 0) + 1;
@@ -131,11 +140,12 @@ function bindDiscEvents() {
   const symbol = document.getElementById('symbol');
   const kind = document.getElementById('kind');
   const riskOnly = document.getElementById('riskOnly');
-  day.value = disc.day || kstToday();
+  day.value = disc.day;
   symbol.value = disc.symbol;
   riskOnly.checked = disc.riskOnly;
 
-  day.addEventListener('change', () => { disc.day = day.value === kstToday() ? '' : day.value; syncUrl(); loadDisclosures(); });
+  // 날짜를 비우면 오늘(종목이 있으면 최근 30일), 고르면 그날만.
+  day.addEventListener('change', () => { disc.day = day.value; syncUrl(); loadDisclosures(); });
   symbol.addEventListener('input', () => {
     const value = symbol.value.replace(/\D/g, '').slice(0, 6);
     symbol.value = value;

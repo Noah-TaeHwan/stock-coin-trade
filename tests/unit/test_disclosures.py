@@ -141,7 +141,7 @@ def test_without_jev_the_rules_fall_back_to_keywords():
 
 # ── 수집기(dart_radar) ────────────────────────────────────────────────────────
 
-from datetime import date, datetime  # noqa: E402
+from datetime import date, datetime, timedelta  # noqa: E402
 
 import dart_radar  # noqa: E402
 import jev_usage  # noqa: E402
@@ -288,7 +288,8 @@ def test_api_reads_filters_and_shows_kst_time_link_and_source(client, monkeypatc
     seen = []
     monkeypatch.setattr(dart_radar, "query", lambda *args: seen.append(args) or [_stored()])
     body = client.get("/api/disclosures?date=2026-09-23&symbol=123456&kind=trading_halt&risk=1&limit=50").get_json()
-    assert seen == [(date(2026, 9, 23), "123456", "trading_halt", True, 50)]
+    day = date(2026, 9, 23)
+    assert seen == [(day, day, "123456", "trading_halt", True, 50)]
     item = body["items"][0]
     assert (item["firstSeenKst"], item["kindLabel"], item["risk"]) == ("09:05", "거래정지", True)
     assert item["url"] == "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260923000001"
@@ -318,7 +319,27 @@ def test_api_defaults_to_today_in_kst(client, monkeypatch):
     seen = []
     monkeypatch.setattr(dart_radar, "query", lambda *args: seen.append(args) or [])
     assert client.get("/api/disclosures").get_json()["items"] == []
-    assert seen[0][0] == datetime.now(dart_radar.KST).date() and seen[0][1:] == (None, None, None, 200)
+    today = datetime.now(dart_radar.KST).date()
+    assert seen == [(today, today, None, None, None, 200)]
+
+
+def test_symbol_without_a_date_reads_the_last_30_days(client, monkeypatch):
+    # 주말·휴일에 DISC 005930이 빈 화면이 되지 않게 한다.
+    seen = []
+    monkeypatch.setattr(dart_radar, "query", lambda *args: seen.append(args) or [_stored()])
+    body = client.get("/api/disclosures?symbol=123456").get_json()
+    today = datetime.now(dart_radar.KST).date()
+    assert seen == [(today - timedelta(days=29), today, "123456", None, None, 200)]
+    assert body["date"] is None and body["from"] == (today - timedelta(days=29)).isoformat()
+    assert body["to"] == today.isoformat() and body["items"][0]["date"] == "2026-09-23"
+
+
+def test_first_seen_shows_the_date_when_it_differs_from_the_filing_date(client, monkeypatch):
+    # 지난 날짜를 나중에 수집하면 처음 본 시각이 접수일과 다르다. 그때는 날짜를 함께 보인다.
+    late = {**_stored(), "first_seen_at": datetime(2026, 9, 26, 0, 24)}  # UTC → 09/26 09:24 KST
+    monkeypatch.setattr(dart_radar, "query", lambda *args: [late, _stored()])
+    items = client.get("/api/disclosures?date=2026-09-23").get_json()["items"]
+    assert [item["firstSeenKst"] for item in items] == ["09/26 09:24", "09:05"]
 
 
 def test_api_is_not_registered_in_public():
@@ -374,3 +395,25 @@ def test_every_gold_kind_is_an_option_and_the_oracle_scores_perfectly(name):
         assert isinstance(case["risk"], bool) and case["stratum"] in {"fixed", "free", "risk_open"}, case["id"]
     summary = summarize(run(OracleClient(cases), cases))
     assert summary["kind_accuracy"] == 1 and summary["risk_accuracy"] == 1 and summary["errors"] == []
+
+
+def test_collect_can_sweep_the_previous_day(collector_env, monkeypatch):
+    _, stored = collector_env
+    dart = FakeDart([[_row("A1")]])
+    monkeypatch.setattr(jev_usage, "client", lambda **kw: FakeJev())
+    summary = dart_radar.collect(True, get=dart, known=lambda n: set(), store=stored.extend, days_ago=1)
+    yesterday = datetime.now(dart_radar.KST).date() - timedelta(days=1)
+    assert summary["day"] == yesterday.isoformat() and dart.params[0]["bgn_de"] == yesterday.strftime("%Y%m%d")
+
+
+def test_events_screen_keeps_the_narrow_columns_visible_and_can_show_the_filing_date():
+    # 브라우저 확인은 docs/evidence에 있다. 여기서는 배치 계약(고정 배치·제목 줄바꿈·접수일 열)이 빠지지 않게 한다.
+    from pathlib import Path
+
+    frontend = Path(__file__).resolve().parents[2] / "frontend"
+    html = (frontend / "events.html").read_text(encoding="utf-8")
+    script = (frontend / "js" / "events.js").read_text(encoding="utf-8")
+    assert ".disc-list { table-layout:fixed; }" in html and "white-space:normal" in html
+    assert ".term-table.disc-list th, .term-table.disc-list td { text-align:left;" in html  # style.css보다 강하게
+    assert '<th class="c-date" id="colDate" hidden>접수일</th>' in html
+    assert "document.getElementById('colDate').hidden = !spanMode" in script

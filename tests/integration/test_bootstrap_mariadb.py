@@ -82,5 +82,5 @@ def test_dart_disclosures_table_is_idempotent_and_keeps_the_first_row():
     dart_radar.save([row])
     dart_radar.save([{**row, "kind": "other"}])  # 이미 있는 번호는 덮어쓰지 않는다
     assert dart_radar.known_numbers(["20260922900001", "X"]) == {"20260922900001"}
-    got = dart_radar.query(date(2026, 9, 23), "123456", None, True, 10)
+    got = dart_radar.query(date(2026, 9, 23), date(2026, 9, 23), "123456", None, True, 10)
     assert [(r["rcept_no"], r["kind"]) for r in got] == [("20260922900001", "trading_halt")]

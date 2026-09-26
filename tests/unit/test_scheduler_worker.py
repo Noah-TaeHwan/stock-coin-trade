@@ -64,6 +64,11 @@ def test_dart_radar_jobs_need_the_source_and_a_key(monkeypatch):
     sweep = jobs["dart_sweep"].trigger
     assert jobs["dart_sweep"].kwargs == {"full": True}
     assert str(sweep.fields[sweep.FIELD_NAMES.index("minute")]) == "30"
+    # 자정 직전 공시를 놓치지 않게 00:10에 전날을 한 번 더 훑는다.
+    prev = jobs["dart_prev_day"].trigger
+    assert jobs["dart_prev_day"].kwargs == {"full": True, "days_ago": 1}
+    assert [str(prev.fields[prev.FIELD_NAMES.index(f)]) for f in ("hour", "minute")] == ["0", "10"]
+    assert str(prev.timezone) == "Asia/Seoul"
 
     # public처럼 소스가 막힌 프로필에서는 키가 있어도 걸지 않는다.
     monkeypatch.setattr(price_sources, "allowed", lambda source_id: source_id != "dart")

@@ -37,6 +37,7 @@ LISTED = frozenset("YKN")  # E(기타 법인)는 저장하지 않는다
 NOTICE = "교육용 분류이며 투자 권유가 아닙니다. 확률은 모델 판단 확률입니다."
 DETAIL_URL = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo={}"
 MAX_LIMIT = 500
+SYMBOL_DAYS = 30  # 날짜 없이 종목만 주면 최근 30일(주말·휴일에도 비지 않게)
 
 TABLE = """CREATE TABLE IF NOT EXISTS dart_disclosures (
   rcept_no CHAR(14) PRIMARY KEY,
@@ -233,12 +234,14 @@ def collect(
     known: Callable[[list[str]], set[str]] = known_numbers,
     store: Callable[[list[dict]], int] = save,
     day: date | None = None,
+    days_ago: int = 0,
 ) -> dict:
     """스케줄 작업: 오늘 새 공시를 읽어 판정하고 저장한다.
 
     @param full True면 하루 전체를 다시 훑는다
     @param get/known/store 테스트·시험 실행용 대역(기본은 requests와 MariaDB)
     @param day 접수일(기본 오늘 KST)
+    @param days_ago day가 없을 때 오늘에서 뺄 날 수(00:10 전날 훑기는 1)
     @returns {"day", "new", "calls", "jev_calls"} 요약
     """
     from settings import Settings
@@ -247,7 +250,7 @@ def collect(
     if not settings.dart_api_key:
         log.warning("dart radar: DART_API_KEY is not set; skipping")
         return {"day": None, "new": 0, "calls": 0, "jev_calls": 0}
-    day = day or datetime.now(KST).date()
+    day = day or datetime.now(KST).date() - timedelta(days=days_ago)
     items, calls = fetch_new(get, settings.dart_api_key, day, known, full=full)
     rows, billed = _judge_rows(items, settings.jev_enabled, settings.jev_monthly_budget_usd)
     store(rows)
@@ -259,14 +262,15 @@ def collect(
 # ── API ──────────────────────────────────────────────────────────────────────
 
 
-def query(day: date, symbol: str | None, kind: str | None, risk: bool | None, limit: int) -> list[dict]:
-    """저장된 공시를 읽는다(최근에 본 것부터).
+def query(start: date, end: date, symbol: str | None, kind: str | None, risk: bool | None, limit: int) -> list[dict]:
+    """저장된 공시를 읽는다(최근 접수일, 최근에 본 것부터).
 
+    @param start/end 접수일 범위(양 끝 포함)
     @returns 행 dict 목록
     """
     from db import engine
 
-    where, params = ["rcept_dt = :day"], {"day": day, "limit": limit}
+    where, params = ["rcept_dt BETWEEN :start AND :end"], {"start": start, "end": end, "limit": limit}
     if symbol:
         where.append("stock_code = :symbol")
         params["symbol"] = symbol
@@ -278,7 +282,7 @@ def query(day: date, symbol: str | None, kind: str | None, risk: bool | None, li
         params["risk"] = risk
     statement = text(
         f"SELECT {', '.join(COLUMNS)} FROM dart_disclosures WHERE {' AND '.join(where)} "
-        "ORDER BY first_seen_at DESC, rcept_no DESC LIMIT :limit"
+        "ORDER BY rcept_dt DESC, first_seen_at DESC, rcept_no DESC LIMIT :limit"
     )
     with engine.connect() as conn:
         return [dict(row._mapping) for row in conn.execute(statement, params)]
@@ -291,7 +295,9 @@ def _prob(value) -> float | None:
 def _item(row: dict) -> dict:
     from deskjev.disclosures import KINDS, MARKETS
 
-    seen = row["first_seen_at"].replace(tzinfo=UTC)
+    seen = row["first_seen_at"].replace(tzinfo=UTC).astimezone(KST)
+    # 지난 날짜를 나중에 수집하면 처음 본 날이 접수일과 다르다. 그때는 날짜도 보인다.
+    seen_text = seen.strftime("%H:%M" if seen.date() == row["rcept_dt"] else "%m/%d %H:%M")
     return {
         "rceptNo": row["rcept_no"],
         "date": row["rcept_dt"].isoformat(),
@@ -309,7 +315,7 @@ def _item(row: dict) -> dict:
         "riskProb": _prob(row["risk_prob"]),
         "judgedBy": row["judged_by"],
         "firstSeenAt": seen.isoformat(),
-        "firstSeenKst": seen.astimezone(KST).strftime("%H:%M"),
+        "firstSeenKst": seen_text,
         "url": DETAIL_URL.format(row["rcept_no"]),
     }
 
@@ -317,7 +323,10 @@ def _item(row: dict) -> dict:
 @dart_bp.get("")
 @limiter.limit("60 per minute")
 def list_disclosures():
-    """GET /api/disclosures?date=YYYY-MM-DD&symbol=6자리&kind=&risk=1&limit= — 저장된 공시(기본 오늘 KST)."""
+    """GET /api/disclosures?date=YYYY-MM-DD&symbol=6자리&kind=&risk=1&limit= — 저장된 공시.
+
+    date가 있으면 그날, 없으면 오늘(KST). date 없이 symbol만 있으면 그 종목의 최근 SYMBOL_DAYS일.
+    """
     from deskjev.disclosures import KINDS
 
     args = request.args
@@ -326,7 +335,7 @@ def list_disclosures():
         # 3.11의 fromisoformat은 20260923도 받으므로 모양을 먼저 확인한다.
         if raw_day and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_day):
             raise ValueError(raw_day)
-        day = date.fromisoformat(raw_day) if raw_day else datetime.now(KST).date()
+        day = date.fromisoformat(raw_day) if raw_day else None
     except ValueError:
         return jsonify({"message": "date는 YYYY-MM-DD 형식이어야 합니다."}), 400
     symbol = args.get("symbol", "").strip() or None
@@ -345,10 +354,14 @@ def list_disclosures():
     if not 1 <= limit <= MAX_LIMIT:
         return jsonify({"message": f"limit은 1~{MAX_LIMIT} 사이여야 합니다."}), 400
 
-    rows = query(day, symbol, kind, None if raw_risk == "" else raw_risk == "1", limit)
+    end = day or datetime.now(KST).date()
+    start = end - timedelta(days=SYMBOL_DAYS - 1) if symbol and not day else end
+    rows = query(start, end, symbol, kind, None if raw_risk == "" else raw_risk == "1", limit)
     return jsonify(
         {
-            "date": day.isoformat(),
+            "date": end.isoformat() if start == end else None,  # 종목 30일 모드는 None
+            "from": start.isoformat(),
+            "to": end.isoformat(),
             "items": [_item(row) for row in rows],
             "kinds": {key: label for key, (label, _) in KINDS.items()},
             "notice": NOTICE,
