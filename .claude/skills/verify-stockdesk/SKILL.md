@@ -13,6 +13,7 @@ description: stock-coin-trade 앱(Flask + nginx + MariaDB + PostgreSQL)을 전�
 - 자기가 띄우지 않은 인스턴스는 주행하지 않는다. doctor가 확인한다.
 - 화면 확인은 쿠키 없는 Playwright로 한다. Ego는 노아의 로그인 세션을 쓰므로 검증 주행에 쓰지 않는다.
 - 증거가 없으면 "통과"라고 쓰지 않는다. 보고에는 명령, 종료 코드, 증거 경로를 붙인다.
+- 검증 중에는 이 체크아웃과 `.verify-artifacts` 밖에 쓰지 않는다(graphify save-result, vault·메모리 기록 금지).
 
 ## Launch
 
