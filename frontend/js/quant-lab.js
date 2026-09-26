@@ -93,6 +93,9 @@ async function run(strategy='ma2050', output=$('[data-backtest]'), detail=null) 
 }
 document.addEventListener('DOMContentLoaded', async () => {
   await initPage();
+  // 공시 화면의 "백테스트" 링크(?symbol=005930)로 오면 종목 칸을 채운다.
+  const linkedSymbol=new URLSearchParams(location.search).get('symbol') || '';
+  if (/^\d{6}$/.test(linkedSymbol)) document.querySelectorAll('[data-symbol]').forEach(input => { input.value=linkedSymbol; });
   const tab=new URLSearchParams(location.search).get('tab') || 'simulation';
   const tabSections={
     simulation:['quant-overview','quant-quickstart','quant-strategies','quant-factors','quant-explorer','quant-backtest'],

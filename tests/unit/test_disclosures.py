@@ -289,11 +289,13 @@ def test_api_reads_filters_and_shows_kst_time_link_and_source(client, monkeypatc
     monkeypatch.setattr(dart_radar, "query", lambda *args: seen.append(args) or [_stored()])
     body = client.get("/api/disclosures?date=2026-09-23&symbol=123456&kind=trading_halt&risk=1&limit=50").get_json()
     day = date(2026, 9, 23)
-    assert seen == [(day, day, "123456", "trading_halt", True, 50)]
+    assert seen == [(day, day, ("123456",), "trading_halt", True, 50)]
     item = body["items"][0]
     assert (item["firstSeenKst"], item["kindLabel"], item["risk"]) == ("09:05", "거래정지", True)
     assert item["url"] == "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260923000001"
     assert body["source"] == "dart" and "DART" in body["attribution"] and "투자 권유가 아닙니다" in body["notice"]
+    # OpenDART 약관 제23조①: 정확성을 보장하지 않는다는 고지를 붙인다.
+    assert "정확성" in body["notice"]
 
 
 @pytest.mark.parametrize(
@@ -308,6 +310,13 @@ def test_api_reads_filters_and_shows_kst_time_link_and_source(client, monkeypatc
         "limit=0",
         "limit=501",
         "limit=x",
+        "symbols=12345",
+        "symbols=123456,ABCDEF",
+        "symbols=" + ",".join(f"{n:06d}" for n in range(21)),
+        "symbol=123456&symbols=654321",
+        "symbols=１２３４５６",
+        "symbol=١٢٣٤٥٦",
+        "symbols=" + "1" * 200,
     ],
 )
 def test_api_rejects_bad_input(client, monkeypatch, query_string):
@@ -329,7 +338,7 @@ def test_symbol_without_a_date_reads_the_last_30_days(client, monkeypatch):
     monkeypatch.setattr(dart_radar, "query", lambda *args: seen.append(args) or [_stored()])
     body = client.get("/api/disclosures?symbol=123456").get_json()
     today = datetime.now(dart_radar.KST).date()
-    assert seen == [(today - timedelta(days=29), today, "123456", None, None, 200)]
+    assert seen == [(today - timedelta(days=29), today, ("123456",), None, None, 200)]
     assert body["date"] is None and body["from"] == (today - timedelta(days=29)).isoformat()
     assert body["to"] == today.isoformat() and body["items"][0]["date"] == "2026-09-23"
 
@@ -342,7 +351,18 @@ def test_first_seen_shows_the_date_when_it_differs_from_the_filing_date(client, 
     assert [item["firstSeenKst"] for item in items] == ["09/26 09:24", "09:05"]
 
 
-def test_api_is_not_registered_in_public():
+def test_watchlist_symbols_read_the_last_30_days_without_duplicates(client, monkeypatch):
+    # 관심 종목은 브라우저에만 있고, 화면이 여러 종목을 한 번에 묻는다(서버에 저장하지 않음).
+    seen = []
+    monkeypatch.setattr(dart_radar, "query", lambda *args: seen.append(args) or [_stored()])
+    body = client.get("/api/disclosures?symbols=123456,654321,123456").get_json()
+    today = datetime.now(dart_radar.KST).date()
+    assert seen == [(today - timedelta(days=29), today, ("123456", "654321"), None, None, 200)]
+    assert body["date"] is None and len(body["items"]) == 1
+
+
+def test_api_is_registered_in_public_with_source_and_notice(monkeypatch):
+    # 노아 판정(2026-09-26): OpenDART는 출처 표시와 정확성 비보장 고지를 붙여 공개한다.
     from app import create_app
     from settings import Settings
 
@@ -353,7 +373,11 @@ def test_api_is_not_registered_in_public():
         admin_email="owner@example.com",
         ratelimit_enabled=True,
     )
-    assert create_app(public).test_client().get("/api/disclosures").status_code == 404
+    monkeypatch.setattr(dart_radar, "query", lambda *args: [])
+    response = create_app(public).test_client().get("/api/disclosures")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert "DART" in body["attribution"] and "정확성" in body["notice"]
 
 
 @pytest.mark.parametrize(

@@ -11,7 +11,7 @@ from sqlalchemy import text
 from db import session_scope
 from market_bots import run_bot_trading_round
 from models import CryptoRank, UpbitMarket
-from settings import Settings
+from settings import dart_api_key_from_env
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ def build_scheduler(scheduler_cls: type[BaseScheduler] = BackgroundScheduler) ->
         purge_unverified_members, CronTrigger(hour=3, minute=10, timezone="Asia/Seoul"), id="member_unverified_purge"
     )
     scheduler.add_job(purge_old_logs, CronTrigger(hour=3, minute=20, timezone="Asia/Seoul"), id="log_retention")
-    if price_sources.allowed("dart") and Settings.from_env().dart_api_key:
+    if price_sources.allowed("dart") and dart_api_key_from_env():
         from dart_radar import collect
 
         # 5분마다 새 공시만(회당 보통 1회 호출, 하루 약 290~350회), 매시 30분에 하루 전체를 다시 훑는다

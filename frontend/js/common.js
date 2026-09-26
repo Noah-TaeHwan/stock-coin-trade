@@ -425,7 +425,7 @@ const PUBLIC_HIDDEN_GROUPS = new Set([
 ]);
 const PUBLIC_HIDDEN_HREFS = new Set([
   '/trade/order.html', '/arbitrage.html', '/trade/alternatives.html', '/ohlcv-db.html', '/ai-sheet.html',
-  '/ai-analysis.html', '/learning/kis-regist.html', '/events.html',
+  '/ai-analysis.html', '/learning/kis-regist.html',
 ]);
 const _hrefPath = href => String(href ?? '').split('?')[0];
 

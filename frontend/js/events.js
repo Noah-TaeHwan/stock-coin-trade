@@ -6,6 +6,7 @@ const DISC_POLL_MS = 60_000;
 const disc = {
   day: '',          // YYYY-MM-DD, 비우면 서버가 오늘(KST)을 쓴다
   symbol: '',
+  watch: false,     // 내 관심 종목 모아 보기(브라우저의 stockWatchlist, 서버에 저장하지 않음)
   kind: '',
   riskOnly: false,
   kinds: {},        // 유형 id → 화면 이름(서버가 준다)
@@ -26,13 +27,25 @@ function kstToday() {
 }
 
 /**
+ * 주식 화면에서 ★로 고른 관심 종목(브라우저 저장소). 서버에 보내지 않고 조회 조건으로만 쓴다.
+ * @returns {string[]} 6자리 종목코드, 최대 20개
+ */
+function watchedSymbols() {
+  try {
+    const list = JSON.parse(localStorage.getItem('stockWatchlist') || '[]');
+    return (Array.isArray(list) ? list : []).filter(code => /^\d{6}$/.test(code)).slice(0, 20);
+  } catch (_) { return []; }
+}
+
+/**
  * 현재 필터로 API 주소를 만든다. 유형은 화면에서 거르므로 보내지 않는다(유형별 건수를 함께 보여 주려고).
  * @returns {string}
  */
 function discQuery() {
   const params = new URLSearchParams();
   if (disc.day) params.set('date', disc.day);
-  if (/^\d{6}$/.test(disc.symbol)) params.set('symbol', disc.symbol);
+  if (disc.watch) params.set('symbols', watchedSymbols().join(','));
+  else if (/^\d{6}$/.test(disc.symbol)) params.set('symbol', disc.symbol);
   if (disc.riskOnly) params.set('risk', '1');
   params.set('limit', '500');
   return `/api/disclosures?${params}`;
@@ -44,6 +57,12 @@ function discQuery() {
  */
 async function loadDisclosures() {
   const live = document.getElementById('discLive');
+  if (disc.watch && !watchedSymbols().length) {
+    disc.items = [];
+    disc.range = null;
+    renderDisclosures('관심 종목이 없습니다. 주식 화면에서 ★를 눌러 관심 종목을 추가하세요.');
+    return;
+  }
   try {
     const res = await apiFetch(discQuery());
     const body = await res.json().catch(() => ({}));
@@ -83,8 +102,12 @@ function judgedCell(item) {
   return `<span class="by" title="TypeSafe Jev 모델 판단 확률">Jev ${discEsc(probs)}</span>`;
 }
 
-/** 목록과 유형별 건수를 그린다. */
-function renderDisclosures() {
+/**
+ * 목록과 유형별 건수를 그린다.
+ * @param {string} [emptyText] 목록이 비었을 때 보여 줄 안내
+ * @returns {void}
+ */
+function renderDisclosures(emptyText = '조건에 맞는 공시가 없습니다. 휴일이거나 수집기가 아직 돌지 않았을 수 있습니다.') {
   const rows = disc.kind ? disc.items.filter(item => item.kind === disc.kind) : disc.items;
   const riskCount = disc.items.filter(item => item.risk).length;
   document.getElementById('discCount').textContent =
@@ -92,7 +115,9 @@ function renderDisclosures() {
   // 날짜 없이 종목만 고르면 서버가 최근 30일을 준다(주말·휴일에도 비지 않게). 그때는 접수일 열을 보인다.
   const spanMode = Boolean(disc.range && !disc.range.date);
   document.getElementById('colDate').hidden = !spanMode;
-  document.getElementById('discTitle').textContent = spanMode
+  document.getElementById('discTitle').textContent = disc.watch
+    ? `내 관심 종목 ${watchedSymbols().length}개 최근 30일 공시${disc.range?.from ? ` (${disc.range.from} ~ ${disc.range.to})` : ''}`
+    : spanMode
     ? `${disc.symbol} 최근 30일 공시 (${disc.range.from} ~ ${disc.range.to})`
     : `${disc.range?.date || disc.day || kstToday()} 공시${disc.symbol ? ` · ${disc.symbol}` : ''}`;
 
@@ -106,13 +131,13 @@ function renderDisclosures() {
     return `<tr class="${item.risk ? 'is-risk' : ''}">
       ${spanMode ? `<td>${discEsc(item.date || '-')}</td>` : ''}
       <td>${discEsc(item.firstSeenKst || '-')}</td>
-      <td class="txt who">${discEsc(item.corpName)}<small>${discEsc(item.market || '')}${code ? ` · <a href="/events.html?symbol=${code}">${code}</a>` : ''}</small></td>
+      <td class="txt who">${discEsc(item.corpName)}<small>${discEsc(item.market || '')}${code ? ` · <a href="/events.html?symbol=${code}">${code}</a> · <a href="/quant.html?symbol=${code}" title="이 종목으로 백테스트(공개 사이트는 합성 학습 데이터)">백테스트</a>` : ''}</small></td>
       <td class="txt">${title}${item.corrected ? '<small>정정 공시</small>' : ''}</td>
       <td class="txt">${discEsc(item.kindLabel || item.kind)}</td>
       <td>${item.risk ? '<span class="flag">⚠ 위험</span>' : '-'}</td>
       <td>${judgedCell(item)}</td>
     </tr>`;
-  }).join('') : '<tr><td class="empty" colspan="7">조건에 맞는 공시가 없습니다. 휴일이거나 수집기가 아직 돌지 않았을 수 있습니다.</td></tr>';
+  }).join('') : `<tr><td class="empty" colspan="7">${discEsc(emptyText)}</td></tr>`;
 
   const counts = {};
   for (const item of disc.items) counts[item.kind] = (counts[item.kind] || 0) + 1;
@@ -127,7 +152,8 @@ function renderDisclosures() {
 function syncUrl() {
   const params = new URLSearchParams();
   if (disc.day) params.set('date', disc.day);
-  if (disc.symbol) params.set('symbol', disc.symbol);
+  if (disc.watch) params.set('watch', '1');
+  else if (disc.symbol) params.set('symbol', disc.symbol);
   if (disc.kind) params.set('kind', disc.kind);
   if (disc.riskOnly) params.set('risk', '1');
   const query = params.toString();
@@ -149,7 +175,16 @@ function bindDiscEvents() {
   symbol.addEventListener('input', () => {
     const value = symbol.value.replace(/\D/g, '').slice(0, 6);
     symbol.value = value;
-    if (value.length === 0 || value.length === 6) { disc.symbol = value; syncUrl(); loadDisclosures(); }
+    if (value.length === 0 || value.length === 6) { disc.symbol = value; setWatch(false); syncUrl(); loadDisclosures(); }
+  });
+  const watch = document.getElementById('watchOnly');
+  const setWatch = on => { disc.watch = on; watch.setAttribute('aria-pressed', String(on)); };
+  setWatch(disc.watch);
+  watch.addEventListener('click', () => {
+    setWatch(!disc.watch);
+    if (disc.watch) { disc.symbol = ''; symbol.value = ''; }
+    syncUrl();
+    loadDisclosures();
   });
   kind.addEventListener('change', () => { disc.kind = kind.value; syncUrl(); renderDisclosures(); });
   riskOnly.addEventListener('change', () => { disc.riskOnly = riskOnly.checked; syncUrl(); loadDisclosures(); });
@@ -189,6 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (/^\d{4}-\d{2}-\d{2}$/.test(day)) disc.day = day;
   disc.kind = /^[a-z_]{2,30}$/.test(params.get('kind') || '') ? params.get('kind') : '';
   disc.riskOnly = params.get('risk') === '1';
+  disc.watch = params.get('watch') === '1';
   await initPage();
   bindDiscEvents();
   await loadDisclosures();

@@ -28,6 +28,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from db import engine
 from errors import error_response, log_exception
+from accounts import PRIVACY_VERSION
 from extensions import limiter
 
 research_agent_bp = Blueprint("research_agent", __name__, url_prefix="/api/agent")
@@ -231,7 +232,12 @@ def ask():
     member_id, denied = _require_member()
     if denied:
         return denied
-    question = str((request.get_json(silent=True) or {}).get("question", "")).strip()
+    body = request.get_json(silent=True) or {}
+    # 질문은 미국 Anthropic으로 가는 국외 이전이다(개인정보 처리방침 4절). 현재 버전에 동의한 요청만 보내고,
+    # 동의 전에는 초대 코드 한도도 쓰지 않는다.
+    if body.get("consent") != PRIVACY_VERSION:
+        return jsonify({"consentRequired": True, "consentVersion": PRIVACY_VERSION})
+    question = str(body.get("question", "")).strip()
     if not question or len(question) > MAX_QUESTION_CHARS:
         return jsonify({"error": "INVALID_QUESTION", "message": f"질문은 1~{MAX_QUESTION_CHARS}자로 입력하세요."}), 400
     budget = float(current_app.config["AI_MONTHLY_BUDGET_USD"])

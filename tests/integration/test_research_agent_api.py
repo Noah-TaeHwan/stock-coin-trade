@@ -17,6 +17,7 @@ import bootstrap
 import db
 import quant
 import research_agent
+from accounts import PRIVACY_VERSION
 from app import create_app
 from settings import Settings
 
@@ -90,15 +91,15 @@ def _invite_row(code):
 def test_disabled_by_default():
     client = _app(enabled=False).test_client()
     _member(client)
-    assert client.post("/api/agent/ask", json={"question": "q"}).status_code == 503
+    assert client.post("/api/agent/ask", json={"question": "q", "consent": PRIVACY_VERSION}).status_code == 503
     assert client.get("/api/agent/status").get_json()["enabled"] is False
 
 
 def test_login_and_invite_are_required():
     client = _app().test_client()
-    assert client.post("/api/agent/ask", json={"question": "q"}).status_code == 401
+    assert client.post("/api/agent/ask", json={"question": "q", "consent": PRIVACY_VERSION}).status_code == 401
     _member(client)
-    response = client.post("/api/agent/ask", json={"question": "q"})
+    response = client.post("/api/agent/ask", json={"question": "q", "consent": PRIVACY_VERSION})
     assert response.status_code == 403 and response.get_json()["error"] == "INVITE_REQUIRED"
 
 
@@ -121,7 +122,9 @@ def test_a_question_runs_the_agent_on_real_backtests_and_records_cost(scripted):
     _member(client)
     code = _invite()
     client.post("/api/agent/redeem", json={"code": code})
-    response = client.post("/api/agent/ask", json={"question": "005930 MA 전략 성과를 알려줘"})
+    response = client.post(
+        "/api/agent/ask", json={"question": "005930 MA 전략 성과를 알려줘", "consent": PRIVACY_VERSION}
+    )
     body = response.get_json()
     assert response.status_code == 200 and body["status"] == "answered", body
     receipt = body["answer"]["receipts"][0]
@@ -143,14 +146,33 @@ def test_a_question_runs_the_agent_on_real_backtests_and_records_cost(scripted):
     assert receipt in usage["receipts"]
 
 
+def test_nothing_goes_to_anthropic_without_consent(monkeypatch):
+    # 질문은 미국 Anthropic으로 가는 국외 이전이다. 현재 처리방침 버전에 동의한 요청만 보내고, 한도도 쓰지 않는다.
+    import research_agent
+
+    monkeypatch.setattr(research_agent, "_anthropic_client", lambda: pytest.fail("동의 전에 Anthropic을 불렀다"))
+    client = _app().test_client()
+    _member(client)
+    code = _invite()
+    assert client.post("/api/agent/redeem", json={"code": code}).status_code == 200
+    for consent in (None, "2020-01-01"):
+        body = {"question": "005930 전략 성과"} | ({"consent": consent} if consent else {})
+        answer = client.post("/api/agent/ask", json=body)
+        assert answer.status_code == 200
+        assert answer.get_json() == {"consentRequired": True, "consentVersion": PRIVACY_VERSION}
+    assert _invite_row(code)["used_requests"] == 0
+
+
 def test_request_limit_is_enforced(scripted):
     scripted(answer("범위 밖 질문입니다.", cited="x", out_of_scope=True))
     client = _app().test_client()
     _member(client)
     code = _invite(requests=1)
     client.post("/api/agent/redeem", json={"code": code})
-    assert client.post("/api/agent/ask", json={"question": "내일 오를까?"}).status_code == 200
-    response = client.post("/api/agent/ask", json={"question": "또 물어볼게"})
+    assert (
+        client.post("/api/agent/ask", json={"question": "내일 오를까?", "consent": PRIVACY_VERSION}).status_code == 200
+    )
+    response = client.post("/api/agent/ask", json={"question": "또 물어볼게", "consent": PRIVACY_VERSION})
     assert response.status_code == 403 and "횟수" in response.get_json()["message"]
 
 
@@ -164,7 +186,7 @@ def test_expired_invite_is_refused():
             text("UPDATE ai_invite SET expires_at = :t WHERE code_hash = :h"),
             {"t": research_agent._now() - timedelta(minutes=1), "h": research_agent.code_hash(code, PEPPER)},
         )
-    response = client.post("/api/agent/ask", json={"question": "q"})
+    response = client.post("/api/agent/ask", json={"question": "q", "consent": PRIVACY_VERSION})
     assert response.status_code == 403 and "만료" in response.get_json()["message"]
 
 
@@ -176,8 +198,8 @@ def test_monthly_budget_stops_new_questions(scripted):
     _member(client)
     code = _invite()
     client.post("/api/agent/redeem", json={"code": code})
-    assert client.post("/api/agent/ask", json={"question": "첫 질문"}).status_code == 200
-    response = client.post("/api/agent/ask", json={"question": "두 번째"})
+    assert client.post("/api/agent/ask", json={"question": "첫 질문", "consent": PRIVACY_VERSION}).status_code == 200
+    response = client.post("/api/agent/ask", json={"question": "두 번째", "consent": PRIVACY_VERSION})
     assert response.status_code == 503 and response.get_json()["error"] == "BUDGET_EXHAUSTED"
 
 
@@ -198,7 +220,7 @@ def test_upstream_rate_limit_is_a_503_and_the_request_stays_counted(monkeypatch)
     _member(client)
     code = _invite()
     client.post("/api/agent/redeem", json={"code": code})
-    response = client.post("/api/agent/ask", json={"question": "q"})
+    response = client.post("/api/agent/ask", json={"question": "q", "consent": PRIVACY_VERSION})
     assert response.status_code == 503 and response.get_json()["error"] == "AI_BUSY"
     assert _invite_row(code)["used_requests"] == 1
 

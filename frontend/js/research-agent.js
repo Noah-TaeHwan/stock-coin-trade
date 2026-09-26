@@ -53,6 +53,46 @@ async function redeem() {
   if (response.ok) loadStatus();
 }
 
+const AI_CONSENT_KEY = 'aiConsentVersion';
+
+function readAiConsent() {
+  try { return localStorage.getItem(AI_CONSENT_KEY) || ''; } catch (_) { return ''; }
+}
+
+function saveAiConsent(version) {
+  try { localStorage.setItem(AI_CONSENT_KEY, version); } catch (_) { /* 저장 못 하면 다음에 다시 묻는다 */ }
+}
+
+/**
+ * 국외 이전 안내를 보여 주고 동의 여부를 받는다(질문 칸 아래 안내 상자, innerHTML 없이 DOM으로).
+ * @returns {Promise<boolean>} 동의하면 true
+ */
+function confirmAiTransfer() {
+  return new Promise(resolve => {
+    const status = $ra('[data-ask-status]');
+    const note = document.createElement('div');
+    note.className = 'ra-consent';
+    const text = document.createElement('p');
+    text.textContent = '질문은 답을 만들기 위해 미국 Anthropic, PBC로 보냅니다. 질문과 이 서비스가 계산한 백테스트 결과만 보내고 '
+      + '회원 정보는 보내지 않습니다. 질문에 개인정보를 넣지 마세요.';
+    const agree = document.createElement('button');
+    agree.type = 'button';
+    agree.textContent = '동의하고 보내기';
+    const decline = document.createElement('button');
+    decline.type = 'button';
+    decline.textContent = '보내지 않기';
+    const policy = document.createElement('a');
+    policy.href = '/privacy.html';
+    policy.textContent = '개인정보 처리방침';
+    const done = answer => { note.remove(); resolve(answer); };
+    agree.addEventListener('click', () => done(true));
+    decline.addEventListener('click', () => done(false));
+    note.append(text, agree, decline, policy);
+    status.textContent = '';
+    status.after(note);
+  });
+}
+
 async function ask() {
   const button = $ra('[data-ask-btn]'), status = $ra('[data-ask-status]');
   const question = $ra('[data-question]').value.trim();
@@ -60,11 +100,20 @@ async function ask() {
   button.disabled = true; status.textContent = 'AI가 백테스트를 실행하고 답을 정리하는 중… (수십 초 걸릴 수 있습니다)';
   $ra('[data-result]').hidden = true;
   try {
-    const response = await fetch('/api/agent/ask', {
+    const send = consent => fetch('/api/agent/ask', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, consent }),
     });
-    const data = await response.json().catch(() => ({}));
+    let response = await send(readAiConsent());
+    let data = await response.json().catch(() => ({}));
+    if (response.ok && data.consentRequired) {
+      // 질문은 미국 Anthropic으로 간다. 처음 한 번 알리고 동의를 받는다(처리방침 4절).
+      const agreed = await confirmAiTransfer();
+      if (!agreed) { status.textContent = '보내지 않았습니다. 동의하면 질문을 AI에게 보낼 수 있습니다.'; return; }
+      saveAiConsent(data.consentVersion);
+      response = await send(data.consentVersion);
+      data = await response.json().catch(() => ({}));
+    }
     if (!response.ok) throw new Error(data.message || '요청 실패');
     const cost = `도구 호출 ${data.toolCalls.length}회 · 토큰 ${Object.values(data.usage).reduce((a, b) => a + b, 0).toLocaleString()} · 약 $${data.costUsd.toFixed(4)}`;
     if (data.answer && (data.status === 'answered' || data.status === 'out_of_scope')) {

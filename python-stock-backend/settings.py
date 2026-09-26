@@ -58,6 +58,16 @@ def load_env_file() -> None:
     load_dotenv(REPO_ROOT / ".env", override=False)
 
 
+def dart_api_key_from_env(environ: Mapping[str, str] | None = None) -> str:
+    """OpenDART 인증키(앞뒤 공백 제거). worker가 다른 설정 검증 없이 수집 작업을 걸지 정할 때 쓴다.
+
+    @param environ 환경변수(기본 os.environ)
+    @returns 인증키, 없으면 빈 문자열
+    """
+    env = os.environ if environ is None else environ
+    return (env.get("DART_API_KEY") or "").strip()
+
+
 def profile_from_env(environ: Mapping[str, str] | None = None) -> str:
     """APP_PROFILE 값(소문자). 검증은 Settings.from_env가 한다."""
     env = os.environ if environ is None else environ
@@ -224,7 +234,7 @@ class Settings:
             ai_invite_pepper=ai_invite_pepper or DEV_AI_INVITE_PEPPER,
             jev_enabled=jev_enabled,
             jev_monthly_budget_usd=jev_monthly_budget_usd,
-            dart_api_key=(env.get("DART_API_KEY") or "").strip(),
+            dart_api_key=dart_api_key_from_env(env),
             signup_enabled=signup_enabled,
             smtp_host=smtp_host,
             public_base_url=public_base_url,
