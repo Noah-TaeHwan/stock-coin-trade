@@ -124,6 +124,23 @@
 7. 최종 법률 확인: 만 14세 자기 신고 방식, 명령 바 국외 이전 근거 등
 8. S5: 도메인, SES 메일 연결(연결 뒤 처리방침에 수탁자 추가), `SIGNUP_ENABLED=true`
 
+## 8-1. 공개 배포 확인 (배포 실행 36237461424, `6b00cfe`)
+
+배포 전에 `scripts/ec2/backup-db.sh`로 운영 DB를 S3에 백업했다(35일 보관). 배포 뒤 SSM으로 서버 안에서 확인했다.
+
+| 확인 | 결과 |
+|---|---|
+| `/health` | 200 |
+| `GET /api/member/me` | `signupOpen: false`, `profile: public` |
+| `POST /api/member/register` | 403 |
+| 강제 CSP | `/member/login`·`/member/login.html`·`/member/verify.html`·`/privacy.html`·`/privacy` 모두 200+헤더, `/index.html`은 없음 |
+| 백테스트 회귀(F2와 같은 요청) | 200 |
+| DB 이전 | `member` 새 열 4개, `member_session`·`member_token`·`member_activity_day` 표, `ai_usage.member_id` NULL 허용, 기존 회원 21명 모두 인증 표시(미인증 0) |
+| bcrypt(t3.small, 컨테이너 안 10회) | 해시 중앙값 290ms(287~304), 검증 중앙값 294ms(288~416) |
+
+- **bcrypt**: 중앙값은 스펙 기준 300ms 안이지만 여유가 작다. 요청 처리까지 더하면 로그인 응답은 300ms를 조금 넘을 수 있다. 사용자가 느끼는 지연은 크지 않아 비용(12)은 유지한다. 가입을 연 뒤 실제 응답 시간을 재서 다시 판단한다.
+- **명령 바**: 호출하면 외부 과금 API(TypeSafe)를 부르므로 화면 응답 200만 확인하고 호출은 하지 않았다.
+
 ## 9. Reality Checker 판정
 
 **PR F 머지·배포 가능(READY)**
