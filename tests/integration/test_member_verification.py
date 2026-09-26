@@ -161,3 +161,88 @@ def test_expired_verification_tokens_are_refused(email, outbox):
             {"h": member_tokens.token_hash(token)},
         )
     assert _client().post("/api/member/verify", json={"token": token}).status_code == 400
+
+
+NEW_PASSWORD = "another long passphrase here"
+
+
+def _verified_client(email, outbox):
+    client = _client()
+    _signup(client, email)
+    client.post("/api/member/verify", json={"token": outbox[-1][2]})
+    assert client.post("/api/member/login", json={"email": email, "password": PASSWORD}).status_code == 200
+    return client
+
+
+def test_reset_ends_sessions_disables_api_keys_and_does_not_log_in(email, outbox):
+    phone = _verified_client(email, outbox)
+    assert phone.post("/api/member/api-keys", json={"label": "k1"}).status_code == 200
+    assert _client().post("/api/member/password/reset-request", json={"email": email}).status_code == 202
+    kind, to, token = outbox[-1]
+    assert (kind, to) == ("reset", email)
+    browser = _client()
+    done = browser.post(
+        "/api/member/password/reset", json={"token": token, "password": NEW_PASSWORD, "password2": NEW_PASSWORD}
+    )
+    assert done.status_code == 200
+    assert browser.get("/api/member/me").get_json()["loggedIn"] is False
+    assert phone.get("/api/member/me").get_json()["loggedIn"] is False
+    with db.engine.connect() as conn:
+        active = conn.execute(
+            text(
+                "SELECT COUNT(*) FROM api_key k JOIN member m USING (member_id) WHERE m.email = :e AND k.is_active = 1"
+            ),
+            {"e": email},
+        ).scalar()
+    assert active == 0
+    assert _client().post("/api/member/login", json={"email": email, "password": PASSWORD}).status_code == 401
+    assert _client().post("/api/member/login", json={"email": email, "password": NEW_PASSWORD}).status_code == 200
+
+
+def test_weak_password_does_not_burn_the_reset_token(email, outbox):
+    _verified_client(email, outbox)
+    _client().post("/api/member/password/reset-request", json={"email": email})
+    token = outbox[-1][2]
+    weak = _client().post(
+        "/api/member/password/reset", json={"token": token, "password": "short", "password2": "short"}
+    )
+    assert weak.status_code == 400 and weak.get_json()["field"] == "password"
+    ok = _client().post(
+        "/api/member/password/reset", json={"token": token, "password": NEW_PASSWORD, "password2": NEW_PASSWORD}
+    )
+    assert ok.status_code == 200
+
+
+def test_reset_request_answers_the_same_for_unknown_addresses(outbox):
+    response = _client().post(
+        "/api/member/password/reset-request", json={"email": f"nobody-{uuid.uuid4().hex[:6]}@example.test"}
+    )
+    assert response.status_code == 202 and outbox == []
+
+
+def test_reset_also_verifies_the_email(email, outbox):
+    client = _client()
+    _signup(client, email)
+    client.post("/api/member/password/reset-request", json={"email": email})
+    token = outbox[-1][2]
+    client.post(
+        "/api/member/password/reset", json={"token": token, "password": NEW_PASSWORD, "password2": NEW_PASSWORD}
+    )
+    assert client.post("/api/member/login", json={"email": email, "password": NEW_PASSWORD}).status_code == 200
+
+
+def test_change_keeps_this_session_and_ends_the_others(email, outbox):
+    laptop = _verified_client(email, outbox)
+    phone = _client()
+    phone.post("/api/member/login", json={"email": email, "password": PASSWORD})
+    wrong = laptop.post(
+        "/api/member/password/change",
+        json={"current": "nope-nope-nope", "password": NEW_PASSWORD, "password2": NEW_PASSWORD},
+    )
+    assert wrong.status_code == 400 and wrong.get_json()["field"] == "current"
+    ok = laptop.post(
+        "/api/member/password/change", json={"current": PASSWORD, "password": NEW_PASSWORD, "password2": NEW_PASSWORD}
+    )
+    assert ok.status_code == 200
+    assert laptop.get("/api/member/me").get_json()["loggedIn"] is True
+    assert phone.get("/api/member/me").get_json()["loggedIn"] is False

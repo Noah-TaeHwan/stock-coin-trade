@@ -51,6 +51,9 @@ POST /api/member/api-keys api_keys.create_key
 POST /api/member/login member.login
 POST /api/member/logout member.logout
 POST /api/member/logout-all member.logout_all
+POST /api/member/password/change member_account.change_password
+POST /api/member/password/reset member_account.reset_password
+POST /api/member/password/reset-request member_account.request_password_reset
 POST /api/member/register member.register
 POST /api/member/verify member_account.verify_email
 POST /api/member/verify/resend member_account.resend_verification
