@@ -60,6 +60,14 @@
     .flash-up   { animation: flash-up .8s ease-out; }
     .flash-down { animation: flash-down .8s ease-out; }
     @media (prefers-reduced-motion: reduce) { .flash-up, .flash-down { animation: none; } }
+    .mon-intro { margin-bottom: 10px; }
+    .mon-intro-close { font: inherit; font-size: 11px; background: none; border: 0; color: var(--muted); cursor: pointer; }
+    .mon-intro-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin: 0; padding: 10px; list-style: none; }
+    .mon-intro-steps a { display: flex; flex-direction: column; gap: 4px; height: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--fg); text-decoration: none; }
+    .mon-intro-steps a:hover { border-color: var(--accent); }
+    .mon-intro-steps b { color: var(--accent); font-size: 13px; }
+    .mon-intro-steps span { font-size: 12px; color: var(--fg-2); line-height: 1.5; }
+    .mon-intro-steps kbd { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
   </style>
   <link rel="stylesheet" href="/css/style.css?v=20260926-consent">
 <link rel="stylesheet" href="/css/tw.css?v=20260926">
@@ -68,6 +76,15 @@
 <div id="header-mount"></div>
 <main class="mon">
   <h1 class="sr-only">MON 마켓 모니터</h1>
+  <!-- 처음 방문한 사람을 위한 안내(닫으면 이 브라우저에서 다시 보이지 않음) -->
+  <section class="term-panel mon-intro" id="monIntro" aria-labelledby="monIntroTitle" hidden>
+    <div class="term-panel__bar"><span class="term-code">START</span><span id="monIntroTitle">처음이신가요?</span><span class="term-sub">데이터로 판단하는 투자자를 위한 도구 · 투자 조언이 아닙니다</span><span class="term-right"><button type="button" class="mon-intro-close" id="monIntroClose" aria-label="안내 닫기">닫기 ✕</button></span></div>
+    <ol class="mon-intro-steps">
+      <li><a href="/events.html"><b>1 · 공시 보기</b><span>금융감독원 DART 공시를 유형·위험 표시와 함께 봅니다. ★ 관심 종목만 모아 볼 수도 있습니다. <kbd>DISC</kbd></span></a></li>
+      <li><a href="/quant.html"><b>2 · 아이디어 백테스트</b><span>전략을 과거 데이터로 돌려 보고 같은 입력이면 같은 계산 영수증을 받습니다(공개 사이트는 합성 학습 데이터). <kbd>QNT</kbd></span></a></li>
+      <li><a href="/trade/stock.html"><b>3 · 관심 종목 고르기</b><span>주식 화면에서 ★를 누르면 이 브라우저에 관심 종목으로 저장됩니다. 서버에는 남지 않습니다. <kbd>STK</kbd></span></a></li>
+    </ol>
+  </section>
   <div class="mon-grid">
 
     <!-- ① 시장 개요 -->
@@ -157,6 +174,16 @@
 <script>
 (async () => {
   await initPage();
+
+  // 처음 방문 안내: 닫기 전까지 보여 주고, 닫으면 이 브라우저에 기억한다.
+  const intro = document.getElementById('monIntro');
+  let introClosed = false;
+  try { introClosed = localStorage.getItem('introClosed') === '1'; } catch (_) {}
+  if (intro && !introClosed) intro.hidden = false;
+  document.getElementById('monIntroClose')?.addEventListener('click', () => {
+    intro.hidden = true;
+    try { localStorage.setItem('introClosed', '1'); } catch (_) {}
+  });
 
   const fmtNum = (n, digits = 0) => Number(n).toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const fmtRate = n => `${Number(n) > 0 ? '+' : ''}${Number(n).toFixed(2)}%`;
