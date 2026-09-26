@@ -88,6 +88,11 @@ class Settings:
     jev_monthly_budget_usd: float = 0.0
     # OpenDART 인증키(공시 레이더 수집기, worker 전용). 비어 있으면 수집 작업을 걸지 않는다. Flask 설정에는 넣지 않는다.
     dart_api_key: str = ""
+    # 가입을 받을지. public은 인증 메일이 필요하므로 SMTP_HOST와 https PUBLIC_BASE_URL이 있어야만 열린다.
+    signup_enabled: bool = True
+    smtp_host: str = ""
+    # 메일 속 링크의 기준 주소. 요청의 Host 헤더로 링크를 만들지 않는다(재설정 링크 변조 방지).
+    public_base_url: str = ""
 
     @property
     def is_public(self) -> bool:
@@ -136,8 +141,17 @@ class Settings:
                 raise SettingsError("AI_ENABLED=true needs AI_MONTHLY_BUDGET_USD greater than 0.")
             if ai_model not in pricing.load():
                 raise SettingsError(f"AI_MODEL {ai_model!r} has no price in config/llm_pricing.toml.")
+        smtp_host = (env.get("SMTP_HOST") or "").strip()
+        public_base_url = (env.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
+        mail_ready = bool(smtp_host) and public_base_url.startswith("https://")
+        signup_default = "true" if profile == "local" or mail_ready else "false"
+        signup_enabled = (env.get("SIGNUP_ENABLED") or signup_default).strip().lower() == "true"
         if profile == "public":
             problems = []
+            if env.get("SESSION_COOKIE_SECURE", "false").strip().lower() != "true":
+                problems.append("SESSION_COOKIE_SECURE must be true")
+            if signup_enabled and not mail_ready:
+                problems.append("SIGNUP_ENABLED needs SMTP_HOST and an https:// PUBLIC_BASE_URL")
             if ai_enabled and (
                 len(ai_invite_pepper) < MIN_AI_INVITE_PEPPER_LENGTH or ai_invite_pepper in EXAMPLE_PLACEHOLDERS
             ):
@@ -179,6 +193,9 @@ class Settings:
             jev_enabled=jev_enabled,
             jev_monthly_budget_usd=jev_monthly_budget_usd,
             dart_api_key=(env.get("DART_API_KEY") or "").strip(),
+            signup_enabled=signup_enabled,
+            smtp_host=smtp_host,
+            public_base_url=public_base_url,
         )
 
     def flask_config(self) -> dict[str, object]:
@@ -198,4 +215,6 @@ class Settings:
             "AI_INVITE_PEPPER": self.ai_invite_pepper,
             "JEV_ENABLED": self.jev_enabled,
             "JEV_MONTHLY_BUDGET_USD": self.jev_monthly_budget_usd,
+            "SIGNUP_ENABLED": self.signup_enabled,
+            "PUBLIC_BASE_URL": self.public_base_url,
         }
