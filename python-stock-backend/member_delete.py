@@ -18,6 +18,8 @@ DELETE_TABLES = (
 )
 # 기록은 남기되 누구의 것인지 끊는다. ai_usage는 월 AI 예산 합계를 지키려고 남긴다. 로그는 90일 뒤 지워진다.
 NULLIFY_TABLES = ("system_error_log", "api_usage_log", "ai_usage")
+# 초대 코드 이름표에는 관리자가 적은 받는 사람 이름이 들어가므로, 탈퇴하면 이 값으로 바꾼다.
+DELETED_LABEL = "탈퇴한 회원"
 
 
 def ensure_deletable() -> None:
@@ -30,17 +32,25 @@ def ensure_deletable() -> None:
             conn.execute(text("ALTER TABLE ai_usage MODIFY member_id BIGINT(20) NULL"))
 
 
-def delete_member(member_id: int) -> None:
-    """회원과 소유 데이터를 지운다. 초대 코드는 연결을 끊고 폐기한다.
+def delete_member(member_id: int, *, only_if_unverified: bool = False) -> bool:
+    """회원과 소유 데이터를 지운다. 초대 코드는 연결을 끊고 이름표를 지우고 폐기한다.
 
     @param member_id 탈퇴할 회원 ID
+    @param only_if_unverified True면 같은 트랜잭션에서 회원 행을 잠그고, 그사이 인증을 마쳤으면 지우지 않는다(정리 작업용)
+    @returns 지웠으면 True
     """
     params = {"m": member_id}
     with engine.begin() as conn:
+        if only_if_unverified:
+            verified_at = conn.execute(
+                text("SELECT email_verified_at FROM member WHERE member_id = :m FOR UPDATE"), params).first()
+            if verified_at is None or verified_at[0] is not None:
+                return False
         for table in DELETE_TABLES:
             conn.execute(text(f"DELETE FROM {table} WHERE member_id = :m"), params)
-        conn.execute(text("UPDATE ai_invite SET member_id = NULL, revoked_at = COALESCE(revoked_at, NOW()) "
-                          "WHERE member_id = :m"), params)
+        conn.execute(text("UPDATE ai_invite SET member_id = NULL, label = :label, revoked_at = COALESCE(revoked_at, NOW()) "
+                          "WHERE member_id = :m"), {**params, "label": DELETED_LABEL})
         for table in NULLIFY_TABLES:
             conn.execute(text(f"UPDATE {table} SET member_id = NULL WHERE member_id = :m"), params)
         conn.execute(text("DELETE FROM member WHERE member_id = :m"), params)
+    return True

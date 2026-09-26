@@ -1195,6 +1195,7 @@ function ensureSiteFooter(user) {
       <span>SCREEN <b>${terminalScreenCode()}</b></span>
       <span class="term-status-hide-sm">USER <b>${user?.loggedIn ? escapeHtml(user.username) : 'GUEST'}</b></span>
       <span class="term-status-hide-sm term-status-note">${noteText}</span>
+      <a class="term-status-privacy" href="/privacy.html"><b>개인정보 처리방침</b></a>
       <span class="term-status-brand">NOAH TRADING DESK</span>
     </div>`;
   setTerminalConnection(user?.__apiReachable !== false);

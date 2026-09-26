@@ -179,6 +179,9 @@ class Settings:
                 problems.append("SESSION_COOKIE_SECURE must be true")
             if smtp_host and not smtp_starttls:
                 problems.append("SMTP_STARTTLS must stay on")
+            # 가입이 닫혀 있어도 재설정 메일은 나가므로, 메일 속 링크는 늘 https여야 한다(토큰 가로채기 방지).
+            if smtp_host and not public_base_url.startswith("https://"):
+                problems.append("PUBLIC_BASE_URL must start with https:// when mail is on")
             if signup_enabled and not mail_ready:
                 problems.append("SIGNUP_ENABLED needs SMTP_HOST and an https:// PUBLIC_BASE_URL")
             if ai_enabled and (

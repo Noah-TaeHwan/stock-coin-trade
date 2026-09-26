@@ -3,137 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>회원가입 — Noah Trading Desk</title>
+  <meta name="referrer" content="no-referrer">
+  <title>가입 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
-  <style>
-    @font-face { font-family:'Pretendard'; font-weight:400; font-display:swap; src:url('/fonts/Pretendard-Regular.woff2') format('woff2'); }
-    @font-face { font-family:'Pretendard'; font-weight:600; font-display:swap; src:url('/fonts/Pretendard-SemiBold.woff2') format('woff2'); }
-    @font-face { font-family:'Pretendard'; font-weight:700; font-display:swap; src:url('/fonts/Pretendard-Bold.woff2') format('woff2'); }
-    @font-face { font-family:'Pretendard'; font-weight:800; font-display:swap; src:url('/fonts/Pretendard-ExtraBold.woff2') format('woff2'); }
-    @font-face { font-family:'Pretendard'; font-weight:900; font-display:swap; src:url('/fonts/Pretendard-Black.woff2') format('woff2'); }
-  </style>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','sans-serif']}}}}</script>
   <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
+  <link rel="stylesheet" href="/css/auth.css?v=20260926">
 </head>
-<body>
-<div class="auth-page">
-
-  <!-- Logo & tagline -->
-  <div class="text-center mb-8">
-    <span class="auth-logo mb-3">Noah Trading Desk</span>
-    <p class="mt-3 text-sm" style="color:rgba(255,255,255,0.45);">모의투자·OpenAPI 실습</p>
-  </div>
-
-  <!-- Auth card -->
-  <div class="auth-card">
-    <h1 class="text-xl font-black text-center mb-1" style="color:#fff;">회원가입</h1>
-    <p class="text-sm text-center mb-1" style="color:rgba(255,255,255,0.4);">가입 즉시 거래 가능 자금</p>
-    <p class="text-base font-black text-center mb-5" style="color:var(--accent);">100,000,000 KRW 지급</p>
-
-    <div id="globalError" style="display:none;background:var(--down-bg);border:1px solid rgba(255,77,77,.35);border-radius:var(--radius);padding:.75rem 1rem;font-size:14px;color:var(--down);margin-bottom:1rem;"></div>
-
-    <form class="space-y-4" onsubmit="handleRegister(event)">
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.07em;">이름</label>
-        <input type="text" id="username" class="dark-input" placeholder="이름" required>
-        <div id="usernameError" class="mt-1 text-xs" style="color:var(--down);display:none;"></div>
+<body data-page="register">
+<main class="auth-page">
+  <a class="auth-logo" href="/index.html">Noah Trading Desk</a>
+  <p class="auth-tagline">데이터로 판단하는 투자자를 위한 도구 · 투자 조언이 아닙니다</p>
+  <section class="auth-card">
+    <h1 class="auth-title">가입</h1>
+    <p class="auth-message" id="message" hidden></p>
+    <p class="auth-sub">비밀번호는 15자 이상, 문장처럼 길게 정하세요. 예: 봄비 오는 날 공시를 읽는다</p>
+    <form id="form" novalidate>
+      <div class="auth-field"><label class="auth-label" for="username">닉네임</label>
+        <input class="dark-input" id="username" autocomplete="nickname" maxlength="20" required>
+        <p class="auth-hint">2~20자. 실명을 쓰지 않아도 됩니다. 랭킹에 보입니다.</p></div>
+      <div class="auth-field"><label class="auth-label" for="email">이메일</label>
+        <input class="dark-input" id="email" type="email" autocomplete="email" required></div>
+      <div class="auth-field"><label class="auth-label" for="password">비밀번호</label>
+        <input class="dark-input" id="password" type="password" autocomplete="new-password" minlength="15" required></div>
+      <div class="auth-field"><label class="auth-label" for="password2">비밀번호 확인</label>
+        <input class="dark-input" id="password2" type="password" autocomplete="new-password" required></div>
+      <div class="auth-hp" aria-hidden="true"><label for="website">웹사이트</label>
+        <input id="website" tabindex="-1" autocomplete="off"></div>
+      <label class="auth-check"><input type="checkbox" id="agreeAge"> 만 14세 이상입니다. (필수) 만 14세 미만은 가입할 수 없습니다.</label>
+      <div class="auth-consent">
+        <p><strong>[필수] 개인정보 수집·이용 동의</strong></p>
+        <ul>
+          <li>목적: 회원 식별과 로그인, 메일 인증과 비밀번호 재설정, 모의투자·백테스트 기능 제공, 부정 이용 방지와 오류 진단, 이용 통계</li>
+          <li>항목: 이메일 주소, 닉네임, 비밀번호(복원할 수 없는 해시로만 저장), 동의 기록, 서비스를 이용한 날짜, 모의투자 기록, 접속·오류 기록(IP 주소, 브라우저 정보)</li>
+          <li>보유 기간: 탈퇴하면 즉시 삭제합니다(백업본에서는 최대 35일 뒤). 접속·오류 기록은 최대 90일 뒤 삭제합니다. 가입 후 7일 안에 메일 인증을 하지 않으면 계정을 삭제합니다.</li>
+          <li>닉네임과 모의투자 수익률은 투자자 랭킹에 공개될 수 있습니다.</li>
+          <li>동의를 거부할 수 있습니다. 거부하면 가입할 수 없지만, 로그인 없이 쓰는 둘러보기와 백테스트는 그대로 이용할 수 있습니다.</li>
+        </ul>
       </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.07em;">이메일</label>
-        <input type="email" id="email" class="dark-input" placeholder="이메일 주소" autocomplete="email" required>
-        <div id="emailError" class="mt-1 text-xs" style="color:var(--down);display:none;"></div>
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.07em;">비밀번호</label>
-        <input type="password" id="password" class="dark-input" placeholder="15자 이상, 문장처럼 길게" autocomplete="new-password" required>
-        <div id="passwordError" class="mt-1 text-xs" style="color:var(--down);display:none;"></div>
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.07em;">비밀번호 확인</label>
-        <input type="password" id="password2" class="dark-input" placeholder="비밀번호 재입력" autocomplete="new-password" required>
-        <div id="password2Error" class="mt-1 text-xs" style="color:var(--down);display:none;"></div>
-      </div>
-      <div class="pt-1 space-y-3">
-        <button type="submit" id="submitBtn" class="btn-gold">가입하기</button>
-        <button type="button" onclick="location.href='/member/login.html'" class="btn-ghost" style="font-size:14px;">이미 계정이 있으신가요? 로그인</button>
-      </div>
+      <label class="auth-check"><input type="checkbox" id="agreePrivacy">
+        <span>위 내용에 동의합니다. <a href="/privacy.html" target="_blank" rel="noopener">개인정보 처리방침 전문</a> (필수)</span></label>
+      <button class="btn-gold auth-submit" id="submit" type="submit">가입하기</button>
     </form>
-  </div>
-
-  <div class="mt-6 text-center">
-    <a href="/index.html" style="font-size:13px;color:rgba(255,255,255,0.3);text-decoration:none;transition:color .15s;"
-       onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">
-      ← 메인으로 돌아가기
-    </a>
-  </div>
-
-</div>
-
+    <p class="auth-links">이미 계정이 있나요? <a href="/member/login.html">로그인</a></p>
+  </section>
+</main>
 <script src="/js/config.js"></script>
-<script src="/js/common.js?v=20260925-terminal"></script>
-<script>
-function clearErrors() {
-  ['username','email','password','password2'].forEach(id => {
-    const el = document.getElementById(id + 'Error');
-    if (el) { el.style.display = 'none'; el.textContent = ''; }
-  });
-  const g = document.getElementById('globalError');
-  if (g) g.style.display = 'none';
-}
-function showFieldError(field, msg) {
-  const el = document.getElementById(field + 'Error');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-}
-
-async function handleRegister(e) {
-  e.preventDefault();
-  clearErrors();
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = '처리 중...';
-
-  try {
-    const res = await apiFetch('/api/member/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: document.getElementById('username').value,
-        email:    document.getElementById('email').value,
-        password: document.getElementById('password').value,
-        password2: document.getElementById('password2').value,
-      }),
-    });
-
-    if (res.ok) {
-      location.href = '/trade/order.html';
-      return;
-    }
-
-    const data = await res.json();
-    if (data.field) showFieldError(data.field, data.error);
-    else {
-      const el = document.getElementById('globalError');
-      el.textContent = data.message ?? data.error ?? '가입에 실패했습니다.';
-      el.style.display = 'block';
-    }
-  } catch {
-    const el = document.getElementById('globalError');
-    el.textContent = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
-    el.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '가입하기';
-  }
-}
-// 공개 배포가 메일 준비 전이라 가입을 닫았으면 화면에서 먼저 알린다(서버도 403으로 막는다).
-apiFetch('/api/member/me').then(res => res.json()).then(me => {
-  if (me.signupOpen !== false) return;
-  const el = document.getElementById('globalError');
-  el.textContent = '공개 베타 준비 중이라 지금은 가입을 받지 않습니다.';
-  el.style.display = 'block';
-  document.getElementById('submitBtn').disabled = true;
-}).catch(() => {});
-</script>
+<script src="/js/auth-pages.js?v=20260926"></script>
 </body>
 </html>

@@ -83,14 +83,15 @@ def test_deleting_an_account_leaves_no_row_with_its_id_anywhere():
         }
         gone = conn.execute(text("SELECT COUNT(*) FROM member WHERE member_id = :m"), {"m": member_id}).scalar()
         kept = conn.execute(text("SELECT SUM(cost_usd) FROM ai_usage WHERE invite_id = :i"), {"i": invite}).scalar()
-        revoked = conn.execute(
-            text("SELECT revoked_at IS NOT NULL FROM ai_invite WHERE invite_id = :i"), {"i": invite}
-        ).scalar()
+        revoked, label = conn.execute(
+            text("SELECT revoked_at IS NOT NULL, label FROM ai_invite WHERE invite_id = :i"), {"i": invite}
+        ).one()
         conn.execute(text("DELETE FROM ai_usage WHERE invite_id = :i"), {"i": invite})
         conn.execute(text("DELETE FROM ai_invite WHERE invite_id = :i"), {"i": invite})
         conn.commit()
     assert leftovers == {table: 0 for table in leftovers} and gone == 0
-    assert float(kept) == 1.25 and revoked == 1
+    # 초대 코드 이름표(관리자가 적은 받는 사람 이름)도 지워 비용 행이 누구의 것인지 알 수 없게 한다.
+    assert float(kept) == 1.25 and revoked == 1 and label == member_delete.DELETED_LABEL
 
 
 def test_every_member_id_table_is_handled_by_the_delete_path():

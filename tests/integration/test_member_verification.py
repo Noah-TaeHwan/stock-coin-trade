@@ -37,7 +37,10 @@ def tables():
 @pytest.fixture
 def outbox(monkeypatch):
     sent = []
-    monkeypatch.setattr(mailer, "queue", lambda kind, to, token=None: sent.append((kind, to, token)))
+    # queue는 토큰을 문자열 또는 발급 함수로 받는다(함수면 상한 확인 뒤 발급). 테스트에서는 바로 발급한다.
+    monkeypatch.setattr(
+        mailer, "queue", lambda kind, to, token=None: sent.append((kind, to, token() if callable(token) else token))
+    )
     return sent
 
 
@@ -246,3 +249,45 @@ def test_change_keeps_this_session_and_ends_the_others(email, outbox):
     assert ok.status_code == 200
     assert laptop.get("/api/member/me").get_json()["loggedIn"] is True
     assert phone.get("/api/member/me").get_json()["loggedIn"] is False
+
+
+def test_password_change_also_disables_api_keys(email, outbox):
+    laptop = _verified_client(email, outbox)
+    assert laptop.post("/api/member/api-keys", json={"label": "k1"}).status_code == 200
+    ok = laptop.post(
+        "/api/member/password/change", json={"current": PASSWORD, "password": NEW_PASSWORD, "password2": NEW_PASSWORD}
+    )
+    assert ok.status_code == 200
+    with db.engine.connect() as conn:
+        active = conn.execute(
+            text(
+                "SELECT COUNT(*) FROM api_key k JOIN member m USING (member_id) WHERE m.email = :e AND k.is_active = 1"
+            ),
+            {"e": email},
+        ).scalar()
+    assert active == 0
+
+
+class _Inline:
+    """threading.Thread 대용: start()에서 바로 실행한다."""
+
+    def __init__(self, target, daemon):
+        self.target = target
+
+    def start(self):
+        self.target()
+
+
+def test_a_capped_resend_keeps_the_last_token_valid(email, monkeypatch):
+    # 수신 주소별 시간당 3통을 넘긴 재전송은 메일을 보내지 않고, 이미 보낸 토큰도 바꾸지 않아야 한다.
+    from types import SimpleNamespace
+
+    sent = []
+    monkeypatch.setattr(mailer, "threading", SimpleNamespace(Thread=_Inline))
+    monkeypatch.setattr(mailer, "send", lambda msg, config: sent.append(msg.get_content().split("#t=")[1].split()[0]))
+    client = _client(ratelimit_enabled=True)
+    _signup(client, email)
+    for _ in range(3):
+        assert client.post("/api/member/verify/resend", json={"email": email}).status_code == 202
+    assert len(sent) == 3
+    assert client.post("/api/member/verify", json={"token": sent[-1]}).status_code == 200

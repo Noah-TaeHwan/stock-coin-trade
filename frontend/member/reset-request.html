@@ -4,28 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <title>로그인 — Noah Trading Desk</title>
+  <title>비밀번호 찾기 — Noah Trading Desk</title>
   <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
   <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
   <link rel="stylesheet" href="/css/auth.css?v=20260926">
 </head>
-<body data-page="login">
+<body data-page="reset-request">
 <main class="auth-page">
   <a class="auth-logo" href="/index.html">Noah Trading Desk</a>
   <p class="auth-tagline">데이터로 판단하는 투자자를 위한 도구 · 투자 조언이 아닙니다</p>
   <section class="auth-card">
-    <h1 class="auth-title">로그인</h1>
+    <h1 class="auth-title">비밀번호 찾기</h1>
     <p class="auth-message" id="message" hidden></p>
-    <p class="auth-sub">이메일과 비밀번호를 입력해 주세요.</p>
+    <p class="auth-sub">가입한 이메일로 재설정 링크를 보냅니다.</p>
     <form id="form" novalidate>
       <div class="auth-field"><label class="auth-label" for="email">이메일</label>
         <input class="dark-input" id="email" type="email" autocomplete="email" required></div>
-      <div class="auth-field"><label class="auth-label" for="password">비밀번호</label>
-        <input class="dark-input" id="password" type="password" autocomplete="current-password" required></div>
-      <button class="btn-gold auth-submit" id="submit" type="submit">로그인</button>
+      <button class="btn-gold auth-submit" id="submit" type="submit">재설정 메일 받기</button>
     </form>
-    <p class="auth-links"><a href="/member/reset-request.html">비밀번호 찾기</a> · <a href="/member/verify.html">인증 메일 다시 받기</a> · <a href="/member/register.html">가입</a></p>
-    <p class="auth-links"><a href="/privacy.html"><strong>개인정보 처리방침</strong></a></p>
+    <p class="auth-links"><a href="/member/login.html">로그인</a></p>
   </section>
 </main>
 <script src="/js/config.js"></script>

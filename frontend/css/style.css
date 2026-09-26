@@ -357,6 +357,8 @@ body.app-shell-layout > footer:not(#site-footer) { padding: 6px clamp(8px, 1vw, 
 .term-status-row > span { display: inline-flex; align-items: center; gap: 5px; }
 .term-status-row b { color: var(--fg-2); font-weight: 700; }
 .term-status-row .term-status-brand { margin-left: auto; color: var(--accent); font-weight: 800; }
+/* 개인정보 처리방침은 모든 화면에서 다른 링크와 구분되게 보여야 한다(시행령 제31조②). */
+.term-status-row .term-status-privacy { color: var(--fg); text-decoration: underline; }
 .term-status-row .term-status-note { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .term-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--up); box-shadow: 0 0 6px var(--up); }
 .term-dot.off { background: var(--down); box-shadow: 0 0 6px var(--down); }

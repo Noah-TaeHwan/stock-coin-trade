@@ -518,7 +518,7 @@ def register():
                 db.rollback()
                 existing_email = email
     if created_id:
-        mailer.queue("verify", email, member_tokens.issue(created_id, "verify"))
+        mailer.queue("verify", email, lambda: member_tokens.issue(created_id, "verify"))
     elif existing_email:
         mailer.queue("exists", existing_email)
     return jsonify(CHECK_EMAIL), 202

@@ -94,44 +94,47 @@ def send(msg: EmailMessage, config: dict) -> None:
         smtp.send_message(msg, to_addrs=[msg["To"]])
 
 
-def _within_caps(address: str) -> bool:
-    """전역 하루·수신 주소별 상한 안이면 한 통을 센다. limiter가 꺼진 배포(local)는 세지 않는다.
+def _within_caps(strategy, address: str) -> bool:
+    """전역 하루·수신 주소별 상한을 한 통 센다. 저장소의 원자적 증가(hit)만 써서 동시 요청도 상한을 넘지 못한다.
 
+    거절된 요청도 앞선 상한에는 세어질 수 있다(보수적으로 막는 쪽). limiter가 꺼진 배포(local)는 세지 않는다.
+
+    @param strategy Flask-Limiter 저장소 전략(None이면 세지 않음)
     @param address 받는 주소
     @returns 보내도 되면 True
     """
-    if not limiter.enabled:
+    if strategy is None:
         return True
-    strategy = limiter.limiter  # public은 Redis 공유 저장소
     key = hashlib.sha256(address.lower().encode("utf-8")).hexdigest()
     checks = [(GLOBAL_DAILY, ("mail", "all")), *((limit, ("mail", key)) for limit in PER_ADDRESS)]
-    if not all(strategy.test(limit, *keys) for limit, keys in checks):
-        return False
-    for limit, keys in checks:
-        strategy.hit(limit, *keys)
-    return True
+    return all(strategy.hit(limit, *keys) for limit, keys in checks)
 
 
-def queue(kind: str, to_addr: str, token: str | None = None) -> None:
+def queue(kind: str, to_addr: str, token=None) -> None:
     """메일을 백그라운드로 보낸다. 메일 미설정·잘못된 주소·상한 초과면 조용히 건너뛴다.
+
+    상한 확인과 토큰 발급은 스레드에서 한다. 상한에 걸리면 토큰을 새로 발급하지 않아 이미 보낸 링크가 살아 있고,
+    요청 처리 시간은 주소가 있든 없든 비슷하다.
 
     @param kind "verify"·"exists"·"reset"
     @param to_addr 받는 주소
-    @param token 링크 토큰
+    @param token 링크 토큰 문자열, 또는 상한을 통과한 뒤 부를 발급 함수(인자 없음)
     """
     config = current_app.config
     if not config.get("SMTP_HOST") or not valid_address(to_addr):
         return
     rid = request_id()
-    if not _within_caps(to_addr):
-        log.warning("mail cap reached request_id=%s kind=%s", rid, kind)
-        return
-    msg = build(kind, to_addr, token, sender=config["SMTP_FROM"], base_url=config["PUBLIC_BASE_URL"])
+    strategy = limiter.limiter if limiter.enabled else None  # public은 Redis 공유 저장소
+    sender, base_url = config["SMTP_FROM"], config["PUBLIC_BASE_URL"]
     snapshot = {key: config[key] for key in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_STARTTLS")}
 
     def run() -> None:
         try:
-            send(msg, snapshot)
+            if not _within_caps(strategy, to_addr):
+                log.warning("mail cap reached request_id=%s kind=%s", rid, kind)
+                return
+            value = token() if callable(token) else token
+            send(build(kind, to_addr, value, sender=sender, base_url=base_url), snapshot)
         except Exception as exc:  # noqa: BLE001 - 발송 실패는 요청에 드러내지 않는다
             log.warning("mail send failed request_id=%s kind=%s error=%s", rid, kind, type(exc).__name__)
 

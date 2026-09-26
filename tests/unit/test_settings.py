@@ -258,3 +258,9 @@ def test_smtp_password_is_kept_out_of_the_settings_repr():
         }
     )
     assert "smtp-secret-value" not in repr(settings)
+
+
+def test_public_mail_links_must_use_https_even_while_signup_is_closed():
+    mail = {**PUBLIC_OK, "SMTP_HOST": "smtp.example.test", "SMTP_FROM": "no-reply@example.test"}
+    with pytest.raises(SettingsError, match="https"):
+        Settings.from_env({**mail, "PUBLIC_BASE_URL": "http://desk.example.test"})

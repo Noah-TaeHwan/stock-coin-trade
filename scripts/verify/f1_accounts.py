@@ -1,4 +1,4 @@
-"""F1 회원 주행: 가입 → 메일 인증 → 로그인·로그아웃(복사 쿠키 거부)·모든 기기 로그아웃 → 메일 재설정 → 비밀번호 변경.
+"""F1 회원 주행: 가입 → 메일 인증 → 로그인·로그아웃(복사 쿠키 거부)·모든 기기 로그아웃 → 메일 재설정 → 비밀번호 변경 → 탈퇴·DB 스캔.
 
 검증 스택은 Mailpit이 있어 메일 인증 모드다. 메일 링크는 common.mail_link로 읽고, 토큰은 증거에 남기지 않는다.
 사용법: python3 scripts/verify/f1_accounts.py (먼저 scripts/verify/stack.sh up·doctor)
@@ -122,6 +122,26 @@ def steps(client: common.Client, rec: common.Recorder) -> None:
     rows = common.mariadb_scalar(f"SELECT COUNT(*) FROM member WHERE email = '{email}'")
     rec.add("db-member-rows", {"email": email}, 0, {"rows": rows})
     assert rows == "1", f"member 행 기대 1, 실제 {rows}"
+
+    # 탈퇴: 비밀번호 확인 뒤 member_id를 가진 모든 표에서 0행이어야 한다(information_schema로 표를 찾는다).
+    member_id = common.mariadb_scalar(f"SELECT member_id FROM member WHERE email = '{email}'")
+    status, body = client.call("POST", "/api/member/delete", {"password": "wrong-password-value"})
+    rec.add("delete-wrong-password", {"password": "wrong-password-value"}, status, body)
+    assert status == 400, f"틀린 비밀번호 탈퇴 기대 400, 실제 {status}/{body}"
+    status, body = client.call("POST", "/api/member/delete", {"password": changed_password})
+    rec.add("delete", {"password": changed_password}, status, body)
+    assert status == 200 and body.get("success") is True, f"탈퇴 기대 200, 실제 {status}/{body}"
+    status, body = client.call("GET", "/api/member/me")
+    rec.add("me-after-delete", {}, status, body)
+    assert body.get("loggedIn") is False, f"탈퇴 뒤 loggedIn 기대 False, 실제 {body}"
+    tables = common.mariadb_scalar("SELECT GROUP_CONCAT(TABLE_NAME) FROM information_schema.COLUMNS "
+                                   "WHERE TABLE_SCHEMA = 'mockinv' AND COLUMN_NAME = 'member_id'").split(",")
+    left = {table: common.mariadb_scalar(f"SELECT COUNT(*) FROM {table} WHERE member_id = {int(member_id)}")
+            for table in tables}
+    nonzero = {table: count for table, count in left.items() if count != "0"}
+    # 표 이름에 token이 들어가면 증거 가림에 걸리므로, 검사한 표 수와 0이 아닌 표만 남긴다.
+    rec.add("db-scan-after-delete", {"member_id": member_id}, 0, {"tables_checked": len(left), "nonzero": nonzero})
+    assert not nonzero, f"탈퇴 뒤 남은 행: {nonzero}"
 
 
 if __name__ == "__main__":

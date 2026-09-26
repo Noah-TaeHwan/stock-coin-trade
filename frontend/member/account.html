@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>계정 설정 — Noah Trading Desk</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
+  <link rel="stylesheet" href="/css/auth.css?v=20260926">
+</head>
+<body data-page="account">
+<main class="auth-page">
+  <a class="auth-logo" href="/index.html">Noah Trading Desk</a>
+  <p class="auth-tagline">데이터로 판단하는 투자자를 위한 도구 · 투자 조언이 아닙니다</p>
+  <section class="auth-card wide">
+    <h1 class="auth-title">계정 설정</h1>
+    <p class="auth-message" id="message" hidden></p>
+    <p class="auth-sub"><span id="who"></span> 님의 계정</p>
+    <form id="change" novalidate>
+      <h2 class="auth-title">비밀번호 변경</h2>
+      <p class="auth-hint">바꾸면 다른 기기는 로그아웃되고 Open API 키는 모두 꺼집니다. 필요하면 키를 다시 만드세요.</p>
+      <div class="auth-field"><label class="auth-label" for="current">현재 비밀번호</label>
+        <input class="dark-input" id="current" type="password" autocomplete="current-password" required></div>
+      <div class="auth-field"><label class="auth-label" for="password">새 비밀번호</label>
+        <input class="dark-input" id="password" type="password" autocomplete="new-password" minlength="15" required></div>
+      <div class="auth-field"><label class="auth-label" for="password2">새 비밀번호 확인</label>
+        <input class="dark-input" id="password2" type="password" autocomplete="new-password" required></div>
+      <button class="btn-gold auth-submit" type="submit">비밀번호 바꾸기</button>
+    </form>
+    <form id="everywhere" class="auth-section" novalidate>
+      <h2>모든 기기에서 로그아웃</h2>
+      <p class="auth-hint">이 기기를 포함해 로그인된 모든 곳에서 로그아웃합니다.</p>
+      <button class="btn-gold auth-submit" type="submit">모든 기기 로그아웃</button>
+    </form>
+    <form id="remove" class="auth-section" novalidate>
+      <h2>탈퇴</h2>
+      <p class="auth-hint">계정과 모의투자 기록·메모·API 키가 즉시 지워지고 되돌릴 수 없습니다. 백업본에서는 최대 35일 뒤, 회원과의 연결을 끊은 오류 기록은 90일 뒤 사라집니다.</p>
+      <div class="auth-field"><label class="auth-label" for="deletePassword">현재 비밀번호</label>
+        <input class="dark-input" id="deletePassword" type="password" autocomplete="current-password" required></div>
+      <label class="auth-check"><input type="checkbox" id="confirmDelete"> 모든 기록이 지워지는 것을 이해했습니다.</label>
+      <button class="btn-gold auth-submit auth-danger" type="submit">탈퇴하기</button>
+    </form>
+  </section>
+</main>
+<script src="/js/config.js"></script>
+<script src="/js/auth-pages.js?v=20260926"></script>
+</body>
+</html>
