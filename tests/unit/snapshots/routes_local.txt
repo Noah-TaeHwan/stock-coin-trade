@@ -118,6 +118,7 @@ POST /api/kis-real/balance kis_real.balance
 POST /api/member/api-keys api_keys.create_key
 POST /api/member/login member.login
 POST /api/member/logout member.logout
+POST /api/member/logout-all member.logout_all
 POST /api/member/register member.register
 POST /api/quant/backtests quant.run_backtest
 POST /api/stocks/account/reset stocks.reset_account

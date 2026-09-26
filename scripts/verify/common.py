@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import copy
 import http.cookiejar
 import json
 import os
@@ -92,7 +93,18 @@ class Client:
     def __init__(self, base: str | None = None):
         """@param base 대상 기본 URL(기본: BASE_URL)"""
         self.base = base or BASE_URL
-        self._opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        self._jar = http.cookiejar.CookieJar()
+        self._opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self._jar))
+
+    def clone(self) -> Client:
+        """같은 쿠키를 가진 새 클라이언트(복사된 쿠키 재사용 시험용).
+
+        @returns 쿠키를 복사한 새 Client
+        """
+        twin = Client(self.base)
+        for cookie in self._jar:
+            twin._jar.set_cookie(copy.copy(cookie))
+        return twin
 
     def call(self, method: str, path: str, body: dict | None = None) -> tuple[int, Any]:
         """요청을 보내고 (상태, JSON 본문)을 돌려준다. @param method HTTP 메서드 @param path 경로 @param body JSON 본문"""

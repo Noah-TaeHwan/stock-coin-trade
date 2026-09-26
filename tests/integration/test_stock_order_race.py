@@ -64,7 +64,7 @@ def member_id():
         new_id = member.member_id
     yield new_id
     with db.engine.begin() as conn:
-        for table in ("stock_order", "stock_position", "member"):
+        for table in ("stock_order", "stock_position", "member_session", "member"):
             conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": new_id})
 
 

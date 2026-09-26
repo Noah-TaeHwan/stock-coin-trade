@@ -38,7 +38,7 @@ def _delete_member(email):
         member_id = conn.execute(text("SELECT member_id FROM member WHERE email = :e"), {"e": email}).scalar()
         if member_id is None:
             return
-        for table in ("api_key", "system_error_log", "member"):
+        for table in ("api_key", "system_error_log", "member_session", "member"):
             conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": member_id})
 
 

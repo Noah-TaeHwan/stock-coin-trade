@@ -47,6 +47,7 @@ from kis_chart_api import kis_chart_bp  # noqa: E402
 from kis_practice import kis_practice_bp  # noqa: E402
 from kis_real import kis_real_bp  # noqa: E402
 from members import member_bp  # noqa: E402
+import member_sessions  # noqa: E402
 from ohlcv_db import ohlcv_db_bp  # noqa: E402
 from intent import intent_bp  # noqa: E402
 from openapi import open_api_bp  # noqa: E402
@@ -139,6 +140,8 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     got_request_exception.connect(_capture_unhandled_exception, app, weak=False)
     app.before_request(_reject_cross_site_requests)
+    # 교차 사이트 요청을 먼저 거른 뒤, 쿠키 세션이 서버에 살아 있는지 확인한다(로그아웃한 쿠키 재사용 차단).
+    app.before_request(member_sessions.validate)
     app.before_request(_start_api_usage_timer)
     app.after_request(_record_failed_response)
     app.after_request(_add_request_id_header)

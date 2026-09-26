@@ -16,6 +16,7 @@ from accounts import can_sign_in, is_reserved_email
 from authz import admin_email, can_use_kis_account, is_admin_member
 from extensions import limiter
 from security import csrf_token
+import member_sessions
 from stock_market import cached_price
 
 LEVERAGED_ALT_CATEGORIES = {"선물", "옵션", "파생상품"}
@@ -421,11 +422,10 @@ def login():
             or not _check_password(password, member.password)
         ):
             return jsonify({"error": "아이디 또는 비밀번호가 맞지 않습니다."}), 401
+        member_id, username, asset = member.member_id, member.username, member.asset
 
-        session.clear()
-        session["member_id"] = member.member_id
-        session.permanent = True
-        return jsonify({"username": member.username, "asset": member.asset})
+    member_sessions.start(member_id)
+    return jsonify({"username": username, "asset": asset})
 
 
 @member_bp.post("/register")
@@ -467,13 +467,25 @@ def register():
             # 동시에 같은 이메일로 가입한 요청이 먼저 커밋됐다(uq_member_email).
             db.rollback()
             return jsonify({"field": "email", "error": "이미 존재하는 회원입니다."}), 400
-        session.clear()
-        session["member_id"] = member.member_id
-        session.permanent = True
-        return jsonify({"username": username})
+        member_id = member.member_id
+
+    # 회원 행이 커밋된 뒤에 세션을 발급한다(트랜잭션 안에서 넣으면 FK 잠금을 기다린다).
+    member_sessions.start(member_id)
+    return jsonify({"username": username})
 
 
 @member_bp.post("/logout")
 def logout():
+    member_sessions.end()
+    return jsonify({"success": True})
+
+
+@member_bp.post("/logout-all")
+def logout_all():
+    """이 회원의 모든 기기 세션을 끝낸다(현재 기기 포함)."""
+    member_id = session.get("member_id")
+    if not member_id:
+        return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    member_sessions.end_all(member_id)
     session.clear()
     return jsonify({"success": True})

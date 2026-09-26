@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 
 import market_bots
+import member_sessions
 import openapi
 import stock_market
 import stock_trading
@@ -62,6 +63,20 @@ def _fake_session_scope():
     yield mock.Mock()
 
 
+def _live_session_store():
+    """서버 세션 표가 이 쿠키를 살아 있는 세션으로 답하는 가짜 엔진."""
+    now = member_sessions._now()
+    conn = mock.MagicMock()
+    conn.execute.return_value.mappings.return_value.first.return_value = {
+        "member_id": 1,
+        "created_at": now,
+        "last_seen_at": now,
+    }
+    engine = mock.MagicMock()
+    engine.begin.return_value.__enter__.return_value = conn
+    return engine
+
+
 def _public_app():
     settings = Settings(profile="public", secret_key="p" * 40, session_cookie_secure=True)
     app = create_app(settings)
@@ -74,8 +89,9 @@ def test_web_order_route_passes_the_profile_decision(app, profile, expected):
     app = _public_app() if profile == "public" else app
     client = app.test_client()
     with client.session_transaction() as sess:
-        sess["member_id"] = 1
+        sess["member_id"], sess["sid"] = 1, "live-token"
     with (
+        mock.patch.object(member_sessions, "engine", _live_session_store()),
         mock.patch.object(stocks, "session_scope", _fake_session_scope),
         mock.patch.object(stock_trading, "execute_order", return_value={"status": "ok"}) as execute,
     ):

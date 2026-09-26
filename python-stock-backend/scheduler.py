@@ -80,6 +80,9 @@ def build_scheduler(scheduler_cls: type[BaseScheduler] = BackgroundScheduler) ->
     if price_sources.allowed("upbit"):
         scheduler.add_job(sync_upbit_markets, CronTrigger(hour=18, minute=0, timezone="Asia/Seoul"))
     scheduler.add_job(run_bot_trading_round, IntervalTrigger(minutes=10))
+    from member_sessions import purge_expired
+
+    scheduler.add_job(purge_expired, CronTrigger(hour=3, minute=0, timezone="Asia/Seoul"), id="member_session_purge")
     if price_sources.allowed("dart") and Settings.from_env().dart_api_key:
         from dart_radar import collect
 
