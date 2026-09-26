@@ -120,6 +120,8 @@ POST /api/member/login member.login
 POST /api/member/logout member.logout
 POST /api/member/logout-all member.logout_all
 POST /api/member/register member.register
+POST /api/member/verify member_account.verify_email
+POST /api/member/verify/resend member_account.resend_verification
 POST /api/quant/backtests quant.run_backtest
 POST /api/stocks/account/reset stocks.reset_account
 POST /api/stocks/ai/qdrant/add core.ai_qdrant_add

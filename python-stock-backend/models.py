@@ -27,6 +27,11 @@ class Member(Base):
     email = Column(String(255))
     password = Column(String(255))
     asset = Column(BigInteger, nullable=False)
+    # 메일 인증 시각(없으면 인증 전), 가입 시각, 동의한 처리방침 버전과 시각(S1 스펙 ③·④)
+    email_verified_at = Column(DateTime)
+    created_at = Column(DateTime, server_default=func.now())
+    consent_version = Column(String(20))
+    consented_at = Column(DateTime)
 
 
 class UpbitMarket(Base):

@@ -163,17 +163,28 @@ def test_unusable_password_matches_nothing():
 
 @pytest.mark.parametrize("email", ["x@sample-investor.local", "x@SYSTEM-BOT.local"])
 def test_reserved_domains_cannot_register(client, email):
-    body = {"username": "x", "email": email, "password": "pw", "password2": "pw"}
+    body = {"username": "예약", "email": email, "password": "pw", "password2": "pw"}
     response = client.post("/api/member/register", json=body)
     assert response.status_code == 400
     assert response.get_json()["field"] == "email"
 
 
-def test_public_admin_address_cannot_register(public_client):
-    body = {"username": "x", "email": "Owner@Example.com", "password": "pw", "password2": "pw"}
-    response = public_client.post("/api/member/register", json=body)
-    assert response.status_code == 400
-    assert response.get_json()["error"] == "사용할 수 없는 이메일입니다."
+def test_public_admin_address_gets_the_same_answer_as_any_signup(public_client):
+    # public은 메일 인증 모드라 관리자 주소도 다른 가입과 같은 202를 받고, DB에는 닿지 않는다(가입 여부 비노출).
+    password = "quiet river finds the sea"
+    body = {
+        "username": "관리",
+        "email": "Owner@Example.com",
+        "password": password,
+        "password2": password,
+        "agreeAge": True,
+        "agreePrivacy": True,
+    }
+    with mock.patch.object(members, "session_scope") as scope:
+        response = public_client.post("/api/member/register", json=body)
+    assert response.status_code == 202
+    assert response.get_json() == {"status": "check_email"}
+    scope.assert_not_called()
 
 
 def test_create_admin_command_reports_validation_errors(app):
