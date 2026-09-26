@@ -4,6 +4,8 @@ POST /api/intent {"text": "하닉 골든크로스 백테스트"} → 이동할 �
 - 기본 꺼짐(JEV_ENABLED). 꺼져 있거나 월 예산을 넘었거나 Jev가 응답하지 않으면 {"enabled": false}를
   돌려주고, 명령 바는 기존 동작(메뉴 검색 → 주식 검색)으로 돌아간다.
 - Jev에 보내는 것은 명령 문장 한 줄뿐이다. 계좌·보유 정보는 보내지 않고, 문장은 저장하지 않는다.
+- 문장은 미국(TypeSafe AI, Inc.)으로 가므로(국외 이전, 개인정보 처리방침 4절) 현재 처리방침 버전에
+  동의한 요청만 보낸다. 동의가 없으면 Jev를 부르지 않고 consentRequired로 답한다.
 - 이동과 폼 채우기만 한다. 주문은 하지 않는다.
 """
 
@@ -15,6 +17,7 @@ from functools import lru_cache
 from flask import Blueprint, current_app, jsonify, request
 
 import jev_usage
+from accounts import PRIVACY_VERSION
 from errors import log_exception
 from extensions import limiter
 
@@ -86,6 +89,8 @@ def resolve():
     if not current_app.config.get("JEV_ENABLED"):
         return jsonify({"enabled": False})
     body = request.get_json(silent=True) or {}
+    if body.get("consent") != PRIVACY_VERSION:
+        return jsonify({"enabled": True, "consentRequired": True, "consentVersion": PRIVACY_VERSION})
     raw = body.get("text")
     if not isinstance(raw, str) or not raw.strip():
         return jsonify({"message": "text가 필요합니다."}), 400

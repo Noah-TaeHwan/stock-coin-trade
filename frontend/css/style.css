@@ -271,6 +271,12 @@ body.app-shell-layout > footer:not(#site-footer) { padding: 6px clamp(8px, 1vw, 
     border: 1px solid var(--border-strong); background: var(--surface); box-shadow: var(--shadow-md);
 }
 .term-cmd-help.open { display: block; }
+/* 자연어 명령 국외 이전 동의(common.js renderJevConsent) */
+.term-cmd-help div.term-consent-actions { display: flex; gap: 8px; align-items: center; padding: 6px 10px 8px; }
+.term-consent-btn { font: inherit; font-size: 12px; padding: 3px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); color: var(--fg); cursor: pointer; }
+.term-consent-btn:first-child { border-color: var(--accent); color: var(--accent); }
+.term-consent-actions a { font-size: 12px; color: var(--muted); text-decoration: underline; }
 .term-cmd-help div { display: grid; grid-template-columns: 90px 1fr; gap: 10px; padding: 3px 10px; font-size: 12px; color: var(--fg-2); }
 .term-cmd-help b { color: var(--accent); font-family: var(--font-mono); font-weight: 800; }
 .term-cmd-help div.active, .term-cmd-help div:hover { background: var(--surface-3); }
