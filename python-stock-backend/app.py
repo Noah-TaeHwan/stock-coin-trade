@@ -94,7 +94,7 @@ SOURCE_DEPENDENT_BLUEPRINTS = {
     market_bp: ("upbit",),  # crypto market list and quotes
     trade_bp: ("upbit",),  # crypto paper trading priced from Upbit
     arb_bp: ("upbit", "exchange_quotes"),  # cross-exchange arbitrage view
-    dart_bp: ("dart",),  # DART 공시 레이더(OpenDART 약관 확인 전이라 local만)
+    dart_bp: ("dart",),  # DART 공시 레이더(노아 판정 2026-09-26: 출처·정확성 비보장 고지로 공개)
 }
 
 # Exact origins, not prefixes: flask-cors treats these strings as regular

@@ -2,7 +2,12 @@
 
 import pytest
 
+import settings
 from settings import Settings
+
+# 테스트는 개발자 PC의 .env(실제 키 등)를 읽지 않는다. app.py가 import 때 load_env_file()을 부르므로
+# 그보다 먼저 막는다. CI처럼 .env가 없는 환경과 같은 결과가 나와야 한다.
+settings.load_env_file = lambda: None
 
 # A syntactically valid public-profile secret for tests only.
 TEST_SECRET_KEY = "test-secret-key-0123456789abcdef0123456789"
