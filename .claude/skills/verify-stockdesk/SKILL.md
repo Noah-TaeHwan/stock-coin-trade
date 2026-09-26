@@ -31,15 +31,16 @@ description: stock-coin-trade 앱(Flask + nginx + MariaDB + PostgreSQL)을 전�
 
 ## Drive
 
-`features/README.md`에서 기능을 고르고, 그 파일의 "주행" 절을 따른다.
+`.claude/skills/verify-stockdesk/features/README.md`(저장소 기준 경로, 숨김 폴더라 `rg --files`에 안 잡힌다)에서 기능을 고르고, 그 파일의 "주행" 절을 따른다.
 - API 흐름은 `python3 scripts/verify/f<번호>_*.py`로 증명한다. 종료 코드는 0 통과, 1 실패, 2 전제 불충족이다.
+- 통합 테스트(`stack.sh itest`)는 코드 수준 보조 증거다. HTTP 주행 스크립트를 대신하지 않는다.
 - 화면은 Playwright로 연다. 선택자는 접근성 이름, `id`, `data-*`를 쓰고 좌표는 쓰지 않는다.
 
 ## Evidence
 
 - 스크립트가 `.verify-artifacts/<UTC시각>-<무작위4자>-<기능ID>/transcript.json`을 쓴다. 쿠키, 토큰, 비밀번호, csrf는 `***`로 가린다. 실패 메시지 같은 문장 속의 값도 가린다.
 - 예상 밖 오류(응답 형식이 다름 등)도 판정 FAIL과 함께 증거를 남긴다.
-- 화면 캡처는 같은 폴더에 저장한다.
+- 화면 캡처와 화면에서 읽은 값(Playwright `evaluate` 결과 등)은 같은 폴더에 파일로 저장한다. 도구 결과가 실행 기록에 남지 않으므로, 파일이 없으면 그 화면은 "미검증"으로 보고한다.
 - 보고에는 판정과 이 경로를 쓴다.
 
 ## Cleanup
@@ -64,6 +65,7 @@ description: stock-coin-trade 앱(Flask + nginx + MariaDB + PostgreSQL)을 전�
 | `python3 scripts/verify/f1_accounts.py` | F1 회원 |
 | `common.mail_link(to, path)` | 검증 스택 Mailpit에서 링크 찾기 |
 | `python3 scripts/verify/f2_backtest.py` | F2 백테스트 영수증 |
+| `python3 scripts/verify/f5_disclosures.py` | F5 공시 고지·관심 종목(예시 행을 넣고 지운다) |
 | `scripts/verify/common.py` | 공용 도구(직접 실행하지 않음) |
 
 구조와 형식은 cursor/plugins pstack(MIT)의 create-verification-skill을 참고해 새로 썼다.
