@@ -41,16 +41,16 @@ enabled = { local = true, public = true }
 name = "업비트 시세(Quotation) REST API"
 kind = "api"
 status = "unverified"
-terms_url = ""
+terms_url = "https://www.upbit.com/open_api_agreement"
 checked_on = ""
 checked_by = ""
-commercial_use = "unknown"
-redistribution = "unknown"
+commercial_use = "forbidden"
+redistribution = "forbidden"
 modification = "unknown"
 attribution = "시세 출처: 업비트"
 rate_limit = "candle 그룹 IP당 초당 10회. Remaining-Req 헤더의 sec 값 사용(min은 폐기). 429 후 계속 요청하면 418 차단. Origin 헤더가 있는 요청은 10초당 1회."
 rate_limit_source = "https://docs.upbit.com/kr/docs/rate-limits"
-notes = "약관 페이지가 JS로 렌더링돼 계획 단계에서 자동 확인하지 못했다. 캔들 어댑터는 src/marketdata/sources/upbit.py."
+notes = "Open API 약관 제5조(2024-10-30판)가 무단 복제·배포와 영리목적 이용을 금지한다. 노아 판정 2026-09-26: 공개 서비스에서 제외, 로컬 학습용만(근거 docs/evidence/data-rights-2026-09-26.md). 캔들 어댑터는 src/marketdata/sources/upbit.py."
 enabled = { local = true, public = false }
 
 [sources.krx_openapi]
@@ -108,8 +108,8 @@ commercial_use = "unknown"
 redistribution = "unknown"
 modification = "unknown"
 attribution = "시세 출처: 네이버 금융"
-notes = "python-stock-backend/stock_market.py(yfinance 실패 시 폴백)."
-enabled = { local = true, public = false }
+notes = "노아 판정 2026-09-26: 로컬에서도 끈다. 네이버 약관이 사전 허락 없는 자동화 수집을 금지하고 finance.naver.com robots.txt가 Disallow: /(근거 docs/evidence/data-rights-2026-09-26.md). python-stock-backend/stock_market.py(yfinance 실패 시 폴백)."
+enabled = { local = false, public = false }
 
 [sources.krx_kind]
 name = "KRX KIND·보도자료 페이지"
@@ -122,8 +122,8 @@ commercial_use = "unknown"
 redistribution = "unknown"
 modification = "unknown"
 attribution = "출처: 한국거래소"
-notes = "python-stock-backend/stock_market.py(종목 목록), app.py(보도자료)."
-enabled = { local = true, public = false }
+notes = "노아 판정 2026-09-26: 로컬에서도 끈다. KRX 데이터 웹 약관 제10조②가 자동화 수단의 무단 수집을 금지한다(근거 docs/evidence/data-rights-2026-09-26.md). python-stock-backend/stock_market.py(종목 목록), app.py(보도자료)."
+enabled = { local = false, public = false }
 
 [sources.exchange_quotes]
 name = "국내외 거래소 공개 시세(빗썸·코인원·코빗·바이낸스)"
@@ -174,15 +174,15 @@ enabled = { local = true, public = false }
 [sources.dart]
 name = "금융감독원 OpenDART API"
 kind = "api"
-status = "unverified"
-terms_url = ""
-checked_on = ""
-checked_by = ""
-commercial_use = "unknown"
-redistribution = "unknown"
+status = "verified"
+terms_url = "https://opendart.fss.or.kr/intro/terms.do"
+checked_on = "2026-09-26"
+checked_by = "노아 판정(PM 원문 조사: 근거 docs/evidence/data-rights-2026-09-26.md §5·§8)"
+commercial_use = "allowed"
+redistribution = "conditional"
 modification = "unknown"
 attribution = "공시 출처: 금융감독원 전자공시시스템(DART)"
 rate_limit = "키당 하루 약 20,000건(비공식 수치, 초과 시 오류 020). 과다 호출은 이용 제한 사유."
 rate_limit_source = "https://opendart.fss.or.kr/intro/terms.do"
-notes = "list.json(공시 목록). rcept_dt에는 시각이 없어 처음 본 시각을 따로 기록한다. corp_code 없이 검색하면 기간이 3개월로 제한된다. 계획 단계 조사에서 상업적 이용 금지 조항은 찾지 못했다(미검증)."
+notes = "약관(시행 2020-01-21)에 상업·재배포 제한 조항 없음, data.go.kr 같은 API는 공공누리 1유형(출처표시). 조건: 출처 표시, 인증키 제3자 이용 금지(제19조②), 정확성 비보장 고지(제23조①). 공개는 S3에서 고지를 붙인 뒤 켠다. list.json(공시 목록). rcept_dt에는 시각이 없어 처음 본 시각을 따로 기록한다. corp_code 없이 검색하면 기간이 3개월로 제한된다."
 enabled = { local = true, public = false }
