@@ -34,4 +34,5 @@ src = ["python-stock-backend", "src"]
 # Instructor modules are only held to syntax errors and pyflakes. New code in
 # src/ and tests/ gets a stricter set through a nested ruff.toml that extends
 # this file (tests/ruff.toml).
-select = ["E9", "F"]
+# S113: 외부 HTTP 호출에 timeout 필수(2026-09-26 기준 위반 0건, 새 위반은 CI가 막는다).
+select = ["E9", "F", "S113"]
