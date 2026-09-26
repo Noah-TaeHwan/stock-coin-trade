@@ -1,0 +1,32 @@
+{
+  "G1_innerHTML": {
+    "frontend/index.html": 6,
+    "frontend/js/ai-sheet.js": 4,
+    "frontend/js/alternatives.js": 7,
+    "frontend/js/analysis.js": 42,
+    "frontend/js/api-keys.js": 3,
+    "frontend/js/arbitrage.js": 19,
+    "frontend/js/avg_down.js": 5,
+    "frontend/js/common.js": 27,
+    "frontend/js/error-analysis.js": 3,
+    "frontend/js/events.js": 3,
+    "frontend/js/hold_crypto.js": 18,
+    "frontend/js/kb-chart.js": 3,
+    "frontend/js/kis-api-explorer.js": 8,
+    "frontend/js/kis-chart.js": 7,
+    "frontend/js/kis-order-flow-test.js": 1,
+    "frontend/js/kis-real-trading-practice.js": 9,
+    "frontend/js/order.js": 9,
+    "frontend/js/pine-script-lab.js": 1,
+    "frontend/js/pine.js": 2,
+    "frontend/js/quant-lab.js": 10,
+    "frontend/js/research-agent.js": 7,
+    "frontend/js/stock-broker.js": 4,
+    "frontend/js/stock.js": 18,
+    "frontend/learning/tradingview-pine.html": 1,
+    "frontend/ohlcv-db.html": 2
+  },
+  "G3_float_column": {
+    "python-stock-backend/models.py": 7
+  }
+}

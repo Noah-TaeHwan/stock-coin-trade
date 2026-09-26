@@ -52,7 +52,8 @@ __pycache__/
 
 .venv/
 venv/
-.claude/
+.claude/*
+!.claude/skills/
 
 *.pem
 *.key
@@ -72,3 +73,4 @@ deploy.md
 
 # graphify 코드 그래프(로컬에서 `graphify update .`로 다시 만든다)
 graphify-out/
+.verify-artifacts/
