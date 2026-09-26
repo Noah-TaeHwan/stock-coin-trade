@@ -121,7 +121,7 @@ def test_worker_skips_jobs_and_trades_whose_sources_are_off(monkeypatch):
 
     monkeypatch.setenv("APP_PROFILE", "public")
     names = [job.func.__name__ for job in scheduler.build_scheduler(BackgroundScheduler).get_jobs()]
-    assert names == ["run_bot_trading_round", "purge_expired"]
+    assert names == ["run_bot_trading_round", "purge_expired", "purge_unverified_members", "purge_old_logs"]
     assert market_bots._tradable_asset_classes() == {"STOCK": 3}
     monkeypatch.setenv("APP_PROFILE", "local")
     assert set(market_bots._tradable_asset_classes()) == {"STOCK", "CRYPTO", "ALT"}

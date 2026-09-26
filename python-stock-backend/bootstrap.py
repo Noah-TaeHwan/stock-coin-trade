@@ -22,6 +22,7 @@ from members import INITIAL_ASSET, ensure_member_tables
 import passwords
 from member_sessions import ensure_session_table
 from member_tokens import ensure_token_table
+from member_delete import ensure_deletable
 from models import Member
 from jev_usage import ensure_jev_tables
 from research_agent import ensure_ai_tables
@@ -43,6 +44,7 @@ def create_tables() -> None:
     ensure_stock_order_columns()
     ensure_jev_tables()
     ensure_dart_tables()
+    ensure_deletable()
 
 
 def seed_demo_data() -> None:

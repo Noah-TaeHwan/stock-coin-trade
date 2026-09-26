@@ -369,6 +369,14 @@ CREATE TABLE IF NOT EXISTS `member_session` (
   CONSTRAINT `fk_member_session_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- 로그인한 회원이 활동한 날(KST) 하루 1행(python-stock-backend/member_sessions.py). IP·기기·페이지는 남기지 않는다.
+CREATE TABLE IF NOT EXISTS `member_activity_day` (
+  `member_id` bigint(20) NOT NULL,
+  `day` date NOT NULL,
+  PRIMARY KEY (`member_id`,`day`),
+  CONSTRAINT `fk_member_activity_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- 메일 인증·비밀번호 재설정 1회용 토큰(python-stock-backend/member_tokens.py가 같은 DDL로 만든다). SHA-256만 둔다.
 -- 인증 24시간·재설정 30분, 새로 발급하면 같은 목적의 이전 토큰을 지운다. 시각은 UTC.
 CREATE TABLE IF NOT EXISTS `member_token` (

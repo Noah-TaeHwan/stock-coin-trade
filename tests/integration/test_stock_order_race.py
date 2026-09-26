@@ -17,11 +17,11 @@ import uuid
 from unittest import mock
 
 import pytest
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 import bootstrap
 import db
+import member_delete
 import stock_market
 import stock_trading
 from models import Member, StockOrder, StockPosition
@@ -63,9 +63,7 @@ def member_id():
         s.flush()
         new_id = member.member_id
     yield new_id
-    with db.engine.begin() as conn:
-        for table in ("stock_order", "stock_position", "member_session", "member"):
-            conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": new_id})
+    member_delete.delete_member(new_id)
 
 
 def _seed_position(member_id, quantity):

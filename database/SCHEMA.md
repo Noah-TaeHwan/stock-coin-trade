@@ -24,6 +24,7 @@ member (1)
  ├──< api_key              이 웹앱 Open API용 해시된 키
  ├──< member_session       로그인 세션(토큰 해시만)
  ├──< member_token         메일 인증·재설정 1회용 토큰(해시만)
+ ├──< member_activity_day  로그인한 날(KST) 하루 1행, IP·기기 없음
  ├──< api_usage_log        외부 API 테스트 호출·결과 이력 (선택 관계)
  └──< system_error_log     서버·브라우저 오류 분석 로그 (선택 관계)
 
@@ -60,6 +61,19 @@ dart_disclosures           DART 공시 목록과 교육용 유형·위험 판정
 | `token_hash` | 토큰의 SHA-256(기본 키). 원본은 메일 링크의 프래그먼트(`#t=`)에만 있다 |
 | `member_id`, `purpose` | 회원과 목적(`verify` 24시간, `reset` 30분) |
 | `expires_at`, `used_at` | 만료·사용 시각(UTC). 사용은 `used_at IS NULL AND expires_at > now`인 행 하나를 원자적으로 바꿀 때만 성공한다 |
+
+### 활동일·보관 기간
+
+- `member_activity_day(member_id, day)`: 로그인하거나 1시간 넘게 지나 다시 요청한 날(KST)을 하루 한 줄만 남긴다. IP·기기·페이지 정보는 없다. 주간 활성·잔존 집계용이다.
+- worker(`retention.py`): 매일 03:10 KST에 가입 흐름(동의 기록 있음)으로 만든 뒤 7일 안에 인증하지 않은 계정을 탈퇴 경로로 지우고, 03:20 KST에 90일 지난 `system_error_log`·`api_usage_log`를 지운다.
+
+### 탈퇴 (`member_delete.py`)
+
+`POST /api/member/delete`(현재 비밀번호 확인)는 한 트랜잭션으로 처리한다.
+
+- 지우는 표: `DELETE_TABLES`(모의투자 주문·보유·메모·API 키·세션·토큰·활동일 등).
+- 연결만 끊는 표: `system_error_log`, `api_usage_log`, `ai_usage`의 `member_id`를 NULL로 바꾼다. `ai_usage`는 월 AI 예산 합계를 지키려고 남기므로 `member_id`가 NULL을 허용한다(`ensure_deletable`). `ai_invite`는 연결을 끊고 폐기 처리한다.
+- `member_id` 열을 가진 새 표를 만들면 삭제 목록에 넣어야 한다. 넣지 않으면 `tests/integration/test_member_delete.py`가 `information_schema`를 훑어 실패한다.
 
 ### 로그인 세션 (`member_session`)
 

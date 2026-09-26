@@ -116,6 +116,7 @@ POST /api/kis-explorer/call kis_explorer.call
 POST /api/kis-practice/orders kis_practice.order
 POST /api/kis-real/balance kis_real.balance
 POST /api/member/api-keys api_keys.create_key
+POST /api/member/delete member_account.delete_account
 POST /api/member/login member.login
 POST /api/member/logout member.logout
 POST /api/member/logout-all member.logout_all

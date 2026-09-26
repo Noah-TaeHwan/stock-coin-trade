@@ -13,6 +13,7 @@ from sqlalchemy import text
 
 import bootstrap
 import db
+import member_delete
 from app import create_app
 from deskmcp.client import DeskAPI
 from deskmcp.server import build_server
@@ -85,16 +86,7 @@ def desk():
     yield api
     with db.engine.begin() as conn:
         member_id = conn.execute(text("SELECT member_id FROM member WHERE email = :e"), {"e": email}).scalar()
-        for table in (
-            "stock_order",
-            "stock_position",
-            "api_key",
-            "system_error_log",
-            "member_session",
-            "member_token",
-            "member",
-        ):
-            conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": member_id})
+        member_delete.delete_member(member_id)
 
 
 @pytest.mark.anyio

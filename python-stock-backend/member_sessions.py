@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from flask import session
 from sqlalchemy import text
@@ -30,6 +31,14 @@ SESSION_TABLE = """CREATE TABLE IF NOT EXISTS member_session (
   CONSTRAINT fk_member_session_member FOREIGN KEY (member_id) REFERENCES member (member_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci"""
 
+# 로그인한 회원이 활동한 날(KST)만 하루 1행. IP·기기·페이지는 남기지 않는다(스펙 ④ 측정).
+ACTIVITY_TABLE = """CREATE TABLE IF NOT EXISTS member_activity_day (
+  member_id BIGINT(20) NOT NULL,
+  day DATE NOT NULL,
+  PRIMARY KEY (member_id, day),
+  CONSTRAINT fk_member_activity_member FOREIGN KEY (member_id) REFERENCES member (member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci"""
+
 
 def token_hash(token: str) -> str:
     """세션 토큰의 SHA-256 16진수.
@@ -49,9 +58,23 @@ def _now() -> datetime:
 
 
 def ensure_session_table() -> None:
-    """member_session 표를 만든다(멱등)."""
+    """세션·활동일 표를 만든다(멱등)."""
     with engine.begin() as conn:
         conn.execute(text(SESSION_TABLE))
+        conn.execute(text(ACTIVITY_TABLE))
+
+
+KST = ZoneInfo("Asia/Seoul")
+
+
+def _record_activity(conn, member_id: int) -> None:
+    """오늘(KST) 활동을 한 번만 기록한다.
+
+    @param conn 트랜잭션 중인 연결
+    @param member_id 회원 ID
+    """
+    conn.execute(text("INSERT IGNORE INTO member_activity_day (member_id, day) VALUES (:m, :d)"),
+                 {"m": member_id, "d": datetime.now(KST).date()})
 
 
 def start(member_id: int) -> None:
@@ -69,6 +92,7 @@ def start(member_id: int) -> None:
             ),
             {"h": token_hash(token), "m": member_id, "now": now},
         )
+        _record_activity(conn, member_id)
     session["member_id"], session["sid"], session.permanent = member_id, token, True
 
 
@@ -101,6 +125,7 @@ def validate() -> None:
                     text("UPDATE member_session SET last_seen_at = :now WHERE token_hash = :h"),
                     {"now": now, "h": digest},
                 )
+                _record_activity(conn, member_id)
     except SQLAlchemyError:
         session.clear()
 
