@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from flask import session
 from sqlalchemy import text
@@ -63,6 +64,19 @@ def ensure_session_table() -> None:
         conn.execute(text(ACTIVITY_TABLE))
 
 
+KST = ZoneInfo("Asia/Seoul")
+
+
+def _record_activity(conn, member_id: int) -> None:
+    """오늘(KST) 활동을 한 번만 기록한다.
+
+    @param conn 트랜잭션 중인 연결
+    @param member_id 회원 ID
+    """
+    conn.execute(text("INSERT IGNORE INTO member_activity_day (member_id, day) VALUES (:m, :d)"),
+                 {"m": member_id, "d": datetime.now(KST).date()})
+
+
 def start(member_id: int) -> None:
     """세션 고정을 막고 새 서버 세션을 발급한다. 회원 행이 커밋된 뒤에 부른다.
 
@@ -78,6 +92,7 @@ def start(member_id: int) -> None:
             ),
             {"h": token_hash(token), "m": member_id, "now": now},
         )
+        _record_activity(conn, member_id)
     session["member_id"], session["sid"], session.permanent = member_id, token, True
 
 
@@ -110,6 +125,7 @@ def validate() -> None:
                     text("UPDATE member_session SET last_seen_at = :now WHERE token_hash = :h"),
                     {"now": now, "h": digest},
                 )
+                _record_activity(conn, member_id)
     except SQLAlchemyError:
         session.clear()
 

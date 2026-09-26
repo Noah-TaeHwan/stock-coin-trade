@@ -83,6 +83,13 @@ def build_scheduler(scheduler_cls: type[BaseScheduler] = BackgroundScheduler) ->
     from member_sessions import purge_expired
 
     scheduler.add_job(purge_expired, CronTrigger(hour=3, minute=0, timezone="Asia/Seoul"), id="member_session_purge")
+    from retention import purge_old_logs, purge_unverified_members
+
+    # 7일 안에 메일 인증을 마치지 않은 가입과 90일 지난 로그를 지운다(개인정보 처리방침의 보관 기간).
+    scheduler.add_job(
+        purge_unverified_members, CronTrigger(hour=3, minute=10, timezone="Asia/Seoul"), id="member_unverified_purge"
+    )
+    scheduler.add_job(purge_old_logs, CronTrigger(hour=3, minute=20, timezone="Asia/Seoul"), id="log_retention")
     if price_sources.allowed("dart") and Settings.from_env().dart_api_key:
         from dart_radar import collect
 

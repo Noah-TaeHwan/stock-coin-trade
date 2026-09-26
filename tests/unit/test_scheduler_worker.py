@@ -23,6 +23,8 @@ def test_build_scheduler_registers_the_recurring_jobs_without_starting():
             "sync_upbit_markets",
             "run_bot_trading_round",
             "purge_expired",
+            "purge_unverified_members",
+            "purge_old_logs",
         }
 
         cmc = jobs["sync_coinmarketcap_rankings"].trigger
@@ -41,6 +43,11 @@ def test_build_scheduler_registers_the_recurring_jobs_without_starting():
         purge = jobs["purge_expired"].trigger
         assert isinstance(purge, CronTrigger) and str(purge.timezone) == "Asia/Seoul"
         assert str(purge.fields[purge.FIELD_NAMES.index("hour")]) == "3"
+        for name, minute in (("purge_unverified_members", "10"), ("purge_old_logs", "20")):
+            trigger = jobs[name].trigger
+            assert isinstance(trigger, CronTrigger) and str(trigger.timezone) == "Asia/Seoul"
+            assert str(trigger.fields[trigger.FIELD_NAMES.index("hour")]) == "3"
+            assert str(trigger.fields[trigger.FIELD_NAMES.index("minute")]) == minute
     finally:
         if sched.running:
             sched.shutdown(wait=False)
@@ -57,7 +64,16 @@ def test_worker_runs_the_same_jobs_in_a_blocking_scheduler():
 
         worker.main()
 
-    assert started == [["purge_expired", "run_bot_trading_round", "sync_coinmarketcap_rankings", "sync_upbit_markets"]]
+    assert started == [
+        [
+            "purge_expired",
+            "purge_old_logs",
+            "purge_unverified_members",
+            "run_bot_trading_round",
+            "sync_coinmarketcap_rankings",
+            "sync_upbit_markets",
+        ]
+    ]
 
 
 def test_dart_radar_jobs_need_the_source_and_a_key(monkeypatch):
