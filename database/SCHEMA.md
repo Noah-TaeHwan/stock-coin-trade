@@ -22,6 +22,7 @@ member (1)
  ├──< alternative_order    파생·금속·부동산 주문 이력
  ├──< hts_watch_memo       관심종목 개인 메모(주식 화면 메모 탭, 옛 HTS 화면에서 이어 씀)
  ├──< api_key              이 웹앱 Open API용 해시된 키
+ ├──< member_session       로그인 세션(토큰 해시만)
  ├──< api_usage_log        외부 API 테스트 호출·결과 이력 (선택 관계)
  └──< system_error_log     서버·브라우저 오류 분석 로그 (선택 관계)
 
@@ -42,6 +43,19 @@ dart_disclosures           DART 공시 목록과 교육용 유형·위험 판정
 | `request_meta` | 민감값을 제외한 입력값(예: 종목코드) |
 | `http_status`, `success`, `duration_ms` | HTTP 결과, 성공 여부, 서버 처리시간 |
 | `result_summary`, `response_body` | 마스킹·길이 제한을 적용한 결과 요약과 응답 상세 |
+
+### 로그인 세션 (`member_session`)
+
+쿠키(Flask 서명 쿠키)에는 `member_id`와 무작위 토큰 `sid`가 있고, 요청마다 이 표로 확인한다(`python-stock-backend/member_sessions.py`). 표에 없거나 만료됐으면 로그아웃 상태가 되며, DB 조회가 실패해도 로그아웃으로 처리한다.
+
+| 필드 | 설명 |
+| --- | --- |
+| `token_hash` | 토큰의 SHA-256(기본 키). 원본 토큰은 저장하지 않는다 |
+| `member_id` | 회원 |
+| `created_at`, `last_seen_at` | 발급·마지막 사용 시각(UTC). 마지막 사용은 1시간에 한 번만 갱신한다 |
+
+- 마지막 사용 뒤 7일 또는 발급 뒤 30일이 지나면 만료. worker가 매일 03:00 KST에 만료 행을 지운다.
+- 로그아웃은 그 행만, 모든 기기 로그아웃은 회원의 모든 행을 지운다.
 
 ### DART 공시 레이더 (`dart_disclosures`)
 

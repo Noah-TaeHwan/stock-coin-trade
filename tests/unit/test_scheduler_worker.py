@@ -13,12 +13,17 @@ def _jobs_by_function(sched):
     return {job.func.__name__: job for job in sched.get_jobs()}
 
 
-def test_build_scheduler_registers_the_three_jobs_without_starting():
+def test_build_scheduler_registers_the_recurring_jobs_without_starting():
     sched = scheduler.build_scheduler(BackgroundScheduler)
     try:
         assert not sched.running
         jobs = _jobs_by_function(sched)
-        assert set(jobs) == {"sync_coinmarketcap_rankings", "sync_upbit_markets", "run_bot_trading_round"}
+        assert set(jobs) == {
+            "sync_coinmarketcap_rankings",
+            "sync_upbit_markets",
+            "run_bot_trading_round",
+            "purge_expired",
+        }
 
         cmc = jobs["sync_coinmarketcap_rankings"].trigger
         assert isinstance(cmc, CronTrigger)
@@ -32,6 +37,10 @@ def test_build_scheduler_registers_the_three_jobs_without_starting():
         bots = jobs["run_bot_trading_round"].trigger
         assert isinstance(bots, IntervalTrigger)
         assert bots.interval == timedelta(minutes=10)
+
+        purge = jobs["purge_expired"].trigger
+        assert isinstance(purge, CronTrigger) and str(purge.timezone) == "Asia/Seoul"
+        assert str(purge.fields[purge.FIELD_NAMES.index("hour")]) == "3"
     finally:
         if sched.running:
             sched.shutdown(wait=False)
@@ -48,7 +57,7 @@ def test_worker_runs_the_same_jobs_in_a_blocking_scheduler():
 
         worker.main()
 
-    assert started == [["run_bot_trading_round", "sync_coinmarketcap_rankings", "sync_upbit_markets"]]
+    assert started == [["purge_expired", "run_bot_trading_round", "sync_coinmarketcap_rankings", "sync_upbit_markets"]]
 
 
 def test_dart_radar_jobs_need_the_source_and_a_key(monkeypatch):

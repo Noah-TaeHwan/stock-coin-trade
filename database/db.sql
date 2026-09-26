@@ -353,6 +353,18 @@ CREATE TABLE IF NOT EXISTS `dart_disclosures` (
   KEY `idx_dart_stock` (`stock_code`,`rcept_dt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- 서버 세션(python-stock-backend/member_sessions.py가 같은 DDL로 만든다). 원본 토큰은 쿠키에만 있고 여기엔 SHA-256만 둔다.
+-- 마지막 사용 7일·발급 30일이 지나면 만료, worker가 매일 03:00 KST에 지운다. 시각은 UTC.
+CREATE TABLE IF NOT EXISTS `member_session` (
+  `token_hash` char(64) NOT NULL,
+  `member_id` bigint(20) NOT NULL,
+  `created_at` datetime NOT NULL COMMENT 'UTC',
+  `last_seen_at` datetime NOT NULL COMMENT 'UTC',
+  PRIMARY KEY (`token_hash`),
+  KEY `idx_member_session_member` (`member_id`),
+  CONSTRAINT `fk_member_session_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -75,7 +75,7 @@ def desk():
     yield api
     with db.engine.begin() as conn:
         member_id = conn.execute(text("SELECT member_id FROM member WHERE email = :e"), {"e": email}).scalar()
-        for table in ("stock_order", "stock_position", "api_key", "system_error_log", "member"):
+        for table in ("stock_order", "stock_position", "api_key", "system_error_log", "member_session", "member"):
             conn.execute(text(f"DELETE FROM {table} WHERE member_id = :id"), {"id": member_id})
 
 

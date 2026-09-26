@@ -19,6 +19,7 @@ from kis_practice import ensure_kis_practice_tables
 from market_bots import ensure_bot_accounts
 from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
+from member_sessions import ensure_session_table
 from models import Member
 from jev_usage import ensure_jev_tables
 from research_agent import ensure_ai_tables
@@ -30,6 +31,7 @@ def create_tables() -> None:
     """Create the MariaDB tables the instructor modules manage themselves."""
     ensure_alternative_tables()
     ensure_member_tables()
+    ensure_session_table()
     ensure_kis_practice_tables()
     ensure_crypto_tables()
     ensure_error_analysis_table()

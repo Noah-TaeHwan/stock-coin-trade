@@ -1,4 +1,4 @@
-"""F1 회원 주행: 가입 → /me → 로그아웃 → /me → 로그인 → /me, DB에 회원 행 1개.
+"""F1 회원 주행: 가입 → /me → 로그아웃(복사한 쿠키도 거부) → /me → 로그인 → /me → 모든 기기 로그아웃, DB에 회원 행 1개.
 
 사용법: python3 scripts/verify/f1_accounts.py (먼저 scripts/verify/stack.sh up·doctor)
 """
@@ -29,9 +29,14 @@ def steps(client: common.Client, rec: common.Recorder) -> None:
     rec.add("me-after-register", {}, status, body)
     assert body.get("loggedIn") is True, f"가입 뒤 loggedIn 기대 True, 실제 {body}"
 
+    stolen = client.clone()
     status, body = client.call("POST", "/api/member/logout")
     rec.add("logout", {}, status, body)
     assert status == 200 and body.get("success") is True, f"로그아웃 기대 200/True, 실제 {status}/{body}"
+
+    status, body = stolen.call("GET", "/api/member/me")
+    rec.add("me-with-copied-cookie", {}, status, body)
+    assert body.get("loggedIn") is False, f"로그아웃 전에 복사한 쿠키는 거부돼야 함, 실제 {body}"
 
     status, body = client.call("GET", "/api/member/me")
     rec.add("me-after-logout", {}, status, body)
@@ -44,6 +49,17 @@ def steps(client: common.Client, rec: common.Recorder) -> None:
     status, body = client.call("GET", "/api/member/me")
     rec.add("me-after-login", {}, status, body)
     assert body.get("loggedIn") is True, f"로그인 뒤 loggedIn 기대 True, 실제 {body}"
+
+    other = common.Client(client.base)
+    status, body = other.call("POST", "/api/member/login", {"email": email, "password": password})
+    rec.add("login-second-device", {"email": email, "password": password}, status, body)
+    assert status == 200, f"두 번째 기기 로그인 기대 200, 실제 {status}/{body}"
+    status, body = client.call("POST", "/api/member/logout-all")
+    rec.add("logout-all", {}, status, body)
+    assert status == 200 and body.get("success") is True, f"모든 기기 로그아웃 기대 200/True, 실제 {status}/{body}"
+    status, body = other.call("GET", "/api/member/me")
+    rec.add("me-other-device-after-logout-all", {}, status, body)
+    assert body.get("loggedIn") is False, f"모든 기기 로그아웃 뒤 다른 기기 loggedIn 기대 False, 실제 {body}"
 
     rows = common.mariadb_scalar(f"SELECT COUNT(*) FROM member WHERE email = '{email}'")
     rec.add("db-member-rows", {"email": email}, 0, {"rows": rows})
