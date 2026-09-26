@@ -240,6 +240,26 @@ function walletText(state, verb) {
   return '확인 필요';
 }
 
+/**
+ * 빗썸 위험 공지 한 건을 경고 줄 HTML로 만든다. 제목·링크는 이스케이프하고, 링크는 빗썸 공지 도메인만 허용한다.
+ * @param {object} n matrix 응답의 notices 항목({title, url, kind, coins, probability, by})
+ * @returns {string} 경고 줄 HTML
+ */
+function noticeWarnHtml(n) {
+  let link = '';
+  try {
+    const url = new URL(n.url);
+    if (url.origin === 'https://feed.bithumb.com') {
+      link = ` <a href="${esc(url.href)}" target="_blank" rel="noopener noreferrer" style="color:var(--info);">원문</a>`;
+    }
+  } catch { /* 링크가 없거나 형식이 틀리면 제목만 보인다 */ }
+  const how = n.by === 'jev' && typeof n.probability === 'number'
+    ? `모델 판단 확률 ${Math.round(n.probability * 100)}%`
+    : '제목 규칙 판정';
+  const target = n.coins === 'UNKNOWN' ? ' · 대상 코인 불명' : '';
+  return `빗썸 공지: ${esc(n.title)} — 확인 필요 (${how}${target})${link}`;
+}
+
 function renderSimulator() {
   const m = arb.matrix;
   if (!m) return;
@@ -291,9 +311,15 @@ function renderSimulator() {
   const w = `${exName(buyEl.value)} ${walletText(m.wallet[buyEl.value]?.withdraw, '출금')} / ${exName(sellEl.value)} ${walletText(m.wallet[sellEl.value]?.deposit, '입금')}`;
   set('outWallet', w);
   if (m.wallet[buyEl.value]?.withdraw === 'closed' || m.wallet[sellEl.value]?.deposit === 'closed') warn.push('입출금이 중단된 거래소가 포함돼 있어 실제로는 옮길 수 없습니다.');
+  // 빗썸 공지는 빗썸이 매수·매도 쪽에 있을 때만 띄운다. 외부 거래소 대상 주의는 그 거래소가 경로에 있을 때만.
+  const route = [buyEl.value, sellEl.value];
+  const notices = route.includes('BITHUMB')
+    ? (m.notices || []).filter(n => n.kind !== 'external' || route.includes(n.exchange))
+    : [];
+  const lines = [...warn.map(esc), ...notices.map(noticeWarnHtml)];
   const warnEl = document.getElementById('simWarn');
-  warnEl.innerHTML = warn.map(esc).join('<br>');
-  warnEl.classList.toggle('show', warn.length > 0);
+  warnEl.innerHTML = lines.join('<br>');
+  warnEl.classList.toggle('show', lines.length > 0);
 }
 
 /* ── 김프 추이 차트 ─────────────────────────────────────────────────────── */
