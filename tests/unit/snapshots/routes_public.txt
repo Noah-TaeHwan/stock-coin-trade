@@ -6,6 +6,7 @@ GET /api/api-usage/history api_usage.list_history
 GET /api/api-usage/history/<int:log_id> api_usage.get_history
 GET /api/api-usage/kb-history api_usage.list_kb_history
 GET /api/api-usage/kis-history api_usage.list_kis_history
+GET /api/disclosures dart_radar.list_disclosures
 GET /api/error-analysis/logs error_analysis.list_logs
 GET /api/error-analysis/logs/<int:log_id> error_analysis.get_log
 GET /api/member/api-keys api_keys.list_keys

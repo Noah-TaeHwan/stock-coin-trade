@@ -38,10 +38,11 @@ def test_unofficial_and_unverified_sources_are_off_in_public(reg):
             assert not source.allowed_in("public"), source.id
 
 
-def test_only_synthetic_data_is_public_until_terms_are_checked(reg):
+def test_public_data_is_synthetic_or_a_verified_source_noah_approved(reg):
+    # 공개 사이트는 합성 데이터와, 노아가 약관을 판정해 공개를 허락한 출처(DART, 2026-09-26)만 쓴다.
     public = reg.enabled("public")
-    assert sorted(source.id for source in public) == ["synthetic", "synthetic_sql"]
-    assert {source.kind for source in public} == {"synthetic"}
+    assert sorted(source.id for source in public) == ["dart", "synthetic", "synthetic_sql"]
+    assert all(source.kind == "synthetic" or source.status == "verified" for source in public)
 
 
 def test_every_source_has_an_attribution_text(reg):
@@ -52,7 +53,8 @@ def test_noah_terms_decisions_2026_09_26_are_recorded(reg):
     """노아 판정(docs/evidence/data-rights-2026-09-26.md §8)이 레지스트리에 반영돼 있다."""
     dart = reg.sources["dart"]
     assert dart.status == "verified" and "노아" in dart.checked_by and dart.terms_url.startswith("https://opendart")
-    assert not dart.allowed_in("public"), "공개는 S3에서 정확성 비보장 고지를 붙인 뒤 켠다"
+    # S3(2026-09-26)에서 출처·정확성 비보장 고지(dart_radar.NOTICE)를 붙여 공개했다.
+    assert dart.allowed_in("public") and dart.attribution
     for scraped in ("naver_finance", "krx_kind"):
         assert not reg.sources[scraped].allowed_in("local"), f"{scraped}: 약관이 자동 수집을 금지해 로컬에서도 끈다"
     assert reg.sources["upbit"].commercial_use == "forbidden"

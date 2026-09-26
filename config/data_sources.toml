@@ -184,5 +184,5 @@ modification = "unknown"
 attribution = "공시 출처: 금융감독원 전자공시시스템(DART)"
 rate_limit = "키당 하루 약 20,000건(비공식 수치, 초과 시 오류 020). 과다 호출은 이용 제한 사유."
 rate_limit_source = "https://opendart.fss.or.kr/intro/terms.do"
-notes = "약관(시행 2020-01-21)에 상업·재배포 제한 조항 없음, data.go.kr 같은 API는 공공누리 1유형(출처표시). 조건: 출처 표시, 인증키 제3자 이용 금지(제19조②), 정확성 비보장 고지(제23조①). 공개는 S3에서 고지를 붙인 뒤 켠다. list.json(공시 목록). rcept_dt에는 시각이 없어 처음 본 시각을 따로 기록한다. corp_code 없이 검색하면 기간이 3개월로 제한된다."
-enabled = { local = true, public = false }
+notes = "약관(시행 2020-01-21)에 상업·재배포 제한 조항 없음, data.go.kr 같은 API는 공공누리 1유형(출처표시). 조건: 출처 표시, 인증키 제3자 이용 금지(제19조②), 정확성 비보장 고지(제23조①). 공개는 S3(2026-09-26)에서 출처·정확성 비보장 고지를 붙여 켰다. list.json(공시 목록). rcept_dt에는 시각이 없어 처음 본 시각을 따로 기록한다. corp_code 없이 검색하면 기간이 3개월로 제한된다."
+enabled = { local = true, public = true }

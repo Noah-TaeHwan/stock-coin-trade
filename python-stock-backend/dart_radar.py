@@ -34,10 +34,13 @@ KST = timezone(timedelta(hours=9))
 LIST_URL = "https://opendart.fss.or.kr/api/list.json"
 PAGE_COUNT = 100
 LISTED = frozenset("YKN")  # E(기타 법인)는 저장하지 않는다
-NOTICE = "교육용 분류이며 투자 권유가 아닙니다. 확률은 모델 판단 확률입니다."
+# OpenDART 약관 제23조①(정확성 비보장)에 따라 고지한다.
+NOTICE = ("교육용 분류이며 투자 권유가 아닙니다. 확률은 모델 판단 확률입니다. "
+          "DART 자료의 정확성·완전성은 보장되지 않으니 원문을 확인하세요.")
 DETAIL_URL = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo={}"
 MAX_LIMIT = 500
 SYMBOL_DAYS = 30  # 날짜 없이 종목만 주면 최근 30일(주말·휴일에도 비지 않게)
+MAX_SYMBOLS = 20  # 관심 종목 모아 보기(symbols)는 한 번에 20종목까지
 
 TABLE = """CREATE TABLE IF NOT EXISTS dart_disclosures (
   rcept_no CHAR(14) PRIMARY KEY,
@@ -262,18 +265,21 @@ def collect(
 # ── API ──────────────────────────────────────────────────────────────────────
 
 
-def query(start: date, end: date, symbol: str | None, kind: str | None, risk: bool | None, limit: int) -> list[dict]:
+def query(
+    start: date, end: date, symbols: tuple[str, ...] | None, kind: str | None, risk: bool | None, limit: int
+) -> list[dict]:
     """저장된 공시를 읽는다(최근 접수일, 최근에 본 것부터).
 
     @param start/end 접수일 범위(양 끝 포함)
+    @param symbols 종목코드들(없으면 전체)
     @returns 행 dict 목록
     """
     from db import engine
 
     where, params = ["rcept_dt BETWEEN :start AND :end"], {"start": start, "end": end, "limit": limit}
-    if symbol:
-        where.append("stock_code = :symbol")
-        params["symbol"] = symbol
+    if symbols:
+        where.append("stock_code IN :symbols")
+        params["symbols"] = list(symbols)
     if kind:
         where.append("kind = :kind")
         params["kind"] = kind
@@ -284,6 +290,8 @@ def query(start: date, end: date, symbol: str | None, kind: str | None, risk: bo
         f"SELECT {', '.join(COLUMNS)} FROM dart_disclosures WHERE {' AND '.join(where)} "
         "ORDER BY rcept_dt DESC, first_seen_at DESC, rcept_no DESC LIMIT :limit"
     )
+    if symbols:
+        statement = statement.bindparams(bindparam("symbols", expanding=True))
     with engine.connect() as conn:
         return [dict(row._mapping) for row in conn.execute(statement, params)]
 
@@ -323,9 +331,10 @@ def _item(row: dict) -> dict:
 @dart_bp.get("")
 @limiter.limit("60 per minute")
 def list_disclosures():
-    """GET /api/disclosures?date=YYYY-MM-DD&symbol=6자리&kind=&risk=1&limit= — 저장된 공시.
+    """GET /api/disclosures?date=YYYY-MM-DD&symbol=6자리&symbols=6자리,…&kind=&risk=1&limit= — 저장된 공시.
 
-    date가 있으면 그날, 없으면 오늘(KST). date 없이 symbol만 있으면 그 종목의 최근 SYMBOL_DAYS일.
+    date가 있으면 그날, 없으면 오늘(KST). date 없이 종목(symbol 하나 또는 symbols 여러 개, 관심 종목 모아 보기)만
+    있으면 그 종목들의 최근 SYMBOL_DAYS일. 관심 종목은 서버에 저장하지 않는다.
     """
     from deskjev.disclosures import KINDS
 
@@ -341,6 +350,14 @@ def list_disclosures():
     symbol = args.get("symbol", "").strip() or None
     if symbol and not re.fullmatch(r"\d{6}", symbol):
         return jsonify({"message": "symbol은 6자리 종목코드여야 합니다."}), 400
+    raw_symbols = args.get("symbols", "").strip()
+    if symbol and raw_symbols:
+        return jsonify({"message": "symbol과 symbols는 함께 쓸 수 없습니다."}), 400
+    symbols = tuple(dict.fromkeys(code.strip() for code in raw_symbols.split(",") if code.strip()))
+    if symbol:
+        symbols = (symbol,)
+    if len(symbols) > MAX_SYMBOLS or any(not re.fullmatch(r"\d{6}", code) for code in symbols):
+        return jsonify({"message": f"symbols는 6자리 종목코드 {MAX_SYMBOLS}개 이하여야 합니다."}), 400
     kind = args.get("kind", "").strip() or None
     if kind and kind not in KINDS:
         return jsonify({"message": "알 수 없는 kind입니다."}), 400
@@ -355,8 +372,8 @@ def list_disclosures():
         return jsonify({"message": f"limit은 1~{MAX_LIMIT} 사이여야 합니다."}), 400
 
     end = day or datetime.now(KST).date()
-    start = end - timedelta(days=SYMBOL_DAYS - 1) if symbol and not day else end
-    rows = query(start, end, symbol, kind, None if raw_risk == "" else raw_risk == "1", limit)
+    start = end - timedelta(days=SYMBOL_DAYS - 1) if symbols and not day else end
+    rows = query(start, end, symbols or None, kind, None if raw_risk == "" else raw_risk == "1", limit)
     return jsonify(
         {
             "date": end.isoformat() if start == end else None,  # 종목 30일 모드는 None
