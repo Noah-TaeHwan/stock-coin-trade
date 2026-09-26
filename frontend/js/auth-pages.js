@@ -183,7 +183,7 @@ const PAGES = {
       location.href = '/member/login.html';
     });
     onSubmit('remove', async () => {
-      if (!isChecked('confirmDelete')) { say('탈퇴하면 모든 기록이 즉시 지워집니다. 확인란을 체크해 주세요.'); return; }
+      if (!isChecked('confirmDelete')) { say('탈퇴하면 회원 정보와 모의투자 기록이 즉시 지워집니다. 확인란을 체크해 주세요.'); return; }
       const { status, data } = await postJson('/api/member/delete', { password: valueOf('deletePassword') });
       if (status === 200) { location.href = '/index.html'; return; }
       say(errorText(status, data, '탈퇴하지 못했습니다.'));

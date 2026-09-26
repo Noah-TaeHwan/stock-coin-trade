@@ -29,10 +29,19 @@
         <input class="dark-input" id="password2" type="password" autocomplete="new-password" required></div>
       <div class="auth-hp" aria-hidden="true"><label for="website">웹사이트</label>
         <input id="website" tabindex="-1" autocomplete="off"></div>
-      <label class="auth-check"><input type="checkbox" id="agreeAge"> 만 14세 이상입니다. (필수)</label>
+      <label class="auth-check"><input type="checkbox" id="agreeAge"> 만 14세 이상입니다. (필수) 만 14세 미만은 가입할 수 없습니다.</label>
+      <div class="auth-consent">
+        <p><strong>[필수] 개인정보 수집·이용 동의</strong></p>
+        <ul>
+          <li>목적: 회원 식별과 로그인, 메일 인증과 비밀번호 재설정, 모의투자·백테스트 기능 제공, 부정 이용 방지와 오류 진단, 이용 통계</li>
+          <li>항목: 이메일 주소, 닉네임, 비밀번호(복원할 수 없는 해시로만 저장), 동의 기록, 서비스를 이용한 날짜, 모의투자 기록, 접속·오류 기록(IP 주소, 브라우저 정보)</li>
+          <li>보유 기간: 탈퇴하면 즉시 삭제합니다(백업본에서는 최대 35일 뒤). 접속·오류 기록은 최대 90일 뒤 삭제합니다. 가입 후 7일 안에 메일 인증을 하지 않으면 계정을 삭제합니다.</li>
+          <li>닉네임과 모의투자 수익률은 투자자 랭킹에 공개될 수 있습니다.</li>
+          <li>동의를 거부할 수 있습니다. 거부하면 가입할 수 없지만, 로그인 없이 쓰는 둘러보기와 백테스트는 그대로 이용할 수 있습니다.</li>
+        </ul>
+      </div>
       <label class="auth-check"><input type="checkbox" id="agreePrivacy">
-        <span>개인정보 수집·이용에 동의합니다. 이메일·닉네임·동의 기록·활동일을 모으고, 탈퇴하면 즉시 지웁니다.
-        <a href="/privacy.html" target="_blank" rel="noopener">전문 보기</a> (필수)</span></label>
+        <span>위 내용에 동의합니다. <a href="/privacy.html" target="_blank" rel="noopener">개인정보 처리방침 전문</a> (필수)</span></label>
       <button class="btn-gold auth-submit" id="submit" type="submit">가입하기</button>
     </form>
     <p class="auth-links">이미 계정이 있나요? <a href="/member/login.html">로그인</a></p>

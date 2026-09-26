@@ -13,7 +13,7 @@ import passwords
 from accounts import is_reserved_email
 from authz import admin_email
 from db import engine
-from extensions import limiter
+from extensions import client_key, limiter
 
 account_bp = Blueprint("member_account", __name__, url_prefix="/api/member")
 ACCEPTED = {"status": "accepted"}
@@ -29,12 +29,13 @@ def _email_from_body() -> str:
 
 
 def _find_member(email: str):
-    """이메일로 회원을 찾는다. 형식이 틀리거나 예약 주소면 찾지 않는다.
+    """이메일로 회원을 찾는다. 형식이 틀리거나 예약 주소·공개 배포의 관리자 주소면 찾지 않는다(관리자는 CLI로만).
 
     @param email 이메일
     @returns member_id·email·email_verified_at 매핑 또는 None
     """
-    if not mailer.valid_address(email) or is_reserved_email(email):
+    public_admin = current_app.config["APP_PROFILE"] == "public" and email.lower() == admin_email()
+    if not mailer.valid_address(email) or is_reserved_email(email) or public_admin:
         return None
     with engine.connect() as conn:
         return conn.execute(text("SELECT member_id, email, email_verified_at FROM member WHERE email = :e"),
@@ -68,20 +69,19 @@ def resend_verification():
 
 
 def _member_key() -> str:
-    """회원 단위 제한 키(세션은 before_request 훅이 이미 검증했다).
+    """회원 단위 제한 키(세션은 before_request 훅이 이미 검증했다). 로그인하지 않았으면 IP 키로 센다.
 
-    @returns "member:<id>"
+    @returns "member:<id>" 또는 IP 키(로그인하지 않은 요청이 한 버킷을 나눠 쓰지 않게)
     """
-    return f"member:{session.get('member_id')}"
+    member_id = session.get("member_id")
+    return f"member:{member_id}" if member_id else client_key()
 
 
 @account_bp.post("/password/reset-request")
 @limiter.limit("10 per hour")
 def request_password_reset():
     """재설정 메일을 보낸다. 항상 202. 공개 배포의 관리자 주소는 메일로 재설정하지 않는다(CLI만)."""
-    email = _email_from_body()
-    public_admin = current_app.config["APP_PROFILE"] == "public" and email.lower() == admin_email()
-    row = None if public_admin else _find_member(email)
+    row = _find_member(_email_from_body())
     if row:
         mailer.queue("reset", row["email"], member_tokens.issue(row["member_id"], "reset"))
     return jsonify(ACCEPTED), 202
