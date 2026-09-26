@@ -30,6 +30,8 @@ x-backend-environment: &backend-environment
   JEV_ENABLED: ${JEV_ENABLED:-false}
   JEV_MONTHLY_BUDGET_USD: ${JEV_MONTHLY_BUDGET_USD:-0}
   TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+  # 공시 레이더(OpenDART) 수집기 키. 비어 있으면 수집 작업을 걸지 않는다.
+  DART_API_KEY: ${DART_API_KEY:-}
   # 증권사 키는 kis.key/kb.key/al.key 파일(/run/secrets)이 기본이며, 아래
   # 환경변수를 .env에 채우면 파일보다 우선 적용된다. KIS_ACCOUNT_NO는
   # 'CANO-계좌상품코드'(예: 12345678-01) 형식이고 하이픈 뒤는 임의로 바꾸지 않는다.

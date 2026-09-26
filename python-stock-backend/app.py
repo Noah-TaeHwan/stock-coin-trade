@@ -38,6 +38,7 @@ from broker_test_api import broker_test_bp  # noqa: E402
 from broker_test_aws_api import aws_broker_test_bp  # noqa: E402
 from crypto import market_bp, trade_bp  # noqa: E402
 from crypto_exchange_test_api import crypto_exchange_test_bp  # noqa: E402
+from dart_radar import dart_bp  # noqa: E402
 from error_analysis import error_analysis_bp, record_error  # noqa: E402
 from errors import error_response, request_id  # noqa: E402
 from extensions import limiter  # noqa: E402
@@ -70,6 +71,7 @@ BLUEPRINTS = (
     alpaca_test_bp, aws_alpaca_test_bp, stock_bp, api_key_bp, broker_test_bp, kis_explorer_bp,
     kis_chart_bp, kis_practice_bp, kis_real_bp, aws_broker_test_bp, open_api_bp, ohlcv_db_bp,
     quant_bp, alternative_bp, error_analysis_bp, api_usage_bp, arb_bp, research_agent_bp, intent_bp,
+    dart_bp,
 )
 
 # Classroom labs that need broker or cloud credentials, the host Docker socket,
@@ -90,6 +92,7 @@ SOURCE_DEPENDENT_BLUEPRINTS = {
     market_bp: ("upbit",),  # crypto market list and quotes
     trade_bp: ("upbit",),  # crypto paper trading priced from Upbit
     arb_bp: ("upbit", "exchange_quotes"),  # cross-exchange arbitrage view
+    dart_bp: ("dart",),  # DART 공시 레이더(OpenDART 약관 확인 전이라 local만)
 }
 
 # Exact origins, not prefixes: flask-cors treats these strings as regular

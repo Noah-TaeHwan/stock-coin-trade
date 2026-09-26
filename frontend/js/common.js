@@ -192,6 +192,7 @@ function renderHeader(user) {
     { type: 'group', label: 'NOAH 리서치', items: [
       { href: '/quant.html?tab=simulation', label: '퀀트 백테스트·영수증', icon: 'fa-solid fa-receipt' },
       { href: '/research-agent.html', label: 'AI 리서치(초대제)', icon: 'fa-solid fa-robot' },
+      { href: '/events.html', label: '공시 레이더(DART)', icon: 'fa-solid fa-bullhorn' },
       { href: '/openapi.html', label: 'Open API·MCP', icon: 'fa-solid fa-plug' },
     ]},
     { type: 'group', label: '거래', items: [
@@ -423,7 +424,7 @@ const PUBLIC_HIDDEN_GROUPS = new Set([
 ]);
 const PUBLIC_HIDDEN_HREFS = new Set([
   '/trade/order.html', '/arbitrage.html', '/trade/alternatives.html', '/ohlcv-db.html', '/ai-sheet.html',
-  '/ai-analysis.html', '/learning/kis-regist.html',
+  '/ai-analysis.html', '/learning/kis-regist.html', '/events.html',
 ]);
 const _hrefPath = href => String(href ?? '').split('?')[0];
 
@@ -478,6 +479,7 @@ const TERMINAL_COMMANDS = [
   { codes: ['EQ', 'STOCK'], label: '주식 (예: STK 005930)', href: '/trade/stock.html' },
   { codes: ['COIN', 'CRYPTO'], label: '코인 (예: BTC, KRW-ETH)', href: '/trade/order.html' },
   { codes: ['ARB', 'KIMP'], label: '코인 차익·김프 (예: ARB ETH)', href: '/arbitrage.html', argParam: 'symbol' },
+  { codes: ['DISC', 'DART'], label: '공시 레이더 (예: DISC 005930)', href: '/events.html', argParam: 'symbol' },
   { codes: ['PORT', 'PRT'], label: '보유자산', href: '/trade/hold.html' },
   { codes: ['AVG'], label: '물타기 계산기', href: '/trade/avg-down.html' },
   { codes: ['QUANT'], label: '퀀트 랩', href: '/quant.html' },
@@ -562,6 +564,9 @@ function runTerminalCommand(raw) {
   const tokens = text.toUpperCase().split(/\s+/);
   const first = tokens[0];
   const command = TERMINAL_COMMANDS.find(c => c.codes.includes(first));
+  // 인자를 받는 명령(ARB ETH, DISC 005930)은 아래 6자리 종목코드 검사보다 먼저 처리한다.
+  const coinArg = tokens[1] && /^[A-Z0-9]{2,10}$/.test(tokens[1]) ? tokens[1] : '';
+  if (command?.argParam && coinArg) { location.href = `${command.href}?${command.argParam}=${coinArg}`; return; }
 
   const stockCode = text.match(/\b\d{6}\b/)?.[0];
   if (stockCode) { location.href = `/trade/stock.html?symbol=${stockCode}`; return; }
@@ -578,9 +583,7 @@ function runTerminalCommand(raw) {
       if (input) { input.value = ''; input.placeholder = on ? 'CVD 팔레트 켜짐 — 상승 파랑 / 하락 빨강' : 'CVD 팔레트 꺼짐 — 상승 초록 / 하락 빨강'; }
       return;
     }
-    const coinArg = tokens[1] && /^[A-Z0-9]{2,10}$/.test(tokens[1]) ? tokens[1] : '';
     if (command.href === '/trade/order.html' && coinArg) { location.href = `/trade/order.html?market=KRW-${coinArg}`; return; }
-    if (command.argParam && coinArg) { location.href = `${command.href}?${command.argParam}=${coinArg}`; return; }
     location.href = command.href;
     return;
   }

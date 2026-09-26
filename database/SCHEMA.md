@@ -26,6 +26,7 @@ member (1)
  └──< system_error_log     서버·브라우저 오류 분석 로그 (선택 관계)
 
 crypto_rank                공개 시세 랭킹 캐시, 회원과 독립
+dart_disclosures           DART 공시 목록과 교육용 유형·위험 판정, 회원과 독립
 ```
 
 `stock_order.simulated`는 실시세를 받지 못해 시뮬레이션 가격으로 체결한 주문을 표시한다(공개 프로필은 이런 주문을 거절한다).
@@ -41,6 +42,21 @@ crypto_rank                공개 시세 랭킹 캐시, 회원과 독립
 | `request_meta` | 민감값을 제외한 입력값(예: 종목코드) |
 | `http_status`, `success`, `duration_ms` | HTTP 결과, 성공 여부, 서버 처리시간 |
 | `result_summary`, `response_body` | 마스킹·길이 제한을 적용한 결과 요약과 응답 상세 |
+
+### DART 공시 레이더 (`dart_disclosures`)
+
+worker가 5분마다 OpenDART 오늘 목록을 읽어 상장사(유가·코스닥·코넥스) 공시만 넣는다(`python-stock-backend/dart_radar.py`, local 전용).
+
+| 필드 | 설명 |
+| --- | --- |
+| `rcept_no` | 접수번호(기본 키). 앞 8자리를 날짜로 쓰지 않는다 |
+| `rcept_dt` | 접수일. DART가 주는 날짜이며 시각은 없다 |
+| `corp_code`, `corp_name`, `stock_code`, `corp_cls` | 회사 고유번호·이름·종목코드·법인구분(Y·K·N) |
+| `report_nm`, `rm`, `flr_nm` | 공시 제목(연속 공백 정리), 비고 코드, 제출인 |
+| `first_seen_at` | 수집기가 처음 본 시각(UTC). 화면은 KST로 보여 준다 |
+| `kind`, `corrected` | 교육용 유형(`src/deskjev/disclosures.py` KINDS)과 정정 공시 여부 |
+| `risk`, `kind_prob`, `risk_prob` | 매매 불가 위험 표시와 Jev가 정한 항목의 모델 판단 확률(규칙이 정하면 NULL) |
+| `judged_by`, `model`, `judged_at` | 판정 주체(`rules`·`jev`), Jev 모델 버전, 판정 시각(UTC) |
 
 ## PostgreSQL Quant ERD
 
@@ -71,3 +87,4 @@ factor_returns ──[분석 입력]──> factor_exposures
 4. `api_usage_log`는 KIS·KB증권·Alpaca·Binance·Korbit·AWS SSM 테스트 경로만 기록한다. 요청 쿼리, 응답 본문, 실패 메시지는 민감값을 마스킹하고 각각 길이 제한을 둔다. 조회 화면은 로그인한 회원 자신의 이력만 반환한다.
 5. MariaDB와 PostgreSQL은 서로 FK를 만들지 않는다. 서비스 API가 데이터 경계와 권한 검사를 담당한다.
 6. Qdrant는 관계형 DB가 아니므로 FK가 없다. 문서 식별자와 카테고리는 검색 결과의 메타데이터로 관리한다.
+7. `dart_disclosures`에는 OpenDART 인증키를 넣지 않는다. Jev에는 공시 제목·비고·시장만 보내고 회사명은 보내지 않는다.

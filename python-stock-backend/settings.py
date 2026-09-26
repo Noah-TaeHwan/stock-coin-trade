@@ -86,6 +86,8 @@ class Settings:
     # 자연어 명령 라우터(src/deskjev, TypeSafe Jev). 기본 꺼짐. 켜면 월 예산과 TYPESAFE_API_KEY가 필요하다.
     jev_enabled: bool = False
     jev_monthly_budget_usd: float = 0.0
+    # OpenDART 인증키(공시 레이더 수집기, worker 전용). 비어 있으면 수집 작업을 걸지 않는다. Flask 설정에는 넣지 않는다.
+    dart_api_key: str = ""
 
     @property
     def is_public(self) -> bool:
@@ -176,6 +178,7 @@ class Settings:
             ai_invite_pepper=ai_invite_pepper or DEV_AI_INVITE_PEPPER,
             jev_enabled=jev_enabled,
             jev_monthly_budget_usd=jev_monthly_budget_usd,
+            dart_api_key=(env.get("DART_API_KEY") or "").strip(),
         )
 
     def flask_config(self) -> dict[str, object]:

@@ -19,6 +19,8 @@ x-portfolio-backend-environment: &portfolio-backend-environment
   JEV_ENABLED: ${JEV_ENABLED:-false}
   JEV_MONTHLY_BUDGET_USD: ${JEV_MONTHLY_BUDGET_USD:-0}
   TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+  # 공시 레이더(OpenDART) 수집기 키. 비어 있으면 수집 작업을 걸지 않는다.
+  DART_API_KEY: ${DART_API_KEY:-}
 
 services:
   frontend:

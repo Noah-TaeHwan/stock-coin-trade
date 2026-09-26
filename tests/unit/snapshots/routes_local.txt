@@ -49,6 +49,7 @@ GET /api/crypto/<code> crypto_market.crypto_info
 GET /api/crypto/<code>/domestic-prices crypto_market.domestic_prices
 GET /api/crypto/market-list crypto_market.market_list
 GET /api/crypto/rankings crypto_market.rankings
+GET /api/disclosures dart_radar.list_disclosures
 GET /api/error-analysis/logs error_analysis.list_logs
 GET /api/error-analysis/logs/<int:log_id> error_analysis.get_log
 GET /api/kis-chart/candles kis_chart.candles

@@ -11,6 +11,7 @@ from sqlalchemy import text
 from db import session_scope
 from market_bots import run_bot_trading_round
 from models import CryptoRank, UpbitMarket
+from settings import Settings
 
 log = logging.getLogger(__name__)
 
@@ -79,6 +80,14 @@ def build_scheduler(scheduler_cls: type[BaseScheduler] = BackgroundScheduler) ->
     if price_sources.allowed("upbit"):
         scheduler.add_job(sync_upbit_markets, CronTrigger(hour=18, minute=0, timezone="Asia/Seoul"))
     scheduler.add_job(run_bot_trading_round, IntervalTrigger(minutes=10))
+    if price_sources.allowed("dart") and Settings.from_env().dart_api_key:
+        from dart_radar import collect
+
+        # 5분마다 새 공시만(회당 보통 1회 호출, 하루 약 290~350회), 매시 30분에 하루 전체를 다시 훑는다
+        # (683건인 날 7쪽 × 24 ≈ 170회). 합계 하루 약 520회로 키당 약 20,000건 한도(비공식) 안이다.
+        # docs/evidence/jev-disclosures-2026-09-26.md
+        scheduler.add_job(collect, IntervalTrigger(minutes=5), id="dart_collect")
+        scheduler.add_job(collect, CronTrigger(minute=30, timezone="Asia/Seoul"), kwargs={"full": True}, id="dart_sweep")
     return scheduler
 
 
