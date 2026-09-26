@@ -28,3 +28,12 @@ def test_email_must_be_one_plain_address(email):
 
 def test_plain_email_passes():
     assert email_problem("user.name+tag@example.test") is None
+
+
+def test_privacy_page_shows_the_version_recorded_at_signup():
+    from pathlib import Path
+
+    from accounts import PRIVACY_VERSION
+
+    page = Path(__file__).resolve().parents[2] / "frontend" / "privacy.html"
+    assert f"버전 {PRIVACY_VERSION}" in page.read_text(encoding="utf-8")
