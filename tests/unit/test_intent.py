@@ -6,6 +6,7 @@ import pytest
 
 import intent as intent_api
 import jev_usage
+from accounts import PRIVACY_VERSION
 from deskjev import intent
 from settings import Settings, SettingsError
 
@@ -151,7 +152,7 @@ def test_endpoint_routes_and_records_only_uncached_calls(jev_client, monkeypatch
 
     monkeypatch.setattr(jev_usage, "client", FakeClient)
     for _ in range(2):
-        body = http.post("/api/intent", json={"text": "이더  김프"}).get_json()
+        body = http.post("/api/intent", json={"text": "이더  김프", "consent": PRIVACY_VERSION}).get_json()
     assert body["enabled"] and body["action"] == "go" and body["href"] == "/arbitrage.html?symbol=ETH"
     assert recorded == [740]  # 두 번째는 캐시
 
@@ -164,13 +165,31 @@ def test_endpoint_falls_back_when_jev_fails(jev_client, monkeypatch):
             raise TimeoutError("jev timed out")
 
     monkeypatch.setattr(jev_usage, "client", Down)
-    assert http.post("/api/intent", json={"text": "홈"}).get_json() == {"enabled": False, "reason": "unavailable"}
+    assert http.post("/api/intent", json={"text": "홈", "consent": PRIVACY_VERSION}).get_json() == {
+        "enabled": False,
+        "reason": "unavailable",
+    }
+    assert recorded == []
+
+
+def test_nothing_is_sent_abroad_before_consent(jev_client, monkeypatch):
+    # 명령 문장은 미국 TypeSafe로 가므로(개인정보 처리방침 4절), 현재 버전에 동의한 요청만 보낸다.
+    http, recorded = jev_client
+
+    def must_not_call():
+        raise AssertionError("동의 전에 Jev를 불렀다")
+
+    monkeypatch.setattr(jev_usage, "client", must_not_call)
+    for consent in (None, "2020-01-01"):
+        body = {"text": "이더 김프"} | ({"consent": consent} if consent else {})
+        answer = http.post("/api/intent", json=body).get_json()
+        assert answer == {"enabled": True, "consentRequired": True, "consentVersion": PRIVACY_VERSION}
     assert recorded == []
 
 
 def test_endpoint_rejects_missing_text(jev_client):
     http, _ = jev_client
-    assert http.post("/api/intent", json={"text": "  "}).status_code == 400
+    assert http.post("/api/intent", json={"text": "  ", "consent": PRIVACY_VERSION}).status_code == 400
 
 
 def test_jev_needs_a_budget_and_a_key():
