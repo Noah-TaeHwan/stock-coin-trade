@@ -4,6 +4,8 @@
 - G3 백엔드 모델의 Column(Float: 금액·수량에 새 Float 열 금지(같은 래칫).
 - G6 저장소 스크립트의 docker rm은 볼륨까지 지운다(-v). 익명 볼륨이 남는 사고를 막는다.
 - G7 셸 스크립트에서 비ASCII 문자 바로 앞의 변수는 ${VAR}로 감싼다($PORT가 → 변수 이름 오인).
+- G8 화면은 Tailwind Play CDN(런타임 생성, 버전 미고정)을 불러오지 않는다.
+  빌드한 frontend/css/tw.css를 쓴다(scripts/build-css.sh).
 외부 HTTP 호출의 timeout 누락은 ruff S113(pyproject.toml)이 막는다.
 """
 
@@ -116,3 +118,13 @@ def test_g6_repo_scripts_remove_volumes_with_containers():
             if bad:
                 offenders[path.relative_to(ROOT).as_posix()] = bad
     assert offenders == {}, f"docker rm에 -v가 없습니다(익명 볼륨이 남음): {offenders}"
+
+
+def test_g8_pages_do_not_load_the_tailwind_play_cdn():
+    offenders = sorted(
+        str(path.relative_to(ROOT))
+        for path in (ROOT / "frontend").rglob("*.html")
+        if re.search(r"<script[^>]+cdn\.tailwindcss\.com", path.read_text(encoding="utf-8"))
+    )
+    assert offenders == [], f"Tailwind CDN 대신 /css/tw.css를 쓰세요(scripts/build-css.sh): {offenders}"
+    assert (ROOT / "frontend" / "css" / "tw.css").stat().st_size > 0

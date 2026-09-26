@@ -273,11 +273,11 @@ function renderHeader(user) {
   const userSection = user?.loggedIn
     ? `<div class="term-user">
          <span class="term-user-name"><i class="fa-solid fa-user" aria-hidden="true"></i> ${escapeHtml(user.username)}</span>
-         <button type="button" class="term-icon-btn term-btn-danger" onclick="logout()">로그아웃</button>
+         <button type="button" class="term-icon-btn term-btn-danger" data-action="logout">로그아웃</button>
        </div>`
     : `<div class="term-user">
-         <button type="button" class="term-icon-btn" onclick="location.href='/member/login.html'">로그인</button>
-         <button type="button" class="term-icon-btn term-btn-primary" onclick="location.href='/member/register.html'">회원가입</button>
+         <button type="button" class="term-icon-btn" data-action="go" data-href="/member/login.html">로그인</button>
+         <button type="button" class="term-icon-btn term-btn-primary" data-action="go" data-href="/member/register.html">회원가입</button>
        </div>`;
 
   const isLoggedIn = !!user?.loggedIn;
@@ -302,7 +302,7 @@ function renderHeader(user) {
     ocGroupIdx++;
     return `
       <div class="oc-group">
-        <button type="button" class="oc-group-toggle" onclick="toggleOcGroup(${ocGroupIdx})" aria-expanded="false">
+        <button type="button" class="oc-group-toggle" data-action="toggle-oc" data-index="${ocGroupIdx}" aria-expanded="false">
           <span>${g.label}</span>
           <i class="fa-solid fa-chevron-down oc-group-chevron" aria-hidden="true"></i>
         </button>
@@ -318,7 +318,7 @@ function renderHeader(user) {
     rightGroupIdx++;
     return `
       <div class="oc-group">
-        <button type="button" class="oc-group-toggle" onclick="toggleRightGroup(${rightGroupIdx})" aria-expanded="false">
+        <button type="button" class="oc-group-toggle" data-action="toggle-right" data-index="${rightGroupIdx}" aria-expanded="false">
           <span>${g.label}</span>
           <i class="fa-solid fa-chevron-down oc-group-chevron" aria-hidden="true"></i>
         </button>
@@ -332,7 +332,7 @@ function renderHeader(user) {
 
   const ocNavGuest = `
     <div class="oc-group open">
-      <button type="button" class="oc-group-toggle" onclick="toggleOcGroup(0)" aria-expanded="true">
+      <button type="button" class="oc-group-toggle" data-action="toggle-oc" data-index="0" aria-expanded="true">
         <span>TR 실전연습</span>
         <i class="fa-solid fa-chevron-down oc-group-chevron" aria-hidden="true"></i>
       </button>
@@ -344,20 +344,20 @@ function renderHeader(user) {
       <i class="fa-solid fa-lock" aria-hidden="true"></i>
       <p>거래·자산관리·분석 도구는 로그인 후 이용할 수 있습니다.</p>
       <div class="oc-guest-actions">
-        <button onclick="closeOffcanvas();location.href='/member/login.html'">로그인</button>
-        <button onclick="closeOffcanvas();location.href='/member/register.html'">회원가입</button>
+        <button type="button" data-action="go" data-href="/member/login.html">로그인</button>
+        <button type="button" data-action="go" data-href="/member/register.html">회원가입</button>
       </div>
     </div>`;
 
   const html = `
     <!-- 왼쪽 오프캔버스 오버레이 -->
-    <div id="oc-overlay" onclick="closeOffcanvas()"></div>
+    <div id="oc-overlay" data-action="close-oc"></div>
 
     <!-- 왼쪽 오프캔버스 — 네비게이션 메뉴 -->
     <aside id="oc-panel">
       <div class="oc-header">
         <span class="brand-logo-text">Noah TD <small style="color:var(--muted);font-size:11px;">· 실전연습</small></span>
-        <button class="oc-close-btn" onclick="closeOffcanvas()" aria-label="메뉴 닫기">✕</button>
+        <button type="button" class="oc-close-btn" data-action="close-oc" aria-label="메뉴 닫기">✕</button>
       </div>
       <nav class="oc-nav" aria-label="TR 실전연습 메뉴">
         ${isLoggedIn ? ocNavAuthed : ocNavGuest}
@@ -371,9 +371,9 @@ function renderHeader(user) {
     <!-- 터미널 헤더: 명령줄 · 기능키 · 티커 테이프 -->
     <header id="site-header">
       <div class="term-cmdbar">
-        <button type="button" class="term-icon-btn" onclick="openOffcanvas()" aria-label="실전연습 메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="term-menu-label">실전연습</span></button>
+        <button type="button" class="term-icon-btn" data-action="open-oc" aria-label="실전연습 메뉴 열기"><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="term-menu-label">실전연습</span></button>
         <a class="term-brand" href="/index.html" aria-label="Noah Trading Desk 대시보드">NOAH TD <small>TERMINAL</small></a>
-        <form class="term-cmd" role="search" onsubmit="event.preventDefault(); runTerminalCommand(this.elements.cmd.value);">
+        <form class="term-cmd" role="search">
           <span class="term-cmd-prompt" aria-hidden="true">&gt;</span>
           <input name="cmd" id="term-cmd-input" autocomplete="off" spellcheck="false" aria-label="명령 또는 종목 입력" placeholder="명령·종목 입력 (예: 005930, BTC, HOLD, HELP) · / 키">
           <button type="submit" class="term-go">GO</button>
@@ -382,7 +382,7 @@ function renderHeader(user) {
         <div class="term-meta">
           <span class="term-clock" id="term-clock" aria-label="한국 시간">--:--:-- KST</span>
           <span class="term-mode" title="모든 주문은 모의투자입니다.">PAPER</span>
-          <button type="button" class="term-icon-btn" onclick="openAiPanel()" aria-label="도구 메뉴 열기"><i class="fa-solid fa-toolbox" aria-hidden="true"></i><span class="term-menu-label">도구</span></button>
+          <button type="button" class="term-icon-btn" data-action="open-ai" aria-label="도구 메뉴 열기"><i class="fa-solid fa-toolbox" aria-hidden="true"></i><span class="term-menu-label">도구</span></button>
           ${userSection}
         </div>
       </div>
@@ -397,13 +397,13 @@ function renderHeader(user) {
     </header>
 
     <!-- 오른쪽 오프캔버스 오버레이 -->
-    <div id="ai-overlay" onclick="closeAiPanel()" style="display:none;position:fixed;inset:0;z-index:399;"></div>
+    <div id="ai-overlay" data-action="close-ai" style="display:none;position:fixed;inset:0;z-index:399;"></div>
 
     <!-- 오른쪽 오프캔버스 — 대시보드·분석·연동 메뉴 -->
     <aside id="ai-panel" style="position:fixed;top:0;right:0;height:100vh;width:420px;max-width:94vw;z-index:400;transform:translateX(100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;">
       <div class="term-panel-head">
         <span><i class="fa-solid fa-toolbox" aria-hidden="true"></i> TOOLS · 빠른 메뉴</span>
-        <button class="oc-close-btn" onclick="closeAiPanel()" aria-label="도구 메뉴 닫기">✕</button>
+        <button type="button" class="oc-close-btn" data-action="close-ai" aria-label="도구 메뉴 닫기">✕</button>
       </div>
       <nav class="oc-nav right-tool-nav" aria-label="대시보드 및 분석·연동 메뉴">
         ${rightNavItems}
@@ -811,6 +811,30 @@ document.addEventListener('click', event => {
   const suggestion = event.target.closest?.('#term-cmd-help [data-href]');
   if (suggestion) { location.href = suggestion.dataset.href; return; }
   if (!event.target.closest?.('.term-cmd')) closeTerminalHelp();
+});
+
+/* ── 헤더 동작(인라인 onclick 대신 data-action 위임) ─────────────────────────
+   인라인 핸들러를 쓰지 않아야 화면에 script-src 'self' CSP를 걸 수 있다. */
+const HEADER_ACTIONS = {
+  logout: () => logout(),
+  go: el => { closeOffcanvas(); location.href = el.dataset.href; },
+  'toggle-oc': el => toggleOcGroup(Number(el.dataset.index)),
+  'toggle-right': el => toggleRightGroup(Number(el.dataset.index)),
+  'open-oc': () => openOffcanvas(),
+  'close-oc': () => closeOffcanvas(),
+  'open-ai': () => openAiPanel(),
+  'close-ai': () => closeAiPanel(),
+};
+document.addEventListener('click', event => {
+  const el = event.target.closest?.('[data-action]');
+  const run = el && HEADER_ACTIONS[el.dataset.action];
+  if (run) run(el);
+});
+document.addEventListener('submit', event => {
+  const form = event.target.closest?.('form.term-cmd');
+  if (!form) return;
+  event.preventDefault();
+  runTerminalCommand(form.elements.cmd.value);
 });
 
 /* ── Offcanvas ───────────────────────────────────────────────────────────── */

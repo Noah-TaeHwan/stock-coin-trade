@@ -1,4 +1,12 @@
+// 인라인 onclick 없이 연결한다(이 화면은 script-src 'self' CSP를 강제한다).
 (async () => {
+  document.getElementById('createKeyBtn').addEventListener('click', createKey);
+  document.getElementById('copyKeyBtn').addEventListener('click', copyNewKey);
+  document.getElementById('closeKeyBtn').addEventListener('click', closeKeyModal);
+  document.getElementById('keysTableBody').addEventListener('click', event => {
+    const button = event.target.closest('button[data-revoke]');
+    if (button) revokeKey(Number(button.dataset.revoke));
+  });
   await initPage({ requireAuth: true });
   await loadKeys();
 })();
@@ -31,7 +39,7 @@ async function loadKeys() {
         </td>
         <td class="px-4 py-3 text-center">
           ${k.isActive
-            ? `<button onclick="revokeKey(${Number(k.id)})" style="background:var(--down-bg);color:var(--down);border:1px solid rgba(255,77,77,.35);border-radius:var(--radius);padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
+            ? `<button type="button" data-revoke="${Number(k.id)}" style="background:var(--down-bg);color:var(--down);border:1px solid rgba(255,77,77,.35);border-radius:var(--radius);padding:.3rem .8rem;font-size:12px;font-weight:700;cursor:pointer;">폐기</button>`
             : '-'}
         </td>
       </tr>`).join('');
