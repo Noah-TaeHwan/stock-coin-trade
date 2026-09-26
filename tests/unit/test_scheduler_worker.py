@@ -49,3 +49,27 @@ def test_worker_runs_the_same_jobs_in_a_blocking_scheduler():
         worker.main()
 
     assert started == [["run_bot_trading_round", "sync_coinmarketcap_rankings", "sync_upbit_markets"]]
+
+
+def test_dart_radar_jobs_need_the_source_and_a_key(monkeypatch):
+    import price_sources
+
+    monkeypatch.delenv("DART_API_KEY", raising=False)
+    assert "collect" not in _jobs_by_function(scheduler.build_scheduler(BackgroundScheduler))
+
+    monkeypatch.setenv("DART_API_KEY", "k")
+    sched = scheduler.build_scheduler(BackgroundScheduler)
+    jobs = {job.id: job for job in sched.get_jobs()}
+    assert jobs["dart_collect"].trigger.interval == timedelta(minutes=5) and jobs["dart_collect"].kwargs == {}
+    sweep = jobs["dart_sweep"].trigger
+    assert jobs["dart_sweep"].kwargs == {"full": True}
+    assert str(sweep.fields[sweep.FIELD_NAMES.index("minute")]) == "30"
+    # 자정 직전 공시를 놓치지 않게 00:10에 전날을 한 번 더 훑는다.
+    prev = jobs["dart_prev_day"].trigger
+    assert jobs["dart_prev_day"].kwargs == {"full": True, "days_ago": 1}
+    assert [str(prev.fields[prev.FIELD_NAMES.index(f)]) for f in ("hour", "minute")] == ["0", "10"]
+    assert str(prev.timezone) == "Asia/Seoul"
+
+    # public처럼 소스가 막힌 프로필에서는 키가 있어도 걸지 않는다.
+    monkeypatch.setattr(price_sources, "allowed", lambda source_id: source_id != "dart")
+    assert "collect" not in _jobs_by_function(scheduler.build_scheduler(BackgroundScheduler))

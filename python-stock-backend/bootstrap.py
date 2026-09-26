@@ -12,6 +12,7 @@ import bcrypt
 from alternatives import ensure_tables as ensure_alternative_tables
 from api_usage import ensure_api_usage_table
 from crypto import ensure_crypto_tables
+from dart_radar import ensure_dart_tables
 from demo_seed import seed_bababa_dataset, seed_demo_investors, seed_ganada_dataset
 from error_analysis import ensure_error_analysis_table
 from kis_practice import ensure_kis_practice_tables
@@ -36,6 +37,7 @@ def create_tables() -> None:
     ensure_ai_tables()
     ensure_stock_order_columns()
     ensure_jev_tables()
+    ensure_dart_tables()
 
 
 def seed_demo_data() -> None:

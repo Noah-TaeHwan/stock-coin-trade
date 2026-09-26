@@ -171,3 +171,10 @@ def test_public_ai_needs_a_real_invite_pepper():
     with pytest.raises(SettingsError, match="AI_INVITE_PEPPER"):
         Settings.from_env({**base, "AI_INVITE_PEPPER": "short"})
     assert Settings.from_env({**base, "AI_INVITE_PEPPER": "p" * 40}).ai_invite_pepper == "p" * 40
+
+
+def test_dart_key_is_read_trimmed_and_kept_out_of_flask_config():
+    settings = Settings.from_env({"DART_API_KEY": "  dart-test  "})
+    assert settings.dart_api_key == "dart-test"
+    assert "dart-test" not in str(settings.flask_config())
+    assert Settings.from_env({}).dart_api_key == ""

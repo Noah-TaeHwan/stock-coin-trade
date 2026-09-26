@@ -327,6 +327,32 @@ CREATE TABLE IF NOT EXISTS `api_key` (
   CONSTRAINT `FK_api_key_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- DART 공시 레이더(python-stock-backend/dart_radar.py가 같은 DDL로 만든다). 회원과 독립.
+-- rcept_dt만 날짜로 쓴다(접수번호 앞 8자리와 다를 수 있다). first_seen_at·judged_at은 UTC.
+CREATE TABLE IF NOT EXISTS `dart_disclosures` (
+  `rcept_no` char(14) NOT NULL,
+  `rcept_dt` date NOT NULL,
+  `corp_code` char(8) NOT NULL,
+  `corp_name` varchar(100) NOT NULL,
+  `stock_code` varchar(6) NOT NULL DEFAULT '',
+  `corp_cls` char(1) NOT NULL,
+  `report_nm` varchar(300) NOT NULL,
+  `rm` varchar(20) NOT NULL DEFAULT '',
+  `flr_nm` varchar(100) NOT NULL DEFAULT '',
+  `first_seen_at` datetime NOT NULL COMMENT 'UTC',
+  `kind` varchar(30) NOT NULL,
+  `corrected` tinyint(1) NOT NULL DEFAULT 0,
+  `risk` tinyint(1) NOT NULL DEFAULT 0,
+  `kind_prob` decimal(4,3) DEFAULT NULL,
+  `risk_prob` decimal(4,3) DEFAULT NULL,
+  `judged_by` varchar(10) NOT NULL,
+  `model` varchar(40) DEFAULT NULL,
+  `judged_at` datetime NOT NULL COMMENT 'UTC',
+  PRIMARY KEY (`rcept_no`),
+  KEY `idx_dart_day` (`rcept_dt`,`first_seen_at`),
+  KEY `idx_dart_stock` (`stock_code`,`rcept_dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>공시 레이더 — Noah Trading Desk</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+  <style>
+    @font-face { font-family:'Pretendard'; font-weight:400; font-display:swap; src:url('/fonts/Pretendard-Regular.woff2') format('woff2'); }
+    @font-face { font-family:'Pretendard'; font-weight:600; font-display:swap; src:url('/fonts/Pretendard-SemiBold.woff2') format('woff2'); }
+    @font-face { font-family:'Pretendard'; font-weight:700; font-display:swap; src:url('/fonts/Pretendard-Bold.woff2') format('woff2'); }
+    @font-face { font-family:'Pretendard'; font-weight:800; font-display:swap; src:url('/fonts/Pretendard-ExtraBold.woff2') format('woff2'); }
+
+    html, body { overflow: hidden; height: 100dvh; }
+    .trading-root { display:grid; grid-template-rows:auto minmax(0, 1fr) auto; grid-template-columns:minmax(0, 1fr); height:100dvh; overflow:hidden; }
+
+    /* 워크스페이스: 공시 목록 | 유형 요약·안내 */
+    .disc-ws { min-height:0; display:grid; grid-template-columns:minmax(0, 1fr) 300px; gap:4px; padding:4px; }
+    .disc-col { min-height:0; min-width:0; display:grid; gap:4px; }
+    .disc-main { grid-template-rows: auto minmax(0, 1fr); }
+    .disc-side { grid-template-rows: minmax(0, 1fr) auto; }
+
+    .disc-filters { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; padding:6px 10px; background:var(--surface); border:1px solid var(--border); }
+    .disc-filters label { color:var(--muted); font-size:11px; font-weight:700; }
+    .disc-filters .dark-input { width:auto; min-width:0; padding:4px 8px; font-size:12px; }
+    .disc-filters #symbol { width:92px; font-family:var(--font-mono); }
+    .disc-filters .risk-toggle { display:inline-flex; align-items:center; gap:4px; color:var(--fg-2); font-size:12px; font-weight:600; }
+    .disc-count { margin-left:auto; color:var(--muted); font-family:var(--font-mono); font-size:11px; }
+
+    /* 1200px 폭에서도 유형·위험·판정 열이 보이게: 고정 배치, 좁은 열은 폭 지정, 제목만 남는 폭을 쓰며 줄바꿈. */
+    .disc-list { table-layout:fixed; }
+    /* style.css가 이 블록보다 뒤에 오므로 .term-table과 겹쳐 써서 이긴다. */
+    .term-table.disc-list th, .term-table.disc-list td { text-align:left; vertical-align:top; }
+    .disc-list .c-date { width:84px; }
+    .disc-list .c-time { width:88px; }
+    .disc-list .c-corp { width:140px; }
+    .disc-list .c-kind { width:108px; }
+    .disc-list .c-risk { width:64px; }
+    .disc-list .c-by { width:132px; }
+    .disc-list td.txt { white-space:normal; overflow-wrap:anywhere; }
+    .disc-list td.txt a { color:var(--fg); text-decoration:none; }
+    .disc-list td.txt a:hover { color:var(--info); text-decoration:underline; }
+    .disc-list td.txt small { display:block; color:var(--muted); font-family:var(--font-mono); font-size:10.5px; }
+    .disc-list .who { white-space:nowrap; }
+    .disc-list .who a { color:var(--fg-2); font-family:var(--font-mono); font-size:11px; }
+    /* 위험 공시는 색과 함께 글자 표시(⚠)로도 구분한다. */
+    .disc-list tr.is-risk { background:var(--down-bg); box-shadow:inset 3px 0 0 var(--down); }
+    .disc-list .flag { color:var(--down); font-weight:800; white-space:nowrap; }
+    .disc-list .by { color:var(--muted); font-family:var(--font-mono); font-size:10.5px; white-space:normal; }
+
+    .kind-sum { width:100%; border-collapse:collapse; font-size:12px; }
+    .kind-sum td { padding:3px 10px; border-bottom:1px solid var(--border); }
+    .kind-sum td + td { text-align:right; font-family:var(--font-mono); color:var(--fg-2); }
+    .kind-sum tr { cursor:pointer; }
+    .kind-sum tr.is-selected td { color:var(--accent); }
+    .disc-note { padding:8px 10px 10px; color:var(--fg-2); font-size:11.5px; line-height:1.6; }
+    .disc-note p + p { margin-top:6px; }
+    .disc-note b { color:var(--warn); }
+    .disc-note small { color:var(--muted); }
+
+    @media (max-width: 1100px) {
+      html, body { overflow:auto; height:auto; }
+      .trading-root { height:auto; min-height:100dvh; overflow:visible; }
+      .disc-ws { grid-template-columns:minmax(0, 1fr); }
+      .disc-main { grid-template-rows: auto minmax(420px, auto); }
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Pretendard','-apple-system','BlinkMacSystemFont','Segoe UI','sans-serif']}}}}</script>
+  <link rel="stylesheet" href="/css/style.css?v=20260925-terminal">
+</head>
+<body>
+<div class="trading-root">
+  <div id="header-mount"></div>
+
+  <div class="disc-ws">
+    <div class="disc-col disc-main">
+      <form class="disc-filters" id="discFilters" aria-label="공시 필터">
+        <label for="day">접수일</label>
+        <input type="date" id="day" class="dark-input">
+        <label for="symbol">종목</label>
+        <input type="text" id="symbol" class="dark-input" inputmode="numeric" maxlength="6" placeholder="005930" pattern="\d{6}">
+        <label for="kind">유형</label>
+        <select id="kind" class="dark-input"><option value="">전체</option></select>
+        <label class="risk-toggle"><input type="checkbox" id="riskOnly"> 매매 불가 위험만</label>
+        <span class="disc-count" id="discCount" aria-live="polite">-</span>
+      </form>
+
+      <section class="term-panel" aria-labelledby="discTitle">
+        <div class="term-panel__bar"><span class="term-code">DISC</span><span id="discTitle">오늘의 공시</span><span class="term-sub">DART · 1분마다 새로 읽음</span><span class="term-right"><span class="live-dot" id="discLive"></span></span></div>
+        <div class="term-panel__body">
+          <table class="term-table disc-list">
+            <thead><tr>
+              <th class="c-date" id="colDate" hidden>접수일</th>
+              <th class="c-time">처음 본 시각</th>
+              <th class="c-corp">회사</th>
+              <th>공시 제목</th>
+              <th class="c-kind">유형</th>
+              <th class="c-risk">위험</th>
+              <th class="c-by" title="규칙 표로 정했는지, Jev(TypeSafe) 모델이 정했는지">판정</th>
+            </tr></thead>
+            <tbody id="discBody"><tr><td class="empty" colspan="7">로딩 중...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="disc-col disc-side">
+      <section class="term-panel" aria-labelledby="kindTitle">
+        <div class="term-panel__bar"><span class="term-code">KIND</span><span id="kindTitle">유형별 건수</span><span class="term-sub">누르면 필터</span></div>
+        <div class="term-panel__body">
+          <table class="kind-sum"><tbody id="kindBody"><tr><td class="empty">-</td></tr></tbody></table>
+        </div>
+      </section>
+
+      <section class="term-panel" aria-labelledby="noteTitle">
+        <div class="term-panel__bar"><span class="term-code">NOTE</span><span id="noteTitle">읽는 법</span></div>
+        <div class="disc-note">
+          <p><b>교육용 분류이며 투자 권유가 아닙니다.</b> 유형과 위험 표시는 공시 제목만 보고 정한 것이라 본문과 다를 수 있습니다. 원문은 제목을 눌러 DART에서 확인하세요.</p>
+          <p><b>⚠ 매매 불가 위험</b>은 거래정지·상장폐지·관리종목·실질심사·회생·파산처럼 주식을 사고팔 수 없게 되었거나 그럴 우려가 있다는 뜻입니다.</p>
+          <p>판정이 <b>규칙</b>이면 서식명 표로 정한 것이고, <b>Jev</b>이면 자유 서식이라 모델(TypeSafe Jev)이 고른 것입니다. 옆의 %는 모델 판단 확률입니다.</p>
+          <p><small>DART는 접수 시각을 주지 않아 이 서버가 처음 본 시각(KST)을 보여 줍니다. 접수일과 다른 날 처음 봤으면 날짜(MM/DD)를 함께 적습니다. 날짜 없이 종목만 고르면 최근 30일을 보여 줍니다. <span id="discSource">공시 출처: 금융감독원 전자공시시스템(DART)</span></small></p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer id="site-footer"></footer>
+</div><!-- /trading-root -->
+
+<script src="/js/config.js"></script>
+<script src="/js/common.js?v=20260926-disc"></script>
+<script src="/js/events.js?v=20260926-disc"></script>
+</body>
+</html>
