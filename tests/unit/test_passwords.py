@@ -54,4 +54,6 @@ def test_ipv6_clients_share_a_limit_per_64_block(app):
         second = client_key()
     with app.test_request_context(environ_base={"REMOTE_ADDR": "203.0.113.7"}):
         v4 = client_key()
-    assert first == second == "2001:db8:1:2::/64" and v4 == "203.0.113.7"
+    with app.test_request_context(environ_base={"REMOTE_ADDR": "::ffff:203.0.113.8"}):
+        mapped = client_key()
+    assert first == second == "2001:db8:1:2::/64" and v4 == "203.0.113.7" and mapped == "203.0.113.8"

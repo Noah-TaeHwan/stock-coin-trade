@@ -7,6 +7,7 @@ already exist), so they can run once per deployment from the Flask CLI:
     flask --app app seed-demo
 """
 
+from sqlalchemy import text
 
 from alternatives import ensure_tables as ensure_alternative_tables
 from api_usage import ensure_api_usage_table
@@ -18,7 +19,6 @@ from kis_practice import ensure_kis_practice_tables
 from market_bots import ensure_bot_accounts
 from db import session_scope
 from members import INITIAL_ASSET, ensure_member_tables
-import member_sessions
 import passwords
 from member_sessions import ensure_session_table
 from models import Member
@@ -67,7 +67,7 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
     email = email.strip().lower()
     if "@" not in email:
         raise ValueError("ADMIN_EMAIL is not an email address.")
-    weak = passwords.problem(password, email=email)
+    weak = passwords.problem(password, email=email, nickname=username)
     if weak:
         raise ValueError(weak)
     hashed = passwords.hash_password(password)
@@ -75,10 +75,8 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
         member = db.query(Member).filter(Member.email == email).first()
         if member:
             member.password = hashed
-            member_id = member.member_id
-        else:
-            db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET))
-            return "created"
-    # 비밀번호를 바꿨으니 이 관리자의 기존 세션을 모두 끝낸다.
-    member_sessions.end_all(member_id)
-    return "updated"
+            # 새 비밀번호와 기존 세션 폐기를 한 트랜잭션으로 커밋한다(탈취된 옛 쿠키가 남지 않게).
+            db.execute(text("DELETE FROM member_session WHERE member_id = :m"), {"m": member.member_id})
+            return "updated"
+        db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET))
+        return "created"

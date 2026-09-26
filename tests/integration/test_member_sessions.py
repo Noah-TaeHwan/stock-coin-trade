@@ -180,3 +180,23 @@ def test_email_limit_counts_only_failures(email):
     assert [attempt(PASSWORD, i) for i in range(3)] == [200] * 3
     statuses = [attempt("wrong-password-xyz", 10 + i) for i in range(31)]
     assert statuses[:30] == [401] * 30 and statuses[30] == 429
+
+
+def test_accent_and_case_variants_share_one_email_limit(email):
+    # 회원 이메일 열은 악센트·대소문자를 구별하지 않는다(jose = JOSÉ). 변형 주소로 한도를 늘리지 못해야 한다.
+    local, domain = email.split("@")
+    variants = [email, local.replace("e", "é").upper() + "@" + domain, local.upper() + "@" + domain.upper()]
+    application = create_app(
+        Settings(profile="local", secret_key="k" * 40, session_cookie_secure=False, ratelimit_enabled=True)
+    )
+    application.config.update(TESTING=True)
+    client = application.test_client()
+    statuses = [
+        client.post(
+            "/api/member/login",
+            json={"email": variants[i % 3], "password": "wrong-password-xyz"},
+            environ_base={"REMOTE_ADDR": f"198.51.100.{i + 1}"},
+        ).status_code
+        for i in range(31)
+    ]
+    assert statuses[:30] == [401] * 30 and statuses[30] == 429

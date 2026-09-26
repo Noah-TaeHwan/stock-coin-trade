@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, current_app, jsonify, request, session
 
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 import stock_trading
 from db import engine, session_scope
@@ -27,6 +27,8 @@ RANKING_CACHE_TTL = 30
 _ranking_cache = {"ts": 0.0, "data": None}
 _ranking_cache_lock = threading.Lock()
 _crypto_price_cache = {"ts": 0.0, "prices": {}}
+# 없는 계정 로그인용 더미 해시를 첫 요청 전에 만든다(첫 요청만 느려 가입 여부가 드러나지 않게).
+passwords.dummy_hash()
 
 
 @member_bp.get("/me")
@@ -395,10 +397,19 @@ def investor_rankings():
 def _login_email_key() -> str:
     """이메일 기준 로그인 제한 키(실패만 센다).
 
+    회원 이메일 열은 대소문자·악센트를 구별하지 않는 collation이라(jose = JOSÉ) 입력 문자열로 키를 만들면
+    변형 주소로 한도를 우회할 수 있다. 있는 계정이면 저장된 이메일로 키를 만든다.
+
     @returns "login:<소문자 이메일>"
     """
     body = request.get_json(silent=True) or {}
-    return "login:" + str(body.get("email") or "").strip().lower()
+    email = str(body.get("email") or "").strip()
+    try:
+        with engine.connect() as conn:
+            stored = conn.execute(text("SELECT email FROM member WHERE email = :e LIMIT 1"), {"e": email}).scalar()
+    except SQLAlchemyError:
+        stored = None
+    return "login:" + (stored or email).lower()
 
 
 @member_bp.post("/login")

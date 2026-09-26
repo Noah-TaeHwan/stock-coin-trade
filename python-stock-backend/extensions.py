@@ -16,6 +16,9 @@ def client_key() -> str:
         ip = ipaddress.ip_address(address)
     except ValueError:
         return address
+    if ip.version == 6 and ip.ipv4_mapped:
+        # ::ffff:1.2.3.4는 IPv4 사용자다. /64로 묶으면 모든 IPv4가 한 버킷이 된다.
+        return str(ip.ipv4_mapped)
     return str(ipaddress.ip_network(f"{ip}/64", strict=False)) if ip.version == 6 else address
 
 

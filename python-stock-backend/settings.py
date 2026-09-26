@@ -88,7 +88,8 @@ class Settings:
     jev_monthly_budget_usd: float = 0.0
     # OpenDART 인증키(공시 레이더 수집기, worker 전용). 비어 있으면 수집 작업을 걸지 않는다. Flask 설정에는 넣지 않는다.
     dart_api_key: str = ""
-    # 가입을 받을지. public은 인증 메일이 필요하므로 SMTP_HOST와 https PUBLIC_BASE_URL이 있어야만 열린다.
+    # 가입을 받을지. public은 SIGNUP_ENABLED=true로 직접 열어야 하고, 인증 메일이 필요하므로
+    # SMTP_HOST와 https PUBLIC_BASE_URL도 있어야 한다(메일만 설정했다고 저절로 열리지 않는다).
     signup_enabled: bool = True
     smtp_host: str = ""
     # 메일 속 링크의 기준 주소. 요청의 Host 헤더로 링크를 만들지 않는다(재설정 링크 변조 방지).
@@ -144,7 +145,7 @@ class Settings:
         smtp_host = (env.get("SMTP_HOST") or "").strip()
         public_base_url = (env.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
         mail_ready = bool(smtp_host) and public_base_url.startswith("https://")
-        signup_default = "true" if profile == "local" or mail_ready else "false"
+        signup_default = "true" if profile == "local" else "false"
         signup_enabled = (env.get("SIGNUP_ENABLED") or signup_default).strip().lower() == "true"
         if profile == "public":
             problems = []
