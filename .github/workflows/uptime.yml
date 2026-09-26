@@ -1,0 +1,44 @@
+# 공개 서버 가동 확인(S5). 30분마다 HTTPS로 핵심 주소를 부르고, 하나라도 실패하면 이 워크플로가 실패한다.
+# 예약 실행이 실패하면 GitHub이 저장소 관리자에게 알림 메일을 보낸다. 추가 비용·외부 서비스 없음.
+name: Uptime
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 5
+    env:
+      SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+    steps:
+      - name: Health, disclosures API, privacy page
+        run: |
+          set -euo pipefail
+          base="https://$SITE_ADDRESS"
+          check() {
+            local path="$1" expect="$2" code body
+            for attempt in 1 2 3; do
+              body=$(curl -sS --max-time 20 -o - -w '\n%{http_code}' "$base$path" || true)
+              code="${body##*$'\n'}"
+              if [ "$code" = 200 ] && grep -q -- "$expect" <<<"$body"; then echo "ok $path"; return 0; fi
+              sleep 10
+            done
+            echo "::error::$path failed (last status ${code:-none})"
+            return 1
+          }
+          failed=0
+          check /health '"status"' || failed=1
+          check /api/disclosures '"attribution"' || failed=1
+          check /privacy.html '개인정보 처리방침' || failed=1
+          exit "$failed"

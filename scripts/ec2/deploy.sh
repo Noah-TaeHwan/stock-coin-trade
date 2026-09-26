@@ -6,7 +6,8 @@
 # <release-dir> holds the compose files and docker/ configs of the commit being
 # deployed (the CI workflow unpacks them from S3). Required environment:
 #   AWS_REGION, ECR_REGISTRY, LOG_GROUP, SITE_ADDRESS
-# Optional: PARAM_PATH (default /stock-coin-trade/prod), STATE_DIR (default /opt/stockdesk)
+# Optional: PARAM_PATH (default /stock-coin-trade/prod), STATE_DIR (default /opt/stockdesk),
+#   BACKUP_BUCKET (set: install a daily DB backup timer, 04:30 KST, backup-db.sh to s3://BUCKET/backups/)
 #
 # Steps: secrets from SSM Parameter Store -> env file (0600) -> ECR login ->
 # pull -> up -> health check through nginx. If the new release is unhealthy
@@ -68,8 +69,38 @@ aws ecr get-login-password --region "$AWS_REGION" |
 compose "$RELEASE_DIR" pull --quiet
 compose "$RELEASE_DIR" up -d --remove-orphans
 
+# Daily DB backup (S5): copy the scripts out of the release so the timer does not depend on an old release
+# directory, then (re)install a systemd timer. Persistent=true runs a missed backup after a reboot.
+install_backup_timer() {
+  [[ -n "${BACKUP_BUCKET:-}" ]] || return 0
+  install -d -m 700 "$STATE_DIR/bin"
+  install -m 700 "$RELEASE_DIR/scripts/ec2/backup-db.sh" "$RELEASE_DIR/scripts/ec2/db-counts.sh" "$STATE_DIR/bin/"
+  cat >/etc/systemd/system/stockdesk-backup.service <<UNIT
+[Unit]
+Description=stockdesk daily DB backup to S3
+[Service]
+Type=oneshot
+Environment=AWS_REGION=$AWS_REGION
+ExecStart=/bin/bash $STATE_DIR/bin/backup-db.sh $BACKUP_BUCKET
+UNIT
+  cat >/etc/systemd/system/stockdesk-backup.timer <<UNIT
+[Unit]
+Description=stockdesk daily DB backup (04:30 KST)
+[Timer]
+OnCalendar=*-*-* 19:30:00 UTC
+RandomizedDelaySec=600
+Persistent=true
+[Install]
+WantedBy=timers.target
+UNIT
+  systemctl daemon-reload
+  systemctl enable --now stockdesk-backup.timer >/dev/null
+  echo "backup timer: $(systemctl show -p NextElapseUSecRealtime --value stockdesk-backup.timer)"
+}
+
 if healthy "$RELEASE_DIR"; then
   printf '%s\n%s\n' "$RELEASE_DIR" "$IMAGE_TAG" >"$STATE_DIR/current"
+  install_backup_timer
   echo "deployed $IMAGE_TAG"
   exit 0
 fi
