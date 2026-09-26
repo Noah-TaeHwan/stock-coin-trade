@@ -19,12 +19,14 @@ description: stock-coin-trade 앱(Flask + nginx + MariaDB + PostgreSQL)을 전�
 `scripts/verify/stack.sh up`
 - 첫 실행 때 `.env.verify`(권한 600)를 만든다. 값은 출력하지 않는다.
 - 이미지를 빌드하고 frontend·backend·init·DB를 띄운다. worker는 띄우지 않는다.
+- 셸 환경변수는 스택에 넘기지 않는다. 앱 설정은 `.env.verify` 값만 쓴다(`JEV_ENABLED` 같은 과금 변수가 새지 않는다).
+- 스택은 한 번에 한 체크아웃만 쓴다. 다른 체크아웃이 쓰는 중이면 종료 코드 2로 멈춘다. 띄운 체크아웃은 `.verify-artifacts/owner`에 기록된다.
 - 준비되면 `up: ok`를 출력한다. 첫 빌드는 몇 분 걸린다.
 
 ## Doctor
 
 `scripts/verify/stack.sh doctor`
-- 포트 3334의 주인이 이 프로젝트 컨테이너인지, `/health`, init 종료 코드 0, 프로필, Jev 상태를 확인한다.
+- 이 체크아웃이 띄운 스택인지(소유 기록), 포트 3334의 주인이 이 프로젝트 컨테이너인지, `/health`, init 종료 코드 0, 프로필 `local`, Jev 꺼짐을 확인한다.
 - `ok`가 아니면(종료 코드 2) 주행하지 않고 원인을 보고한다.
 
 ## Drive
@@ -35,14 +37,15 @@ description: stock-coin-trade 앱(Flask + nginx + MariaDB + PostgreSQL)을 전�
 
 ## Evidence
 
-- 스크립트가 `.verify-artifacts/<UTC시각>-<무작위4자>-<기능ID>/transcript.json`을 쓴다. 쿠키, 토큰, 비밀번호, csrf는 `***`로 가린다.
+- 스크립트가 `.verify-artifacts/<UTC시각>-<무작위4자>-<기능ID>/transcript.json`을 쓴다. 쿠키, 토큰, 비밀번호, csrf는 `***`로 가린다. 실패 메시지 같은 문장 속의 값도 가린다.
+- 예상 밖 오류(응답 형식이 다름 등)도 판정 FAIL과 함께 증거를 남긴다.
 - 화면 캡처는 같은 폴더에 저장한다.
 - 보고에는 판정과 이 경로를 쓴다.
 
 ## Cleanup
 
 `scripts/verify/stack.sh down`
-- 이 프로젝트만 `down -v`한다. 익명 볼륨 수가 up 때보다 늘면 실패(종료 코드 1)다.
+- 자기가 띄운 스택만 `down -v`한다. 소유 기록이 다르면 거부(종료 코드 2), `.env.verify`가 없으면 실패(1)다. 익명 볼륨 수가 up 때보다 늘어도 실패(1)다.
 - 증거 폴더는 지우지 않는다.
 - 프로세스를 이름으로 죽이지 않는다.
 

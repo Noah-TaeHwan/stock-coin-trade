@@ -8,15 +8,22 @@ PROJECT=stockdesk-verify
 PORT=3334
 ENV_FILE=.env.verify
 ART=.verify-artifacts
+OWNER="$ART/owner"   # 이 스택을 띄운 체크아웃의 절대 경로
+HERE=$(pwd -P)
+# ponytail: 검증 스택은 한 번에 한 체크아웃만 쓴다. 병렬 검증이 필요해지면 프로젝트 이름·포트를 체크아웃별로 나눈다.
 
-# 과금·외부 호출 변수는 셸에 있어도 검증 스택으로 넘기지 않는다.
+# 셸 환경을 비우고 docker 연결에 필요한 변수만 넘긴다. 앱 설정 값은 .env.verify에서만 온다.
 compose() {
-  env -u JEV_ENABLED -u TYPESAFE_API_KEY -u JEV_MONTHLY_BUDGET_USD -u DART_API_KEY \
+  env -i PATH="$PATH" HOME="$HOME" \
+    ${DOCKER_HOST:+DOCKER_HOST="$DOCKER_HOST"} ${DOCKER_CONTEXT:+DOCKER_CONTEXT="$DOCKER_CONTEXT"} \
+    ${DOCKER_CONFIG:+DOCKER_CONFIG="$DOCKER_CONFIG"} ${BUILDX_CONFIG:+BUILDX_CONFIG="$BUILDX_CONFIG"} \
     docker compose -p "$PROJECT" --env-file "$ENV_FILE" \
     -f docker-compose.yml -f compose.portfolio.yml --profile local-db "$@"
 }
 
 dangling() { docker volume ls -qf dangling=true | wc -l | tr -d ' '; }
+running() { [ -n "$(docker ps -aq --filter "label=com.docker.compose.project=$PROJECT")" ]; }
+mine() { [ "$(cat "$OWNER" 2>/dev/null)" = "$HERE" ]; }
 
 # 처음 한 번 무작위 값으로 .env.verify를 만든다(권한 600, 값은 출력하지 않음).
 make_env() {
@@ -45,28 +52,41 @@ service_id() {
 
 case "${1:-}" in
   up)
+    if running && ! mine; then
+      echo "up: ${PROJECT}가 다른 체크아웃($(cat "$OWNER" 2>/dev/null || echo 기록 없음))에서 쓰는 중입니다. 그쪽에서 down한 뒤 다시 실행하세요"
+      exit 2
+    fi
     mkdir -p "$ART"
     dangling > "$ART/pre-dangling.txt"
     make_env
     # worker는 외부 시세 사이트를 부르는 주기 작업이라 띄우지 않는다. frontend가 backend·init·DB를 끌어온다.
     compose up -d --build --wait frontend
+    printf '%s\n' "$HERE" > "$OWNER"
     echo "up: ok project=$PROJECT port=$PORT"
     ;;
   doctor)
     frontend=$(docker ps -q --filter "label=com.docker.compose.project=$PROJECT" --filter "label=com.docker.compose.service=frontend")
     [ -n "$frontend" ] || { echo "doctor: $PROJECT frontend 컨테이너가 없습니다"; exit 2; }
+    mine || { echo "doctor: 이 체크아웃이 띄운 스택이 아닙니다($(cat "$OWNER" 2>/dev/null || echo 소유 기록 없음))"; exit 2; }
     published=$(docker port "$frontend" 80/tcp | head -1)
-    [ "$published" = "127.0.0.1:$PORT" ] || { echo "doctor: 포트 $PORT가 이 프로젝트 것이 아닙니다($published)"; exit 2; }
+    [ "$published" = "127.0.0.1:$PORT" ] || { echo "doctor: 포트 ${PORT}가 이 프로젝트 것이 아닙니다(${published})"; exit 2; }
     curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null || { echo "doctor: /health 실패"; exit 2; }
     init=$(service_id init)
     code=$(docker inspect -f '{{.State.ExitCode}}' "$init")
     [ "$code" = 0 ] || { echo "doctor: init 종료 코드 $code"; exit 2; }
     profile=$(curl -fsS "http://127.0.0.1:$PORT/api/member/me" | python3 -c 'import json,sys; print(json.load(sys.stdin)["profile"])')
     jev=$(docker exec "$(service_id python-backend)" sh -c 'echo "${JEV_ENABLED:-unset}"')
+    [ "$profile" = local ] || { echo "doctor: 프로필이 local이 아닙니다(profile=$profile)"; exit 2; }
+    [ "$jev" = false ] || { echo "doctor: 과금 기능 Jev가 꺼져 있지 않습니다(jev=$jev)"; exit 2; }
     echo "doctor: ok profile=$profile jev=$jev port=$PORT"
     ;;
   down)
-    if [ -f "$ENV_FILE" ]; then compose down -v --remove-orphans; else echo "down: $ENV_FILE 없음, compose 정리 생략"; fi
+    if running; then
+      mine || { echo "down: 이 체크아웃이 띄운 스택이 아닙니다($(cat "$OWNER" 2>/dev/null || echo 소유 기록 없음)). 띄운 쪽에서 정리하세요"; exit 2; }
+      [ -f "$ENV_FILE" ] || { echo "down: $ENV_FILE 없이는 compose로 정리할 수 없습니다"; exit 1; }
+      compose down -v --remove-orphans
+    fi
+    rm -f "$OWNER"
     after=$(dangling)
     if [ -f "$ART/pre-dangling.txt" ]; then
       before=$(cat "$ART/pre-dangling.txt")

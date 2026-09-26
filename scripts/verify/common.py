@@ -24,6 +24,8 @@ PROJECT = "stockdesk-verify"
 BASE_URL = os.environ.get("VERIFY_BASE_URL", "http://127.0.0.1:3334")
 ARTIFACTS = Path(os.environ.get("VERIFY_ARTIFACTS", ".verify-artifacts"))
 _SECRET_KEY = re.compile(r"(?i)(token|password|secret|cookie|sid|csrf)")
+# 자유 문장(예외 메시지 등) 속 "키: 값", "키=값"의 값. 앞이 영문자면 다른 단어의 일부(inside 등)로 본다.
+_SECRET_IN_TEXT = re.compile(r"(?i)((?<![A-Za-z])(?:token|password|secret|cookie|sid|csrf)\w*['\"]?\s*[:=]\s*['\"]?)([^'\",}\s&]+)")
 
 
 def redact(value):
@@ -36,6 +38,8 @@ def redact(value):
         return {key: ("***" if _SECRET_KEY.search(str(key)) else redact(item)) for key, item in value.items()}
     if isinstance(value, list):
         return [redact(item) for item in value]
+    if isinstance(value, str):
+        return _SECRET_IN_TEXT.sub(r"\1***", value)
     return value
 
 
@@ -117,14 +121,15 @@ def mariadb_scalar(sql: str) -> str:
                           check=True, capture_output=True, text=True).stdout.strip()
 
 
-def run(feature_id: str, steps: Callable[[Client, Recorder], None]) -> int:
+def run(feature_id: str, steps: Callable[[Client, Recorder], None], root: Path = ARTIFACTS) -> int:
     """기능 주행을 실행하고 판정·증거 경로를 출력한다.
 
     @param feature_id 기능 ID
     @param steps (client, recorder)를 받아 실패 시 AssertionError, 전제 불충족 시 ConnectionError를 낸다
+    @param root 증거 최상위 폴더
     @returns 종료 코드(PASS·FAIL·UNMET)
     """
-    recorder, client = Recorder(feature_id), Client()
+    recorder, client = Recorder(feature_id, root), Client()
     try:
         steps(client, recorder)
         verdict, code = "PASS", PASS
@@ -134,6 +139,9 @@ def run(feature_id: str, steps: Callable[[Client, Recorder], None]) -> int:
     except (ConnectionError, urllib.error.URLError, RuntimeError) as exc:
         recorder.add("precondition", {}, 0, str(exc))
         verdict, code = "UNMET", UNMET
+    except Exception as exc:  # noqa: BLE001 — 예상 밖 응답 형식 등도 증거를 남기고 실패로 판정한다
+        recorder.add("unexpected", {}, 0, f"{type(exc).__name__}: {exc}")
+        verdict, code = "FAIL", FAIL
     path = recorder.finish(verdict)
     print(f"{feature_id}: {verdict} evidence={path}")
     return code

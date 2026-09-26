@@ -46,3 +46,28 @@ def test_recorders_started_in_the_same_second_keep_separate_evidence(tmp_path):
     first, second = common.Recorder("F9", root=tmp_path), common.Recorder("F9", root=tmp_path)
     assert first.dir != second.dir
     assert first.dir.name.endswith("-F9") and second.dir.name.endswith("-F9")
+
+
+def test_redact_masks_secret_values_inside_free_text():
+    text = "로그인 기대 200, 실제 401/{'csrfToken': 'topsecret1', 'loggedIn': False} password=hunter22"
+    masked = common.redact(text)
+    assert "topsecret1" not in masked and "hunter22" not in masked
+    assert "loggedIn" in masked
+
+
+def test_run_keeps_failure_evidence_free_of_secrets(tmp_path):
+    def steps(client, rec):
+        raise AssertionError("기대 True, 실제 {'csrfToken': 'topsecret2'}")
+
+    assert common.run("F9", steps, root=tmp_path) == common.FAIL
+    transcript = next(tmp_path.glob("*-F9/transcript.json")).read_text(encoding="utf-8")
+    assert "topsecret2" not in transcript and '"verdict": "FAIL"' in transcript
+
+
+def test_run_turns_unexpected_errors_into_recorded_failures(tmp_path):
+    def steps(client, rec):
+        "html page".get("loggedIn")
+
+    assert common.run("F9", steps, root=tmp_path) == common.FAIL
+    data = json.loads(next(tmp_path.glob("*-F9/transcript.json")).read_text(encoding="utf-8"))
+    assert data["verdict"] == "FAIL" and "AttributeError" in data["steps"][-1]["body"]
