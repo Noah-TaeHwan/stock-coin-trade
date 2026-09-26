@@ -93,3 +93,16 @@ def test_a_logged_in_day_is_recorded_once_without_device_data():
         )
     member_delete.delete_member(member_id)
     assert rows == 1 and columns == {"member_id", "day"}
+
+
+def test_an_account_verified_after_selection_is_not_deleted():
+    # 정리 작업이 대상을 고른 뒤 사용자가 인증을 마치면, 삭제 트랜잭션에서 다시 확인해 지우지 않는다.
+    tag = uuid.uuid4().hex[:8]
+    with db.engine.begin() as conn:
+        member_id = _insert_member(conn, f"race-{tag}@example.test", False, "2026-09-26", 8)
+        conn.execute(text("UPDATE member SET email_verified_at = NOW() WHERE member_id = :m"), {"m": member_id})
+    assert member_delete.delete_member(member_id, only_if_unverified=True) is False
+    with db.engine.connect() as conn:
+        still = conn.execute(text("SELECT COUNT(*) FROM member WHERE member_id = :m"), {"m": member_id}).scalar()
+    member_delete.delete_member(member_id)
+    assert still == 1

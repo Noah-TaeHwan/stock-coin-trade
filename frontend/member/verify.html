@@ -17,6 +17,10 @@
   <section class="auth-card">
     <h1 class="auth-title">이메일 인증</h1>
     <p class="auth-message" id="message" hidden></p>
+    <form id="confirm" hidden novalidate>
+      <p class="auth-sub">가입을 요청한 본인이라면 아래 버튼을 눌러 인증을 마쳐 주세요.</p>
+      <button class="btn-gold auth-submit" type="submit">이메일 인증 완료</button>
+    </form>
     <p class="auth-links" id="toLogin" hidden><a href="/member/login.html">로그인하러 가기</a></p>
     <form id="resend" hidden novalidate>
       <p class="auth-sub">가입한 이메일을 넣으면 인증 메일을 다시 보냅니다.</p>

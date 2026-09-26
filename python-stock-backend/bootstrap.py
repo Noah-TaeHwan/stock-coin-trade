@@ -82,6 +82,7 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
             member.email_verified_at = member.email_verified_at or func.now()
             # 새 비밀번호와 기존 세션 폐기를 한 트랜잭션으로 커밋한다(탈취된 옛 쿠키가 남지 않게).
             db.execute(text("DELETE FROM member_session WHERE member_id = :m"), {"m": member.member_id})
+            db.execute(text("UPDATE api_key SET is_active = 0 WHERE member_id = :m"), {"m": member.member_id})
             return "updated"
         # CLI로 만드는 관리자는 운영자 본인이므로 메일 인증을 거친 것으로 본다.
         db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET, email_verified_at=func.now()))

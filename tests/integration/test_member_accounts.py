@@ -130,8 +130,18 @@ def test_create_admin_makes_an_account_that_can_sign_in_and_is_admin():
         assert client.post("/api/member/login", json={"email": email, "password": password + "!"}).status_code == 200
         assert client.get("/api/member/me").get_json()["isAdmin"] is True
         assert client.get("/api/admin/me").status_code == 200
-        # 비밀번호를 다시 설정하면 기존 관리자 세션은 같은 트랜잭션에서 끝난다.
+        assert client.post("/api/member/api-keys", json={"label": "admin key"}).status_code == 200
+        # 비밀번호를 다시 설정하면 기존 관리자 세션과 API 키가 같은 트랜잭션에서 끝난다.
         assert bootstrap.create_admin(email, password + "?") == "updated"
         assert client.get("/api/member/me").get_json()["loggedIn"] is False
+        with db.engine.connect() as conn:
+            active = conn.execute(
+                text(
+                    "SELECT COUNT(*) FROM api_key k JOIN member m USING (member_id) "
+                    "WHERE m.email = :e AND k.is_active = 1"
+                ),
+                {"e": email},
+            ).scalar()
+        assert active == 0
     finally:
         _delete_member(email)

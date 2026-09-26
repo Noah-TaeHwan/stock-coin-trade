@@ -52,8 +52,12 @@ def verify_email():
         if member_id is None:
             conn.rollback()
             return jsonify(INVALID_TOKEN), 400
-        conn.execute(text("UPDATE member SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE member_id = :m"),
-                     {"m": member_id})
+        verified = conn.execute(
+            text("UPDATE member SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE member_id = :m"),
+            {"m": member_id}).rowcount
+        if verified != 1:  # 정리 작업이 그사이 계정을 지웠다
+            conn.rollback()
+            return jsonify(INVALID_TOKEN), 400
         conn.commit()
     return jsonify({"verified": True})
 
@@ -64,7 +68,8 @@ def resend_verification():
     """인증 메일을 다시 보낸다. 주소가 있든 없든, 이미 인증했든 같은 202로 답한다."""
     row = _find_member(_email_from_body())
     if row and row["email_verified_at"] is None:
-        mailer.queue("verify", row["email"], member_tokens.issue(row["member_id"], "verify"))
+        member_id = row["member_id"]
+        mailer.queue("verify", row["email"], lambda: member_tokens.issue(member_id, "verify"))
     return jsonify(ACCEPTED), 202
 
 
@@ -83,7 +88,8 @@ def request_password_reset():
     """재설정 메일을 보낸다. 항상 202. 공개 배포의 관리자 주소는 메일로 재설정하지 않는다(CLI만)."""
     row = _find_member(_email_from_body())
     if row:
-        mailer.queue("reset", row["email"], member_tokens.issue(row["member_id"], "reset"))
+        member_id = row["member_id"]
+        mailer.queue("reset", row["email"], lambda: member_tokens.issue(member_id, "reset"))
     return jsonify(ACCEPTED), 202
 
 
@@ -117,7 +123,7 @@ def reset_password():
 @account_bp.post("/password/change")
 @limiter.limit("10 per hour", key_func=_member_key)
 def change_password():
-    """현재 비밀번호를 확인하고 바꾼다. 다른 기기 세션은 끝내고 이 기기는 새 세션을 받는다."""
+    """현재 비밀번호를 확인하고 바꾼다. 다른 기기 세션과 API 키는 끝내고 이 기기는 새 세션을 받는다."""
     member_id = session.get("member_id")
     if not member_id:
         return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
@@ -136,6 +142,8 @@ def change_password():
         conn.execute(text("UPDATE member SET password = :p WHERE member_id = :m"),
                      {"p": passwords.hash_password(password), "m": member_id})
         conn.execute(text("DELETE FROM member_session WHERE member_id = :m"), {"m": member_id})
+        # 세션을 훔친 사람이 만들어 둔 API 키가 남지 않게 모두 끈다(재설정과 같은 규칙).
+        conn.execute(text("UPDATE api_key SET is_active = 0 WHERE member_id = :m"), {"m": member_id})
         conn.commit()
     member_sessions.start(member_id)
     return jsonify({"success": True})

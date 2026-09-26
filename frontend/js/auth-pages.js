@@ -125,14 +125,20 @@ const PAGES = {
       say('가입했지만 아직 인증하지 않은 주소라면 인증 메일을 다시 보냈습니다.', 'ok');
     });
     if (!window.__authToken) { resend.hidden = false; return; }
-    const { status, data } = await postJson('/api/member/verify', { token: window.__authToken });
-    if (status === 200) {
-      say('이메일 인증이 끝났습니다. 이제 로그인할 수 있습니다.', 'ok');
-      document.getElementById('toLogin').hidden = false;
-      return;
-    }
-    say(errorText(status, data, '인증하지 못했습니다.'));
-    resend.hidden = false;
+    // 메일 보안 검사기가 링크를 열어도 인증되지 않게, 토큰은 사람이 버튼을 눌렀을 때만 쓴다.
+    const confirm = document.getElementById('confirm');
+    confirm.hidden = false;
+    onSubmit('confirm', async () => {
+      const { status, data } = await postJson('/api/member/verify', { token: window.__authToken });
+      confirm.hidden = true;
+      if (status === 200) {
+        say('이메일 인증이 끝났습니다. 이제 로그인할 수 있습니다.', 'ok');
+        document.getElementById('toLogin').hidden = false;
+        return;
+      }
+      say(errorText(status, data, '인증하지 못했습니다.'));
+      resend.hidden = false;
+    });
   },
 
   'reset-request'() {
@@ -173,7 +179,7 @@ const PAGES = {
       });
       if (status === 200) {
         document.getElementById('change').reset();
-        say('비밀번호를 바꿨습니다. 다른 기기는 로그아웃되었습니다.', 'ok');
+        say('비밀번호를 바꿨습니다. 다른 기기는 로그아웃되었고 API 키는 꺼졌습니다.', 'ok');
         return;
       }
       say(errorText(status, data, '비밀번호를 바꾸지 못했습니다.'));

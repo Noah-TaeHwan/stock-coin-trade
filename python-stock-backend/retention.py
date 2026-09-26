@@ -23,9 +23,8 @@ def purge_unverified_members() -> int:
         ids = conn.execute(text(
             "SELECT member_id FROM member WHERE email_verified_at IS NULL AND consent_version IS NOT NULL "
             f"AND created_at < NOW() - INTERVAL {UNVERIFIED_DAYS} DAY")).scalars().all()
-    for member_id in ids:
-        delete_member(member_id)
-    return len(ids)
+    # 고른 뒤 사용자가 인증을 마쳤을 수 있으므로 삭제 트랜잭션에서 다시 확인한다.
+    return sum(delete_member(member_id, only_if_unverified=True) for member_id in ids)
 
 
 def purge_old_logs() -> int:
