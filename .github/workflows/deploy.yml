@@ -69,7 +69,7 @@ jobs:
           mkdir -p "$dir"
           aws s3 cp "s3://$RELEASE_BUCKET/releases/$IMAGE_TAG.tgz" - | tar xz -C "$dir"
           AWS_REGION="$AWS_REGION" ECR_REGISTRY="$REGISTRY" LOG_GROUP="$LOG_GROUP" SITE_ADDRESS="$SITE_ADDRESS" \
-            bash "$dir/scripts/ec2/deploy.sh" "$dir" "$IMAGE_TAG"
+            BACKUP_BUCKET="$RELEASE_BUCKET" bash "$dir/scripts/ec2/deploy.sh" "$dir" "$IMAGE_TAG"
           SCRIPT
           )
           params=$(jq -n --arg s "$script" '{commands: [$s], executionTimeout: ["1800"]}')

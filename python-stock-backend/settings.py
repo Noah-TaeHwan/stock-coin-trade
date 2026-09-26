@@ -37,6 +37,9 @@ MEMORY_RATELIMIT_STORAGE = "memory://"
 DEFAULT_AI_MODEL = "claude-opus-5-5"
 DEV_AI_INVITE_PEPPER = "dev-invite-pepper-change-me"
 MIN_AI_INVITE_PEPPER_LENGTH = 32
+# 공개 사이트의 AI 질문은 미국 Anthropic으로 가는 국외 이전이다. 처리방침 4절에 이전받는 자·항목·목적·보유 기간을
+# 적은 뒤에만 True로 바꾼다(그 전에는 공개 프로필에서 AI_ENABLED=true를 거부한다).
+AI_TRANSFER_IN_PRIVACY_POLICY = False
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -194,6 +197,8 @@ class Settings:
                 problems.append("PUBLIC_BASE_URL must start with https:// when mail is on")
             if signup_enabled and not mail_ready:
                 problems.append("SIGNUP_ENABLED needs SMTP_HOST and an https:// PUBLIC_BASE_URL")
+            if ai_enabled and not AI_TRANSFER_IN_PRIVACY_POLICY:
+                problems.append("AI_ENABLED needs the privacy policy to cover the Anthropic transfer first")
             if ai_enabled and (
                 len(ai_invite_pepper) < MIN_AI_INVITE_PEPPER_LENGTH or ai_invite_pepper in EXAMPLE_PLACEHOLDERS
             ):
