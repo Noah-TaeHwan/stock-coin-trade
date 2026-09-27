@@ -117,3 +117,11 @@
 {"id": "i117", "text": "비트코인 해외랑 국내 가격 차이", "screen": "arbitrage", "stock": null, "coin": "BTC", "strategy": null, "screen_alt": []}
 {"id": "i118", "text": "삼성전자 이평선 교차 전략 과거 성과", "screen": "quant", "stock": "005930", "coin": null, "strategy": "ma2050", "screen_alt": []}
 {"id": "i119", "text": "셀트리온 주문", "screen": "stock", "stock": "068270", "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i120", "text": "삼성전자 공시 보여줘", "screen": "disclosures", "stock": "005930", "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i121", "text": "오늘 공시 뭐 나왔어", "screen": "disclosures", "stock": null, "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i122", "text": "하닉 공시 떴어?", "screen": "disclosures", "stock": "000660", "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i123", "text": "위험 공시만 모아 줘", "screen": "disclosures", "stock": null, "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i124", "text": "DART 공시 목록", "screen": "disclosures", "stock": null, "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i125", "text": "네이버 최근 공시 확인", "screen": "disclosures", "stock": "035420", "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i126", "text": "관심 종목 공시 모아 보기", "screen": "disclosures", "stock": null, "coin": null, "strategy": null, "screen_alt": []}
+{"id": "i127", "text": "현대차 유상증자 공시 있었나", "screen": "disclosures", "stock": "005380", "coin": null, "strategy": null, "screen_alt": []}
