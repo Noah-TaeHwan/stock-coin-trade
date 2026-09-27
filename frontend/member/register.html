@@ -17,6 +17,12 @@
     <h1 class="auth-title">가입</h1>
     <p class="auth-message" id="message" hidden></p>
     <p class="auth-sub">비밀번호는 15자 이상, 문장처럼 길게 정하세요. 예: 봄비 오는 날 공시를 읽는다</p>
+    <section id="demo-access" class="auth-section" hidden>
+      <h2>공용 데모 체험</h2>
+      <p>이메일: <strong id="demo-email"></strong><br>비밀번호: <strong id="demo-password"></strong></p>
+      <p>모의 거래와 메모는 다른 방문자와 공유됩니다. 개인 정보는 입력하지 마세요.</p>
+      <button id="demo-use" class="btn-ghost auth-submit" type="button">데모 로그인으로 이동</button>
+    </section>
     <form id="form" novalidate>
       <div class="auth-field"><label class="auth-label" for="username">닉네임</label>
         <input class="dark-input" id="username" autocomplete="nickname" maxlength="20" required>

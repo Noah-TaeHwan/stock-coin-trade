@@ -9,6 +9,7 @@ import requests
 from flask import Blueprint, jsonify, session
 
 from api_usage import record_kis_gateway_call
+from authz import is_demo_member
 from db import session_scope
 from models import Member
 from security import csrf_is_valid
@@ -33,6 +34,8 @@ class KisRealError(RuntimeError):
 def require_login():
     if not session.get("member_id"):
         return jsonify({"ok": False, "error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    if is_demo_member(session["member_id"]):
+        return jsonify({"ok": False, "error": "DEMO_ACCOUNT", "message": "공용 데모에서는 실전 계좌를 사용할 수 없습니다."}), 403
 
 
 def _settings() -> dict[str, str]:

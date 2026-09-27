@@ -11,7 +11,7 @@ import member_sessions
 import member_tokens
 import passwords
 from accounts import is_reserved_email
-from authz import admin_email
+from authz import admin_email, is_demo_member
 from db import engine
 from extensions import client_key, limiter
 
@@ -38,8 +38,9 @@ def _find_member(email: str):
     if not mailer.valid_address(email) or is_reserved_email(email) or public_admin:
         return None
     with engine.connect() as conn:
-        return conn.execute(text("SELECT member_id, email, email_verified_at FROM member WHERE email = :e"),
-                            {"e": email}).mappings().first()
+        row = conn.execute(text("SELECT member_id, email, email_verified_at, is_demo FROM member WHERE email = :e"),
+                           {"e": email}).mappings().first()
+        return None if row and row["is_demo"] else row
 
 
 @account_bp.post("/verify")
@@ -106,7 +107,11 @@ def reset_password():
         if member_id is None:
             conn.rollback()
             return jsonify(INVALID_TOKEN), 400
-        row = conn.execute(text("SELECT email, username FROM member WHERE member_id = :m"), {"m": member_id}).mappings().first()
+        row = conn.execute(text("SELECT email, username, is_demo FROM member WHERE member_id = :m"),
+                           {"m": member_id}).mappings().first()
+        if row["is_demo"]:
+            conn.rollback()
+            return jsonify({"error": "DEMO_ACCOUNT"}), 403
         weak = passwords.problem(password, email=row["email"], nickname=row["username"] or "")
         if weak:
             conn.rollback()  # 토큰을 되살려 같은 링크로 다시 시도하게 한다
@@ -127,6 +132,8 @@ def change_password():
     member_id = session.get("member_id")
     if not member_id:
         return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    if is_demo_member(member_id):
+        return jsonify({"error": "DEMO_ACCOUNT"}), 403
     body = request.get_json(silent=True) or {}
     current, password, password2 = body.get("current") or "", body.get("password") or "", body.get("password2") or ""
     if not password or password != password2:
@@ -156,6 +163,8 @@ def delete_account():
     member_id = session.get("member_id")
     if not member_id:
         return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    if is_demo_member(member_id):
+        return jsonify({"error": "DEMO_ACCOUNT"}), 403
     password = (request.get_json(silent=True) or {}).get("password") or ""
     with engine.connect() as conn:
         stored = conn.execute(text("SELECT password FROM member WHERE member_id = :m"), {"m": member_id}).scalar()

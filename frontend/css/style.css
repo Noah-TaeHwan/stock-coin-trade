@@ -340,10 +340,15 @@ body.app-shell-layout > footer:not(#site-footer) { padding: 6px clamp(8px, 1vw, 
     .term-tape-track { animation: none; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1023px) {
     .term-cmdbar { flex-wrap: wrap; padding: 4px 6px; gap: 6px; }
     .term-cmd { order: 5; flex-basis: 100%; max-width: none; }
     .term-clock, .term-menu-label, .term-user-name, .term-mode, .term-brand small { display: none; }
+    .term-icon-btn, .term-brand { min-height: 44px; height: auto; }
+    .term-icon-btn { min-width: 44px; }
+    .term-cmd { height: 46px; }
+    .term-go { min-width: 44px; }
+    .term-fkey { min-height: 44px; }
 }
 
 /* ── Status bar (footer) ────────────────────────────────────────────────── */

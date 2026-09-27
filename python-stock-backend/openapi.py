@@ -61,6 +61,8 @@ def require_api_key(f):
                 return jsonify({"error": "RATE_LIMITED", "message": f"분당 {RATE_LIMIT_MAX}회 호출 제한을 초과했습니다."}), 429
 
             member = db.get(Member, api_key.member_id)
+            if not member or member.is_demo:
+                return jsonify({"error": "UNAUTHORIZED"}), 401
             api_key.last_used_at = datetime.now(timezone.utc).replace(tzinfo=None)
             g.member_id = member.member_id
 

@@ -10,6 +10,7 @@ already exist), so they can run once per deployment from the Flask CLI:
 from sqlalchemy import func, text
 
 from alternatives import ensure_tables as ensure_alternative_tables
+from accounts import PUBLIC_DEMO_EMAIL, PUBLIC_DEMO_PASSWORD, PUBLIC_DEMO_USERNAME
 from api_usage import ensure_api_usage_table
 from crypto import ensure_crypto_tables
 from dart_radar import ensure_dart_tables
@@ -24,6 +25,7 @@ from member_sessions import ensure_session_table
 from member_tokens import ensure_token_table
 from member_delete import ensure_deletable
 from models import Member
+from authz import admin_email
 from jev_usage import ensure_jev_tables
 from research_agent import ensure_ai_tables
 from stock_trading import ensure_stock_order_columns
@@ -78,6 +80,8 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
     with session_scope() as db:
         member = db.query(Member).filter(Member.email == email).first()
         if member:
+            if member.is_demo:
+                raise ValueError("공용 데모 계정은 관리자로 전환할 수 없습니다.")
             member.password = hashed
             member.email_verified_at = member.email_verified_at or func.now()
             # 새 비밀번호와 기존 세션 폐기를 한 트랜잭션으로 커밋한다(탈취된 옛 쿠키가 남지 않게).
@@ -86,4 +90,22 @@ def create_admin(email: str, password: str, username: str = "admin") -> str:
             return "updated"
         # CLI로 만드는 관리자는 운영자 본인이므로 메일 인증을 거친 것으로 본다.
         db.add(Member(username=username, email=email, password=hashed, asset=INITIAL_ASSET, email_verified_at=func.now()))
+        return "created"
+
+
+def create_public_demo() -> str:
+    """공개 자격정보를 가진 일반 회원을 한 번 만들고, 같은 계정이면 유지한다."""
+    if admin_email() == PUBLIC_DEMO_EMAIL:
+        raise ValueError("관리자 주소와 공용 데모 주소가 같습니다.")
+    with session_scope() as db:
+        member = db.query(Member).filter(Member.email == PUBLIC_DEMO_EMAIL).first()
+        if member:
+            if (member.is_demo and member.username == PUBLIC_DEMO_USERNAME and
+                    member.email_verified_at is not None and
+                    passwords.verify(PUBLIC_DEMO_PASSWORD, member.password)):
+                return "unchanged"
+            raise ValueError("이미 사용 중인 이메일입니다. 기존 계정은 변경하지 않았습니다.")
+        db.add(Member(username=PUBLIC_DEMO_USERNAME, email=PUBLIC_DEMO_EMAIL,
+                      password=passwords.hash_password(PUBLIC_DEMO_PASSWORD),
+                      asset=INITIAL_ASSET, is_demo=True, email_verified_at=func.now()))
         return "created"

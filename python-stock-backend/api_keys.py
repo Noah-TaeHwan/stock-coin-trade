@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request, session
 from db import session_scope
 from extensions import limiter
 from models import ApiKey
+from authz import is_demo_member
 
 api_key_bp = Blueprint("api_keys", __name__, url_prefix="/api/member/api-keys")
 
@@ -18,6 +19,8 @@ MAX_ACTIVE_KEYS = 5
 def require_login():
     if not session.get("member_id"):
         return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    if is_demo_member(session["member_id"]):
+        return jsonify({"error": "DEMO_ACCOUNT"}), 403
 
 
 def _serialize(key: ApiKey) -> dict:

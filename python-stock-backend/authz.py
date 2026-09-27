@@ -33,10 +33,32 @@ def member_email(member_id: int | None, db=None) -> str | None:
 
 
 def is_admin_member(member_id: int | None, db=None) -> bool:
-    email = member_email(member_id, db)
-    return email is not None and email == admin_email()
+    if not member_id:
+        return False
+    if db is not None:
+        member = db.get(Member, member_id)
+        return bool(member and not member.is_demo and member.email and member.email.strip().lower() == admin_email())
+    with session_scope() as own_db:
+        return is_admin_member(member_id, own_db)
+
+
+def is_demo_member(member_id: int | None, db=None) -> bool:
+    """저장된 데모 표식으로 공용 계정인지 확인한다."""
+    if not member_id:
+        return False
+    if db is not None:
+        member = db.get(Member, member_id)
+        return bool(member and member.is_demo)
+    with session_scope() as own_db:
+        return is_demo_member(member_id, own_db)
 
 
 def can_use_kis_account(member_id: int | None, db=None) -> bool:
     """All valid signed-in members may use the shared KIS Testbed account."""
-    return member_email(member_id, db) is not None
+    if not member_id:
+        return False
+    if db is not None:
+        member = db.get(Member, member_id)
+        return bool(member and member.email and not member.is_demo)
+    with session_scope() as own_db:
+        return can_use_kis_account(member_id, own_db)
