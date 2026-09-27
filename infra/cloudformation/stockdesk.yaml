@@ -186,9 +186,9 @@ Resources:
       LifecycleConfiguration:
         Rules:
           - {Id: expire-releases, Status: Enabled, Prefix: releases/, ExpirationInDays: 90}
-          # 25 days + 7 noncurrent days, each rounded up to the next UTC midnight: gone within about 34 days
-          # (the privacy policy promises 35).
-          - {Id: expire-backups, Status: Enabled, Prefix: backups/, ExpirationInDays: 25}
+          # 21 days + 7 noncurrent days, each rounded up to the next UTC midnight: scheduled for deletion by
+          # about day 30. S3 deletes asynchronously, so this leaves room under the privacy policy's 35 days.
+          - {Id: expire-backups, Status: Enabled, Prefix: backups/, ExpirationInDays: 21}
           - {Id: old-versions, Status: Enabled, NoncurrentVersionExpiration: {NoncurrentDays: 7}}
 
   ReleaseBucketTlsOnly:
@@ -488,19 +488,20 @@ Resources:
               # {"site": "..."} is a dry run against another host: it reports but writes no metric.
               site = event.get("site") or os.environ["SITE"]
               up = all([ok(f"https://{site}{path}", needle) for path, needle in CHECKS])
+              age = None  # a failed listing writes no backup datapoint (one blip must not alarm for an hour)
               try:
-                  # ponytail: one page (<=1000 keys); 25 days x 3 files stays far below. Paginate if that changes.
+                  # ponytail: one page (<=1000 keys); 21 days x 3 files stays far below. Paginate if that changes.
                   rows = boto3.client("s3").list_objects_v2(Bucket=os.environ["BUCKET"], Prefix="backups/").get("Contents", [])
                   done = [o["LastModified"].timestamp() for o in rows if o["Key"].endswith("/counts.tsv")]
                   age = (time.time() - max(done)) / 3600 if done else 9999.0
               except Exception as e:
                   print("FAIL backups", repr(e))
-                  age = 9999.0
               if "site" not in event:
-                  boto3.client("cloudwatch").put_metric_data(Namespace="Stockdesk", MetricData=[
-                      {"MetricName": "SiteUp", "Value": 1.0 if up else 0.0},
-                      {"MetricName": "BackupAgeHours", "Value": age}])
-              return {"siteUp": up, "backupAgeHours": round(age, 1)}
+                  data = [{"MetricName": "SiteUp", "Value": 1.0 if up else 0.0}]
+                  if age is not None:
+                      data.append({"MetricName": "BackupAgeHours", "Value": age})
+                  boto3.client("cloudwatch").put_metric_data(Namespace="Stockdesk", MetricData=data)
+              return {"siteUp": up, "backupAgeHours": None if age is None else round(age, 1)}
 
   MonitorSchedule:
     Type: AWS::Events::Rule
@@ -516,7 +517,7 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn: !GetAtt MonitorSchedule.Arn
 
-  # Two 10-minute periods (about four checks) must fail before the site alarm fires.
+  # Fires when each of two consecutive 10-minute periods has at least one failed check (Minimum < 1).
   SiteDownAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:

@@ -5,7 +5,7 @@
 ## 1. 스택 만들기
 
 ```bash
-ami=$(aws ssm get-parameter --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 --query Parameter.Value --output text)
+ami=$(aws ssm get-parameter --region ap-northeast-2 --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 --query Parameter.Value --output text)
 aws cloudformation deploy --region ap-northeast-2 --stack-name stockdesk \
   --template-file infra/cloudformation/stockdesk.yaml --capabilities CAPABILITY_IAM \
   --parameter-overrides BudgetEmail=<메일> MonthlyBudgetUsd=35 InstanceType=t3.small \
@@ -71,7 +71,7 @@ sudo docker compose -p stockdesk exec python-backend flask --app app create-invi
 
 ```bash
 export AWS_REGION=ap-northeast-2
-# 두 DB를 덤프하고 덤프 전후 행 수(counts.tsv)를 기록한다. 모두 성공해야 s3://<ReleaseBucket>/backups/<UTC 시각>/에 올린다(25일 뒤 만료, 이전 버전은 7일 뒤 삭제: 약 34일 안에 사라진다)
+# 두 DB를 덤프하고 덤프 전후 행 수(counts.tsv)를 기록한다. 모두 성공해야 s3://<ReleaseBucket>/backups/<UTC 시각>/에 올린다(21일 뒤 만료, 이전 버전은 7일 뒤 삭제: 약 30일째에 삭제 예정. S3 삭제는 비동기라 하루 이틀 늦을 수 있다. 복구 스크립트는 현재 버전만 쓰므로 복구 가능 기간은 약 21일)
 bash scripts/ec2/backup-db.sh <ReleaseBucket>
 # 임시 컨테이너(같은 이미지)에 복구하고 테이블별 행 수를 백업의 counts.tsv와 대조한다(덤프 중 안 바뀐 테이블은 정확히 일치)
 bash scripts/ec2/restore-check.sh s3://<ReleaseBucket>/backups/<UTC 시각>
@@ -87,13 +87,13 @@ bash scripts/ec2/restore-check.sh s3://<ReleaseBucket>/backups/<UTC 시각>
 
 - 스택의 `MonitorFunction`(Lambda)이 5분마다 공개 주소 세 곳(`/health`, `/api/disclosures`, `/privacy.html`)을 부르고, 가장 최근 백업(`backups/*/counts.tsv`)의 나이를 CloudWatch 지표 `Stockdesk/SiteUp`·`BackupAgeHours`로 남긴다.
 - 경보 두 개가 `BudgetEmail`로 메일을 보낸다(경보·복구 때 한 번씩).
-  - `SiteDownAlarm`: 10분 두 구간 연속 실패
+  - `SiteDownAlarm`: 연속된 10분 두 구간에 각각 실패한 확인이 한 번 이상 있을 때
   - `BackupStaleAlarm`: 백업이 27시간 넘게 없음
   - 감시 자체가 멈춰 지표가 없어도 경보가 된다.
 - 처음 만든 뒤 `BudgetEmail`로 온 "AWS Notification - Subscription Confirmation" 메일의 링크를 48시간 안에 눌러야 한다. 놓치면 `aws sns subscribe --topic-arn <AlertTopic> --protocol email --notification-endpoint <메일>`로 다시 보낸다.
 - 시험
-  - `aws lambda invoke --function-name <MonitorFunction> --payload '{}' out.json`
-  - 실패 경로는 `--payload '{"site":"example.com"}'`(지표를 쓰지 않는다)로 본다.
+  - `aws lambda invoke --cli-binary-format raw-in-base64-out --function-name <MonitorFunction> --payload '{}' out.json`
+  - 실패 경로는 같은 명령에 `--payload '{"site":"example.com"}'`(지표를 쓰지 않는다)로 본다.
   - 메일은 `aws cloudwatch set-alarm-state --alarm-name <이름> --state-value ALARM --state-reason test`로 확인한다.
 - 비용: Lambda·규칙·지표 2개·경보 2개·SNS 메일은 무료 한도 안이고, S3 목록 조회만 월 약 $0.04다.
 - GitHub `Uptime` 워크플로는 수동 점검용이다. 이 저장소는 포크라 GitHub 예약 실행이 돌지 않는다.

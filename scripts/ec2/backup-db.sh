@@ -8,7 +8,7 @@
 # to demand an exact match for tables that did not change meanwhile. Nothing is uploaded unless every
 # step succeeded, and counts.tsv goes last, so an interrupted upload is never taken for a backup.
 # Credentials stay inside the containers; nothing secret is passed on a command line. The bucket's
-# lifecycle rule expires backups/ objects after 25 days (old versions 7 days later: gone within ~34 days).
+# lifecycle rule expires backups/ objects after 21 days (old versions 7 days later: scheduled by ~day 30).
 # Required environment: AWS_REGION. Optional: COMPOSE_PROJECT (default stockdesk).
 set -euo pipefail
 

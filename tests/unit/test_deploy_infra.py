@@ -317,12 +317,13 @@ def test_ami_is_pinned_so_a_stack_update_cannot_replace_the_host(template):
     assert ami["Type"] == "AWS::EC2::Image::Id" and "Default" not in ami
 
 
-def test_backups_are_gone_within_the_35_days_the_privacy_policy_promises(resources):
+def test_backups_are_scheduled_for_deletion_well_before_the_35_days_the_policy_promises(resources):
     rules = {r["Id"]: r for r in resources["ReleaseBucket"]["Properties"]["LifecycleConfiguration"]["Rules"]}
-    # S3 rounds each step up to the next UTC midnight: 25 + 1 + 7 + 1 = 34 days at worst.
+    # S3 rounds each step up to the next UTC midnight (21 + 1 + 7 + 1 = 30) and deletes asynchronously,
+    # so the schedule keeps several days of room under 35.
     current = rules["expire-backups"]["ExpirationInDays"]
     noncurrent = rules["old-versions"]["NoncurrentVersionExpiration"]["NoncurrentDays"]
-    assert current + noncurrent <= 32
+    assert current + noncurrent <= 28
 
 
 def test_site_address_has_no_default(template):
