@@ -171,13 +171,21 @@ def test_ai_is_off_by_default_and_needs_a_budget_when_on():
         Settings.from_env({"SECRET_KEY": STRONG_SECRET, "AI_ENABLED": "true"})
     with pytest.raises(SettingsError, match="no price"):
         Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5", "AI_MODEL": "gpt-4o"})
-    on = Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5"})
+    on = Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5", "ANTHROPIC_API_KEY": "k"})
     assert on.ai_enabled and on.ai_monthly_budget_usd == 5.0 and on.ai_model == "claude-opus-5-5"
+
+
+def test_ai_needs_an_anthropic_key():
+    # 키 없이 켜면 질문마다 500이 나고 초대 한도만 줄었다(9/27 검증). 시작할 때 막는다.
+    with pytest.raises(SettingsError, match="ANTHROPIC_API_KEY"):
+        Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5"})
+    with pytest.raises(SettingsError, match="ANTHROPIC_API_KEY"):
+        Settings.from_env({"AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "5", "ANTHROPIC_API_KEY": "  "})
 
 
 def test_public_ai_needs_a_real_invite_pepper(monkeypatch):
     monkeypatch.setattr("settings.AI_TRANSFER_IN_PRIVACY_POLICY", True)
-    base = {**PUBLIC_ENV, "AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "10"}
+    base = {**PUBLIC_ENV, "AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "10", "ANTHROPIC_API_KEY": "k"}
     with pytest.raises(SettingsError, match="AI_INVITE_PEPPER"):
         Settings.from_env(base)
     with pytest.raises(SettingsError, match="AI_INVITE_PEPPER"):
@@ -186,7 +194,13 @@ def test_public_ai_needs_a_real_invite_pepper(monkeypatch):
 
 
 def test_public_ai_stays_off_until_the_privacy_policy_covers_it():
-    env = {**PUBLIC_ENV, "AI_ENABLED": "true", "AI_MONTHLY_BUDGET_USD": "10", "AI_INVITE_PEPPER": "p" * 40}
+    env = {
+        **PUBLIC_ENV,
+        "AI_ENABLED": "true",
+        "AI_MONTHLY_BUDGET_USD": "10",
+        "AI_INVITE_PEPPER": "p" * 40,
+        "ANTHROPIC_API_KEY": "k",
+    }
     with pytest.raises(SettingsError, match="privacy policy"):
         Settings.from_env(env)
 

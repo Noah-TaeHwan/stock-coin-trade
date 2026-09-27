@@ -101,6 +101,9 @@ UNIT
 if healthy "$RELEASE_DIR"; then
   printf '%s\n%s\n' "$RELEASE_DIR" "$IMAGE_TAG" >"$STATE_DIR/current"
   install_backup_timer
+  # 배포마다 이미지(약 1.1GB)가 쌓여 디스크를 채운다. 지금 도는 컨테이너가 쓰지 않는 이미지만 지우므로
+  # 다음 배포의 자동 롤백 대상(지금 이 릴리스)은 남는다. 더 옛 릴리스로 되돌릴 때는 ECR에서 다시 받는다.
+  docker image prune -af >/dev/null || echo "image prune failed (disk not reclaimed)" >&2
   echo "deployed $IMAGE_TAG"
   exit 0
 fi

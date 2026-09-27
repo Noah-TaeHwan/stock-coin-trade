@@ -171,6 +171,8 @@ class Settings:
                 raise SettingsError("AI_ENABLED=true needs AI_MONTHLY_BUDGET_USD greater than 0.")
             if ai_model not in pricing.load():
                 raise SettingsError(f"AI_MODEL {ai_model!r} has no price in config/llm_pricing.toml.")
+            if not (env.get("ANTHROPIC_API_KEY") or "").strip():
+                raise SettingsError("AI_ENABLED=true needs ANTHROPIC_API_KEY.")
         smtp_host = (env.get("SMTP_HOST") or "").strip()
         public_base_url = (env.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
         mail_ready = bool(smtp_host) and public_base_url.startswith("https://")

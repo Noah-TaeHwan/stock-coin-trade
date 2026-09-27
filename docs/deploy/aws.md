@@ -74,10 +74,19 @@ bash scripts/ec2/restore-check.sh s3://<ReleaseBucket>/backups/<UTC 시각>
 - `counts.tsv`는 맨 마지막에 올라간다. 이 파일이 없는 백업은 업로드가 중간에 끊긴 것이므로 쓰지 않는다.
 - 복구 확인용 임시 컨테이너와 볼륨(운영 DB 사본)은 끝나면 지운다. 남았는지 보려면 `docker volume ls -qf dangling=true`.
 - 실제로 되살릴 때는 서비스를 멈춘 뒤 같은 덤프를 `mariadb`/`pg_restore --clean`으로 운영 컨테이너에 넣는다. 리허설 기록: [정비 2026-09-26](../evidence/maintenance-2026-09-26.md).
-- 정기 실행(타이머)은 아직 없다. 필요하면 `deploy.sh`에서 systemd 타이머를 설치하는 방식으로 추가한다.
+- 정기 실행: `deploy.sh`가 설치하는 systemd 타이머 `stockdesk-backup.timer`가 매일 19:30 UTC(04:30 KST)에 돈다. 스크립트는 `/opt/stockdesk/bin`에 복사돼 있어 옛 릴리스 폴더에 의존하지 않는다.
 
 ## 되돌리기
 
-- **자동**: `deploy.sh`는 새 릴리스의 `/health`가 150초 안에 통과하지 않으면 직전 릴리스를 다시 올린다.
-- **수동**: 이전 커밋 SHA로 워크플로를 다시 실행한다. ECR 태그는 변경 불가(IMMUTABLE)다.
+- **자동**: `deploy.sh`는 새 릴리스의 `/health`가 150초 안에 통과하지 않으면 직전 릴리스를 다시 올린다. 정상 배포가 끝나면 쓰지 않는 이미지를 지우지만, 지금 도는 릴리스의 이미지는 남으므로 다음 배포의 자동 롤백 대상은 그대로다.
+- **수동(더 옛 릴리스로)**: 같은 커밋 SHA로 Deploy 워크플로를 다시 돌리면 안 된다. 이미지를 다시 빌드해 같은 태그로 올리는데, ECR 태그는 변경 불가(IMMUTABLE)라 push가 실패한다. 대신 호스트에 남아 있는 옛 릴리스 폴더의 `deploy.sh`를 SSM(root)으로 실행한다. 이미지는 ECR에 저장소마다 20개씩 남아 있어 compose가 다시 받는다.
+
+  ```bash
+  old=<되돌릴 커밋 SHA>
+  AWS_REGION=ap-northeast-2 ECR_REGISTRY=<계정>.dkr.ecr.ap-northeast-2.amazonaws.com LOG_GROUP=<LogGroup> \
+    SITE_ADDRESS=<주소> BACKUP_BUCKET=<ReleaseBucket> \
+    bash /opt/stockdesk/releases/$old/scripts/ec2/deploy.sh /opt/stockdesk/releases/$old $old
+  ```
+
+  - 호스트를 새로 만들어 폴더가 없으면, 워크플로처럼 `s3://<ReleaseBucket>/releases/$old.tgz`(90일 보관)를 받아 풀고 실행한다.
 - **스택 삭제 시**: 데이터 볼륨은 스냅샷으로, 로그 그룹과 S3 버킷은 그대로 남는다.

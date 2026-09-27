@@ -242,3 +242,67 @@ def test_openapi_key_limit_falls_back_to_a_local_window_when_rate_limiting_is_of
     with client.application.test_request_context(), mock.patch.object(openapi, "_rate_buckets", {}) as local:
         results = [openapi._check_rate_limit(7) for _ in range(openapi.RATE_LIMIT_MAX + 1)]
     assert results[-1] is False and len(local[7]) == openapi.RATE_LIMIT_MAX
+
+
+# ── JSON bodies and the error log ────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("body", [["x"], [], "text", 5, True])
+def test_json_body_that_is_not_an_object_is_rejected_before_the_handler(public_client, body):
+    with mock.patch.object(members, "session_scope", _no_member_scope):
+        response = public_client.post("/api/member/login", json=body)
+    assert response.status_code == 400
+    assert response.get_json() == {"message": "JSON 객체 본문이 필요합니다."}
+
+
+def test_json_object_body_still_reaches_the_handler(public_client):
+    with mock.patch.object(members, "session_scope", _no_member_scope):
+        response = public_client.post("/api/member/login", json={"email": "a@example.com", "password": "x"})
+    assert response.status_code == 401
+
+
+def test_unrouted_404_is_not_written_to_the_error_log(public_client):
+    with mock.patch.object(app_module, "record_error") as record:
+        response = public_client.get("/api/crypto/market-list")
+    assert response.status_code == 404
+    record.assert_not_called()
+
+
+def test_routed_client_error_is_still_written_to_the_error_log(public_client):
+    with (
+        mock.patch.object(members, "session_scope", _no_member_scope),
+        mock.patch.object(app_module, "record_error") as record,
+    ):
+        public_client.post("/api/member/login", json={"email": "a@example.com", "password": "x"})
+    record.assert_called_once()
+    assert record.call_args.kwargs["status"] == 401
+
+
+def test_error_without_a_message_is_logged_with_the_status_text():
+    application = create_app(PUBLIC)
+    application.config.update(TESTING=True)
+    application.add_url_rule("/api/test-empty-404", "test_empty_404", lambda: ("", 404))
+    with mock.patch.object(app_module, "record_error") as record:
+        application.test_client().get("/api/test-empty-404")
+    assert record.call_args.kwargs["message"] == "404 NOT FOUND"
+
+
+@pytest.mark.parametrize("raw", ["null", "{bad", "[1"])
+def test_null_or_broken_json_body_is_rejected(public_client, raw):
+    response = public_client.post("/api/member/login", data=raw, content_type="application/json")
+    assert response.status_code == 400
+    assert response.get_json() == {"message": "JSON 객체 본문이 필요합니다."}
+
+
+def test_empty_json_body_still_reaches_the_handler(public_client):
+    # 본문 없이 JSON 형식 헤더만 붙인 요청(로그아웃 등)은 막지 않는다.
+    assert public_client.post("/api/member/logout", content_type="application/json").status_code == 200
+
+
+def test_method_not_allowed_is_still_written_to_the_error_log(public_client):
+    # 405는 경로가 있는데 방식이 틀린 요청이라 endpoint가 없어도 기록한다(주소 탐색 신호).
+    with mock.patch.object(app_module, "record_error") as record:
+        response = public_client.post("/health")
+    assert response.status_code == 405
+    record.assert_called_once()
+    assert record.call_args.kwargs["status"] == 405

@@ -128,6 +128,7 @@ echo "IMAGE_TAG=$IMAGE_TAG $*" >> "$CALLS"
 # Like the real CLI, read the piped password (otherwise the writer gets SIGPIPE under pipefail).
 if [[ "$*" == *"--password-stdin"* ]]; then cat >/dev/null; fi
 if [[ "$*" == *" exec "* && "$IMAGE_TAG" == "bad" ]]; then exit 1; fi
+if [[ "$*" == "image prune"* && "${PRUNE_FAILS:-}" == 1 ]]; then exit 1; fi
 exit 0
 """
 
@@ -148,9 +149,10 @@ def run_deploy(tmp_path):
     state = tmp_path / "state"
     calls = tmp_path / "calls.log"
 
-    def run(release: str, tag: str):
+    def run(release: str, tag: str, **extra_env: str):
         env = {
             **os.environ,
+            **extra_env,
             "PATH": f"{bin_dir}:{os.environ['PATH']}",
             "AWS_REGION": "ap-northeast-2",
             "ECR_REGISTRY": "123.dkr.ecr.ap-northeast-2.amazonaws.com",
@@ -190,6 +192,29 @@ def test_unhealthy_release_rolls_back_to_the_recorded_one(run_deploy):
     assert (state / "current").read_text().splitlines() == ["/releases/r1", "good"]
     last_up = [line for line in calls.read_text().splitlines() if " up -d" in line][-1]
     assert last_up.startswith("IMAGE_TAG=good") and "/releases/r1/" in last_up
+
+
+def test_healthy_deploy_removes_images_no_container_uses(run_deploy):
+    result, _, calls = run_deploy("r1", "good")
+    assert result.returncode == 0, result.stderr
+    lines = calls.read_text().splitlines()
+    prune = [i for i, line in enumerate(lines) if line.endswith("image prune -af")]
+    last_up = max(i for i, line in enumerate(lines) if " up -d" in line)
+    assert len(prune) == 1 and prune[0] > last_up
+
+
+def test_rolled_back_deploy_keeps_every_image(run_deploy):
+    run_deploy("r1", "good")
+    result, _, calls = run_deploy("r2", "bad")
+    assert result.returncode == 1
+    # r1의 정상 배포에서 한 번만 정리했다. 롤백한 r2는 이미지를 지우지 않는다.
+    assert sum(line.endswith("image prune -af") for line in calls.read_text().splitlines()) == 1
+
+
+def test_failed_image_prune_does_not_fail_a_healthy_deploy(run_deploy):
+    result, state, _ = run_deploy("r1", "good", PRUNE_FAILS="1")
+    assert result.returncode == 0 and "image prune failed" in result.stderr
+    assert (state / "current").read_text().splitlines() == ["/releases/r1", "good"]
 
 
 def test_first_release_that_fails_does_not_invent_a_rollback(run_deploy):
