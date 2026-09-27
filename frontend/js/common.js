@@ -452,7 +452,8 @@ let terminalIsPublic = false;
  */
 let terminalMe = null;
 function applyProfileToTerminal(user) {
-  if (!isPublicProfile(user)) return;
+  // 프로필을 모르면(/me 실패) 공개 사이트처럼 안전하게 다룬다(코인 명령·경로를 열지 않는다).
+  if (user?.profile === 'local') return;
   terminalIsPublic = true;
   const keep = item => !PUBLIC_HIDDEN_HREFS.has(_hrefPath(item.href));
   const ai = TERMINAL_FKEYS.find(f => f.code === 'AI');

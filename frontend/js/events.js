@@ -234,7 +234,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 백테스트 링크는 시세가 있는 종목에만 단다(없으면 퀀트 랩에서 '시세가 부족합니다'로 끝난다).
   try {
     const res = await fetch('/api/quant/overview', { credentials: 'same-origin' });
-    if (res.ok) disc.backtestable = new Set(((await res.json()).symbols || []).filter(code => /^\d{6}$/.test(code)));
+    if (res.ok) {
+      const overview = await res.json();
+      // 백테스트 기간(최근 3년)에 시세가 충분한 종목만(backtestable). 옛 서버면 symbols로 대신한다.
+      disc.backtestable = new Set((overview.backtestable || overview.symbols || []).filter(code => /^\d{6}$/.test(code)));
+    }
   } catch (_) { /* 퀀트 DB가 없으면 링크를 달지 않는다 */ }
   await loadDisclosures();
   startDiscPolling();

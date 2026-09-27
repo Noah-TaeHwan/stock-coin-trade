@@ -61,6 +61,8 @@
     .flash-up   { animation: flash-up .8s ease-out; }
     .flash-down { animation: flash-down .8s ease-out; }
     @media (prefers-reduced-motion: reduce) { .flash-up, .flash-down { animation: none; } }
+    /* 코인 등 공개 사이트에서 뺀 요소는 local로 확인되기 전까지 첫 화면부터 숨긴다(common.js 규칙과 같다). */
+    html:not([data-profile="local"]) [data-local-only] { display: none !important; }
     .mon-intro { margin-bottom: 10px; }
     @media (max-width: 760px) { .mon-intro .term-sub { white-space: normal; } }
     .mon-intro-close { font: inherit; font-size: 11px; background: none; border: 0; color: var(--muted); cursor: pointer; }
@@ -118,7 +120,7 @@
 
     <!-- ② 상승·하락 상위 -->
     <section class="term-panel mon-mov" aria-labelledby="monMovTitle">
-      <div class="term-panel__bar"><span class="term-code">MOV</span><span id="monMovTitle">상승·하락 상위</span><span class="term-sub">대표 종목 · 30초</span><span class="badge badge-muted hidden" data-synthetic-badge>합성 데이터</span></div>
+      <div class="term-panel__bar"><span class="term-code">MOV</span><span id="monMovTitle">상승·하락 상위</span><span class="term-sub">대표 종목 · 30초</span><span class="badge badge-muted hidden" id="monMovSource"></span></div>
       <div class="mon-movers">
         <div>
           <h3 class="up">▲ 상승</h3>
@@ -139,7 +141,7 @@
         <a class="mon-fn-tile" href="/trade/order.html" data-local-only><span class="code">CRY</span><strong>코인 거래 실습</strong><span>업비트 실시간 시세 · KRW 마켓</span></a>
         <a class="mon-fn-tile" href="/trade/alternatives.html" data-local-only><span class="code">ALT</span><strong>대체자산</strong><span>선물·옵션·금·은·부동산 지분</span></a>
         <a class="mon-fn-tile" href="/trade/hold.html"><span class="code">HOLD</span><strong>보유자산</strong><span>포트폴리오 비중·손익·변동성</span></a>
-        <a class="mon-fn-tile" href="/trade/history.html"><span class="code">HIST</span><strong>거래이력</strong><span>주식·코인·대체자산 체결 내역</span></a>
+        <a class="mon-fn-tile" href="/trade/history.html"><span class="code">HIST</span><strong>거래이력</strong><span>모의 체결 내역</span></a>
         <a class="mon-fn-tile" href="/events.html"><span class="code">DISC</span><strong>공시 레이더</strong><span>DART 공시 유형·위험 표시 · 관심 종목 모아 보기</span></a>
         <a class="mon-fn-tile" href="/quant.html"><span class="code">QNT</span><strong>퀀트 랩</strong><span>PostgreSQL 백테스트·시그널</span></a>
         <a class="mon-fn-tile" href="/ai-analysis.html" data-local-only><span class="code">AI</span><strong>AI 분석</strong><span>RAG 기반 시장·종목 분석 질의</span></a>
@@ -149,7 +151,7 @@
 
     <!-- ③ 주식 모니터 -->
     <section class="term-panel mon-eq" aria-labelledby="monEqTitle">
-      <div class="term-panel__bar"><span class="term-code">EQ</span><span id="monEqTitle">주식 모니터</span><span class="term-sub">등락률 절댓값 상위 20 · 30초</span><span class="badge badge-muted hidden" data-synthetic-badge>합성 데이터</span><span class="term-right"><span class="live-dot" id="stockLiveDot" title="30초 갱신"></span></span></div>
+      <div class="term-panel__bar"><span class="term-code">EQ</span><span id="monEqTitle">주식 모니터</span><span class="term-sub">등락률 절댓값 상위 20 · 30초</span><span class="badge badge-muted hidden" id="monEqSource"></span><span class="term-right"><span class="live-dot" id="stockLiveDot" title="30초 갱신"></span></span></div>
       <div class="mon-table-wrap">
         <table class="term-table mon-table">
           <thead><tr><th>종목</th><th>현재가</th><th>전일대비</th><th>등락률</th><th>거래량</th><th>시장</th></tr></thead>
@@ -223,6 +225,15 @@
     document.getElementById(`${id}Text`).innerHTML = `<span class="up">${up}</span>/<span class="flat">${flat}</span>/<span class="down">${down}</span>`;
   }
 
+  // 합성·시뮬레이션 값이면 표 제목 옆 배지로 밝힌다(표를 그리는 응답이 스스로 알려 준 출처로).
+  function showSourceBadge(id, source, attribution) {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = DATA_SOURCE_LABELS[source] || '';
+    badge.classList.toggle('hidden', !DATA_SOURCE_LABELS[source]);
+    badge.title = attribution || '';
+  }
+
   /* ── 시장 개요 ───────────────────────────────────────────────── */
   async function loadIndices() {
     try {
@@ -250,7 +261,8 @@
     try {
       const res = await apiFetch('/api/stocks/movers');
       if (!res.ok) return;
-      const { gainers = [], losers = [] } = await res.json();
+      const { gainers = [], losers = [], source, attribution } = await res.json();
+      showSourceBadge('monMovSource', source, attribution);
       const row = s => `<tr onclick="location.href=${jsArg('/trade/stock.html?symbol=' + encodeURIComponent(s.symbol))}"><td class="txt">${escapeHtml(s.name)}</td><td style="color:${priceColor(s.changeRate)};">${fmtRate(s.changeRate)}</td></tr>`;
       const empty = '<tr><td class="empty" colspan="2">데이터 없음</td></tr>';
       document.getElementById('monGainers').innerHTML = gainers.map(row).join('') || empty;
@@ -330,11 +342,7 @@
       if (!res.ok) return;
       const data = await res.json();
       const unreal = Object.values(data.prices ?? {}).find(p => DATA_SOURCE_LABELS[p.source]);
-      document.querySelectorAll('[data-synthetic-badge]').forEach(badge => {
-        badge.textContent = unreal ? DATA_SOURCE_LABELS[unreal.source] : '';
-        badge.classList.toggle('hidden', !unreal);
-        badge.title = unreal?.attribution ?? '';
-      });
+      showSourceBadge('monEqSource', unreal?.source, unreal?.attribution);
       const sorted = Object.entries(data.prices ?? {})
         .map(([sym, p]) => ({ sym, ...p }))
         .sort((a, b) => Math.abs(b.changeRate) - Math.abs(a.changeRate))

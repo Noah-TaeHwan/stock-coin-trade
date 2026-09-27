@@ -99,6 +99,27 @@ def visible_symbols(symbols, profile: str) -> list[str]:
     return [s for s in listed if STOCK_CODE.fullmatch(s)] if profile == "public" else listed
 
 
+def visible_rows(rows: list[dict], profile: str) -> list[dict]:
+    """공개 사이트는 코인 종목의 저장된 결과(거래 로그 등)를 보이지 않는다.
+
+    @param rows symbol 열을 가진 행 목록
+    @param profile APP_PROFILE 값
+    @returns 보일 행 목록
+    """
+    return [r for r in rows if STOCK_CODE.fullmatch(str(r.get("symbol", "")))] if profile == "public" else rows
+
+
+def receipt_visible(body: dict, profile: str) -> bool:
+    """저장된 백테스트 영수증을 이 배포에서 보여도 되는지. 공개 사이트는 코인 실행을 숨긴다.
+
+    @param body stored_backtest()가 돌려준 본문
+    @param profile APP_PROFILE 값
+    @returns 보여도 되면 True
+    """
+    symbol = str((body.get("parameters") or {}).get("symbol", ""))
+    return profile != "public" or bool(STOCK_CODE.fullmatch(symbol))
+
+
 def _params():
     symbol = request.args.get("symbol", "005930").upper().strip()
     if not symbol or len(symbol) > 20 or not all(char.isalnum() or char in "-_" for char in symbol):
@@ -116,10 +137,16 @@ def overview():
                 SELECT (SELECT count(*) FROM market_data) AS market_rows,
                        (SELECT count(*) FROM strategies) AS strategy_count,
                        (SELECT count(*) FROM trade_logs) AS trade_count,
-                       (SELECT array_agg(symbol ORDER BY symbol) FROM (SELECT DISTINCT symbol FROM market_data) s) AS symbols
+                       (SELECT array_agg(symbol ORDER BY symbol) FROM (SELECT DISTINCT symbol FROM market_data) s) AS symbols,
+                       -- 기본 백테스트 기간(최근 3년)에 이동평균 전략을 돌릴 만큼(60봉 이상) 시세가 있는 종목
+                       (SELECT array_agg(symbol ORDER BY symbol) FROM (
+                            SELECT symbol FROM market_data WHERE trade_time >= now() - interval '3 years'
+                            GROUP BY symbol HAVING count(*) >= 60) b) AS backtestable
             """))
             row = _rows(result)[0]
-        row["symbols"] = visible_symbols(row.get("symbols"), current_app.config.get("APP_PROFILE", "local"))
+        profile = current_app.config.get("APP_PROFILE", "local")
+        row["symbols"] = visible_symbols(row.get("symbols"), profile)
+        row["backtestable"] = visible_symbols(row.get("backtestable"), profile)
         return jsonify(row)
     except SQLAlchemyError as exc:
         return jsonify({"message": f"퀀트 PostgreSQL에 연결할 수 없습니다: {exc.__class__.__name__}"}), 503
@@ -392,7 +419,7 @@ def get_backtest(receipt_id):
         return jsonify({"message": str(exc)}), 400
     except SQLAlchemyError as exc:
         return error_response("백테스트 조회 실패: 데이터베이스 오류", exc, 503, key="message")
-    if body is None:
+    if body is None or not receipt_visible(body, current_app.config.get("APP_PROFILE", "local")):
         return jsonify({"message": "해당 영수증의 실행이 없습니다."}), 404
     return jsonify(body)
 
@@ -431,7 +458,8 @@ def results():
                 FROM trade_logs WHERE CAST(:sid AS bigint) IS NULL OR strategy_id = :sid
                 ORDER BY trade_id DESC LIMIT 50
             """), {"sid": strategy_id}))
-        return jsonify({"strategies": strategies, "trades": trades})
+        return jsonify({"strategies": strategies,
+                        "trades": visible_rows(trades, current_app.config.get("APP_PROFILE", "local"))})
     except SQLAlchemyError as exc:
         return jsonify({"message": f"결과 조회 실패: {exc.__class__.__name__}"}), 503
 
@@ -492,6 +520,10 @@ def data_quality():
     from marketdata import quality, store
 
     symbol = request.args.get("symbol", "005930").upper().strip()
+    try:
+        _require_public_stock(symbol)
+    except ValueError as exc:
+        return jsonify({"message": str(exc)}), 400
     try:
         days = max(1, min(int(request.args.get("days", 365)), 3650))
     except ValueError:
