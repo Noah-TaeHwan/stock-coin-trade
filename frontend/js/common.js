@@ -647,7 +647,7 @@ function saveJevConsent(version) {
  */
 function renderJevConsent(text, first, version) {
   const box = document.getElementById('term-cmd-help');
-  if (!box) { fallbackCommand(text, first); return; }
+  if (!box) return;  // 동의를 물을 곳이 없으면 아무 데도 보내지 않는다(검색 주소로도 넘기지 않는다)
   const line = (label, body) => {
     const row = document.createElement('div');
     const b = document.createElement('b');
@@ -684,9 +684,11 @@ function renderJevConsent(text, first, version) {
 
 async function routeByIntent(text, first, consent = readJevConsent()) {
   // 동의 전에는 문장을 이 서비스 서버로도 보내지 않는다(처리방침 4절 "어디로도 보내지 않습니다").
-  // /me를 모르는 화면이면 예전처럼 서버가 consentRequired로 막는다.
-  if (terminalMe && !terminalMe.jevEnabled) { fallbackCommand(text, first); return; }
-  if (terminalMe?.privacyVersion && consent !== terminalMe.privacyVersion) {
+  // /me를 받지 못해 동의 버전을 알 수 없으면 보내지 않고 도움말만 보인다.
+  if (!terminalMe?.privacyVersion) { renderTerminalHelp(); return; }
+  // Jev가 꺼져 있으면 해외 전송 자체가 없다. 이때는 이 사이트의 주식 검색으로 넘긴다(접속 기록 대상).
+  if (!terminalMe.jevEnabled) { fallbackCommand(text, first); return; }
+  if (consent !== terminalMe.privacyVersion) {
     renderJevConsent(text, first, terminalMe.privacyVersion);
     return;
   }
