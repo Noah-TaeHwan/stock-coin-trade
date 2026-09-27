@@ -144,6 +144,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     # 거절된 요청의 오류 기록에도 검증된 회원 ID만 남게 한다.
     app.before_request(member_sessions.validate)
     app.before_request(_reject_cross_site_requests)
+    app.before_request(_reject_non_object_json)
     app.before_request(_start_api_usage_timer)
     app.after_request(_record_failed_response)
     app.after_request(_add_request_id_header)
@@ -200,6 +201,18 @@ def _reject_cross_site_requests():
     return None
 
 
+def _reject_non_object_json():
+    """JSON 본문이 객체가 아니면 핸들러 전에 400으로 거절한다.
+
+    핸들러들은 `request.get_json(silent=True) or {}` 뒤 `.get`을 부르므로, 배열 본문이 오면 500이 났다.
+    배열을 받는 API는 없다. 깨진 JSON(None)은 핸들러가 빈 객체로 다루므로 그대로 둔다.
+    @returns 거절 응답 또는 None
+    """
+    if request.is_json and not isinstance(request.get_json(silent=True), (dict, type(None))):
+        return jsonify({"message": "JSON 객체 본문이 필요합니다."}), 400
+    return None
+
+
 def _rate_limited(error):
     return jsonify({
         "error": "RATE_LIMITED",
@@ -228,12 +241,15 @@ def _record_failed_response(response):
     if getattr(g, "api_usage_started_at", None) is not None:
         record_api_usage(response, g.api_usage_started_at)
     # 429는 기록하지 않는다. 제한에 걸린 요청마다 행을 쓰면 제한이 DB 쓰기를 막지 못한다.
-    if (response.status_code >= 400 and response.status_code != 429
+    # 경로가 없는 4xx(없는 주소, 이 배포에서 끈 기능)도 기록하지 않는다. 방문자 IP가 오류 기록(90일)에
+    # 쌓이고, 요청 제한이 없는 404를 두드려 DB 쓰기를 늘릴 수 있기 때문이다. 5xx는 늘 기록한다.
+    unrouted_client_error = request.endpoint is None and response.status_code < 500
+    if (response.status_code >= 400 and response.status_code != 429 and not unrouted_client_error
             and not request.path.startswith("/api/error-analysis/")):
         try:
             body = response.get_json(silent=True) or {}
             exc = getattr(g, "unhandled_error", None)
-            message = body.get("message") or body.get("error") or str(exc) or response.status
+            message = body.get("message") or body.get("error") or (str(exc) if exc else response.status)
             record_error(
                 source="SERVER", severity="CRITICAL" if response.status_code >= 500 else "WARNING",
                 status=response.status_code, method=request.method, path=request.full_path.rstrip("?"),
