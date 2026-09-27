@@ -8,6 +8,9 @@ from kis_real import kis_real_bp
 
 class KisRealApiTest(unittest.TestCase):
     def setUp(self):
+        demo_check = patch("kis_real.is_demo_member", return_value=False)
+        self.is_demo_member = demo_check.start()  # 기존 7번 세션은 일반 회원
+        self.addCleanup(demo_check.stop)
         app = Flask(__name__)
         app.config.update(SECRET_KEY="test-secret", TESTING=True)
         app.register_blueprint(kis_real_bp)
@@ -52,6 +55,19 @@ class KisRealApiTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.get_json()["balance"]["readOnly"])
         get_balance.assert_called_once_with()
+
+    @patch("kis_real.get_real_balance")
+    def test_demo_is_denied_before_balance_configuration_or_network(self, get_balance):
+        self.is_demo_member.return_value = True
+        status = self.client.get("/api/kis-real/status")
+        balance = self.client.post(
+            "/api/kis-real/balance", json={}, headers={"X-CSRF-Token": "csrf-test-token"},
+        )
+        self.assertEqual(status.status_code, 403)
+        self.assertEqual(status.get_json()["error"], "DEMO_ACCOUNT")
+        self.assertEqual(balance.status_code, 403)
+        self.assertEqual(balance.get_json()["error"], "DEMO_ACCOUNT")
+        get_balance.assert_not_called()
 
 
 if __name__ == "__main__":

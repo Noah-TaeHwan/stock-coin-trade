@@ -11,8 +11,8 @@ import stock_trading
 from db import engine, session_scope
 from models import AlternativeOrder, CryptoOrder, HoldCrypto, HtsWatchMemo, Member, StockOrder, StockPosition, UpbitMarket
 from alternatives import get_positions as get_alternative_positions, position_value
-from accounts import PRIVACY_VERSION, can_sign_in, email_problem, is_reserved_email, nickname_problem, normalize_nickname
-from authz import admin_email, can_use_kis_account, is_admin_member
+from accounts import PUBLIC_DEMO_EMAIL, PUBLIC_DEMO_USERNAME, PRIVACY_VERSION, can_sign_in, email_problem, is_reserved_email, nickname_problem, normalize_nickname
+from authz import admin_email, can_use_kis_account, is_admin_member, is_demo_member
 from extensions import limiter
 from security import csrf_token
 import mailer
@@ -43,6 +43,15 @@ def me():
             "privacyVersion": PRIVACY_VERSION,
             "jevEnabled": bool(current_app.config.get("JEV_ENABLED")),
             "aiEnabled": bool(current_app.config.get("AI_ENABLED"))}
+    if request.args.get("demo") == "1":
+        try:
+            with session_scope() as db:
+                demo = db.query(Member).filter(Member.email == PUBLIC_DEMO_EMAIL).first()
+                base["demoReady"] = bool(demo and demo.is_demo and demo.email_verified_at and
+                                         demo.username == PUBLIC_DEMO_USERNAME and
+                                         admin_email() != PUBLIC_DEMO_EMAIL)
+        except SQLAlchemyError:
+            base["demoReady"] = False
     if not member_id:
         return jsonify({"loggedIn": False, **base})
     with session_scope() as db:
@@ -51,7 +60,8 @@ def me():
             return jsonify({"loggedIn": False, **base})
         return jsonify({
             "loggedIn": True, "username": member.username, "asset": member.asset,
-            "isAdmin": is_admin_member(member_id, db), "canUseKisAccount": can_use_kis_account(member_id, db),
+            "isAdmin": is_admin_member(member_id, db), "isDemo": bool(member.is_demo),
+            "canUseKisAccount": can_use_kis_account(member_id, db),
             **base,
         })
 
@@ -117,6 +127,7 @@ def ensure_member_tables() -> None:
 
 
 MEMBER_COLUMNS = {
+    "is_demo": "TINYINT(1) NOT NULL DEFAULT 0",
     "email_verified_at": "DATETIME NULL",
     "created_at": "DATETIME NULL DEFAULT CURRENT_TIMESTAMP",
     "consent_version": "VARCHAR(20) NULL",
@@ -493,7 +504,7 @@ def register():
     if password != password2:
         return jsonify({"field": "password2", "error": "패스워드가 일치하지 않습니다."}), 400
     public = current_app.config["APP_PROFILE"] == "public"
-    silent = is_reserved_email(email) or (public and email.lower() == admin_email())
+    silent = is_reserved_email(email) or email.lower() == PUBLIC_DEMO_EMAIL or (public and email.lower() == admin_email())
     if not current_app.config.get("EMAIL_VERIFICATION"):
         return _register_without_mail(username, email, password, silent)
 
@@ -570,6 +581,8 @@ def logout_all():
     member_id = session.get("member_id")
     if not member_id:
         return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    if is_demo_member(member_id):
+        return jsonify({"error": "DEMO_ACCOUNT", "message": "공용 데모는 전체 로그아웃을 사용할 수 없습니다."}), 403
     member_sessions.end_all(member_id)
     session.clear()
     return jsonify({"success": True})

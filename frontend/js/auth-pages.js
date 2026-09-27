@@ -1,6 +1,10 @@
 'use strict';
 // 인증 화면 공용 스크립트. 외부·인라인 스크립트 없이 CSP 'self'로 동작한다. 사용자 입력은 textContent로만 출력한다.
 const AUTH_API = window.APP_CONFIG?.apiBase ?? '';
+/** 화면에 공개하는 공용 체험 계정 주소입니다. */
+const DEMO_EMAIL = 'test@test.com';
+/** 화면에 공개하는 공용 체험 계정 비밀번호입니다. */
+const DEMO_PASSWORD = 'test1234';
 
 /**
  * JSON POST를 보내고 상태와 본문을 돌려준다.
@@ -20,13 +24,46 @@ async function postJson(path, body) {
 
 /**
  * 현재 로그인 상태를 가져온다.
+ * @param {boolean} withDemo 데모 준비 여부를 함께 확인할지
  * @returns {Promise<object>} /api/member/me 응답(실패하면 {})
  */
-async function currentMember() {
+async function currentMember(withDemo = false) {
   try {
-    const res = await fetch(AUTH_API + '/api/member/me', { credentials: 'include' });
+    const res = await fetch(AUTH_API + `/api/member/me${withDemo ? '?demo=1' : ''}`, { credentials: 'include' });
     return await res.json();
   } catch (_) { return {}; }
+}
+
+/**
+ * 서버가 준비됐다고 확인한 경우에만 공용 계정 안내와 로그인 버튼을 보여 준다.
+ * @param {object} me 현재 회원 응답
+ */
+function showDemo(me) {
+  if (me.demoReady !== true) return;
+  const section = document.getElementById('demo-access');
+  if (!section) return;
+  document.getElementById('demo-email').textContent = DEMO_EMAIL;
+  document.getElementById('demo-password').textContent = DEMO_PASSWORD;
+  const button = document.getElementById('demo-use');
+  button.addEventListener('click', () => {
+    if (document.body.dataset.page !== 'login') {
+      location.href = '/member/login.html';
+      return;
+    }
+    document.getElementById('email').value = DEMO_EMAIL;
+    document.getElementById('password').value = DEMO_PASSWORD;
+    document.getElementById('form').requestSubmit();
+  });
+  section.hidden = false;
+}
+
+/**
+ * 로그인한 배포 프로필에서 제공하는 거래 화면으로 이동한다.
+ * @returns {Promise<void>} 이동 완료
+ */
+async function goAfterAuth() {
+  const me = await currentMember();
+  location.href = me.profile === 'local' ? '/trade/order.html' : '/trade/stock.html';
 }
 
 /**
@@ -86,20 +123,25 @@ function onSubmit(formId, handler) {
   });
 }
 
+/** 인증 화면별 폼 제출과 안내 처리 함수입니다. */
 const PAGES = {
-  login() {
+  /** 로그인 폼을 연결하고 준비된 데모 안내를 표시한다. */
+  async login() {
     onSubmit('form', async () => {
       const { status, data } = await postJson('/api/member/login', { email: valueOf('email'), password: valueOf('password') });
-      if (status === 200) { location.href = '/trade/order.html'; return; }
+      if (status === 200) { await goAfterAuth(); return; }
       say(errorText(status, data, '로그인에 실패했습니다.'));
     });
+    showDemo(await currentMember(true));
   },
 
+  /** 가입 가능 여부와 준비된 공용 데모 안내를 확인한다. */
   async register() {
-    const me = await currentMember();
+    const me = await currentMember(true);
+    showDemo(me);
     if (me.signupOpen === false) {
-      say('공개 베타 준비 중이라 지금은 가입을 받지 않습니다.');
-      document.getElementById('submit').disabled = true;
+      document.querySelector('.auth-sub').textContent = '공개 베타 준비 중이라 지금은 가입을 받지 않습니다.';
+      document.getElementById('form').hidden = true;
       return;
     }
     onSubmit('form', async () => {
@@ -113,7 +155,7 @@ const PAGES = {
         say('확인 메일을 보냈습니다. 메일의 링크를 열면 가입이 끝납니다. 메일이 없으면 스팸함을 확인해 주세요.', 'ok');
         return;
       }
-      if (status === 200) { location.href = '/trade/order.html'; return; }
+      if (status === 200) { await goAfterAuth(); return; }
       say(errorText(status, data, '가입에 실패했습니다.'));
     });
   },
@@ -173,6 +215,11 @@ const PAGES = {
     const me = await currentMember();
     if (!me.loggedIn) { location.href = '/member/login.html'; return; }
     document.getElementById('who').textContent = me.username || '';
+    if (me.isDemo) {
+      for (const id of ['change', 'everywhere', 'remove']) document.getElementById(id).hidden = true;
+      say('공용 데모의 거래와 메모는 방문자끼리 공유됩니다. 계정 설정은 사용할 수 없습니다.', 'ok');
+      return;
+    }
     onSubmit('change', async () => {
       const { status, data } = await postJson('/api/member/password/change', {
         current: valueOf('current'), password: valueOf('password'), password2: valueOf('password2'),

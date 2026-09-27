@@ -28,7 +28,7 @@
 | 3 | 코인 흔적 | PR-D, PR-A | `[data-local-only]` 7개 모두 숨김<br>코인 요청 0<br>코인 경로 4곳 404<br>제목 "Noah Trading Desk — 데이터로 판단하는 투자자를 위한 도구"<br>PR-D 배포 뒤 `/api/crypto` 오류 기록 0행 | `…prD-public/index-desktop.json`, `…prE-public/final-reprobe.txt` |
 | 4 | 처리방침 문구와 실제의 차이 | (a) PR-C (b)~(d) PR-B | (a) 만료 21일 + 이전 버전 7일로 약 30일(35일 안)<br>(b) 문장 입력 시 동의 안내만 뜨고 `/api/intent` 0건, 거절해도 0건(PR-E 배포 뒤 다시 확인)<br>(c) 안내 문구 수정<br>(d) API 키 화면 CSP `style-src 'self' 'unsafe-inline'; font-src 'self'` | `20260927T022705Z-prC/post-apply.txt`, `20260927T015150Z-prB/`, `…prE-public/ui.json` |
 | 5 | Jev 후보에 공시 레이더 없음 | PR-E | "삼성전자 공시 보여줘" → 바로 이동 `/events.html?symbol=005930`(0.99)<br>"하이닉스 최근 공시" → `?symbol=000660`(0.99) | `…prE-public/intent-api.jsonl` |
-| 6 | 가동 확인 예약 실행 0건 | PR-C | 경보 2개 OK(11:28 KST부터)<br>`SiteUp`이 11:30~12:10 KST 동안 5분마다 1.0(PR-D·E 배포 구간 포함)<br>메일 구독은 노아 확인 대기 | `…prC/post-apply.txt` |
+| 6 | 가동 확인 예약 실행 0건 | PR-C | 경보 2개 OK(11:28 KST부터)<br>`SiteUp`이 11:30~12:10 KST 동안 5분마다 1.0(PR-D·E 배포 구간 포함)<br>당시 메일 구독 확인 대기 → 같은 날 15:43 확인 완료, ALARM·OK 메일 받은편지함 수신(7절) | `…prC/post-apply.txt`, [후속 복원 기록](mobile-recovery-2026-09-27.md) |
 | 7 | 옛 이미지가 쌓임 | PR-A | 오늘 배포 3번 뒤 이미지 6개, 회수 가능 8MB, 디스크 8% | `…prE-public/final-reprobe.txt` |
 | 8 | JSON 배열 본문 → 500 | PR-A | `/api/member/login`·`/api/intent`에 `[]`·`null` → 400 ×4 | `…prE-public/final-reprobe.txt` |
 | 9 | AI 키 없이 AI를 켤 수 있음 | PR-A | 설정 검사가 거부한다(`tests/unit/test_settings.py`)<br>공개 서버는 AI가 꺼져 있어 화면 경로가 없다 | 단위 테스트 |
@@ -73,9 +73,9 @@
 - `docs/superpowers/specs/2026-09-26-s3-three-features-design.md`: "합성 데이터 표시가 이미 있다"는 사실이 아니었다. PR-D에서 표시를 더했다.
 - `docs/evidence/jev-intent-2026-09-26.md`: 바로 이동 기준이 2026-09-27부터 0.90이다.
 
-## 7. 노아가 할 일
+## 7. 메일 확인 완료와 남은 결정
 
-- **AWS 구독 확인 메일**(제목 "AWS Notification - Subscription Confirmation")의 링크를 9/29 11시(KST) 전에 한 번 누른다. 스팸함도 확인한다.
-  - 누르기 전에는 경보 메일이 오지 않는다.
-  - 누른 뒤에는 경보 시험(ALARM→OK 메일 2통)으로 확인한다.
+- **AWS 구독 확인은 9/27 15:43 KST에 완료했다.** 같은 날 15:43 ALARM, 15:44 OK 시험 메일 모두 Gmail `INBOX`에 도착한 도구 응답을 확인했다. 사용자에게 확인 링크를 다시 누르도록 요청할 필요가 없다.
+  - 이 후속 결과는 당시 기록을 복원한 것이며, 현재 경보 상태를 새로 조회한 것은 아니다.
+  - 원본 세션·시각·응답 위치는 [모바일 점검 중단 복구 기록](mobile-recovery-2026-09-27.md)에 있다.
 - 이름·브랜드와 최종 법률 확인(기존 결정 대기 항목)

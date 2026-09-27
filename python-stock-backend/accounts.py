@@ -10,6 +10,11 @@ RESERVED_EMAIL_DOMAINS = (DEMO_EMAIL_DOMAIN, BOT_EMAIL_DOMAIN)
 # bcrypt 해시가 아니므로 어떤 비밀번호와도 일치하지 않는다(passwords.verify가 False).
 UNUSABLE_PASSWORD = "!unusable"
 
+# 운영자가 별도 명령으로만 만드는 공개 체험 계정. 자격정보는 화면에 공개된다.
+PUBLIC_DEMO_EMAIL = "test@test.com"
+PUBLIC_DEMO_USERNAME = "공용 데모"
+PUBLIC_DEMO_PASSWORD = "test1234"
+
 
 def _normalized(email: str | None) -> str:
     return (email or "").strip().lower()

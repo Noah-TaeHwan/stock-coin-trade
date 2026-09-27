@@ -153,6 +153,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.cli.add_command(init_db_command)
     app.cli.add_command(seed_demo_command)
     app.cli.add_command(create_admin_command)
+    app.cli.add_command(create_demo_command)
     app.cli.add_command(init_quant_db_command)
     app.cli.add_command(create_invite_command)
     return app
@@ -191,6 +192,16 @@ def create_admin_command(email: str, password: str) -> None:
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
     click.echo(f"create-admin: {outcome} {email.strip().lower()}")
+
+
+@click.command("create-demo")
+def create_demo_command() -> None:
+    """공용 데모 회원을 안전하게 생성한다. 기존 이메일은 변경하지 않는다."""
+    try:
+        outcome = bootstrap.create_public_demo()
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"create-demo: {outcome}")
 
 
 def _reject_cross_site_requests():

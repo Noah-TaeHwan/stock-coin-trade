@@ -65,6 +65,8 @@ sudo docker compose -p stockdesk exec python-backend flask --app app create-admi
 sudo docker compose -p stockdesk exec python-backend flask --app app create-invite --label <이름> --max-requests 20
 ```
 
+공용 웹 데모를 제공할 때는 새 백엔드 컨테이너에서 `flask --app app create-demo`를 별도로 실행한다. 지정된 공개 체험 계정을 일반 회원으로 만들며, 같은 데모는 그대로 두고 기존 일반 회원·관리자 주소와 충돌하면 거부한다. 생성 후에만 로그인·가입 화면에 안내가 나타난다. 계정 보호와 검증 범위는 [공용 데모 기록](../evidence/public-demo-2026-09-27.md)을 따른다.
+
 공시 레이더는 수집을 시작한 날부터의 공시만 가진다. 종목 조회의 "최근 30일"이 비어 보이지 않게, 새 서버에서는 최근 30일 영업일을 한 번 채운다(같은 공시는 다시 넣지 않는다).
 
 ```bash
