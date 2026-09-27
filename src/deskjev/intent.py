@@ -16,10 +16,11 @@ from urllib.parse import urlencode
 from deskjev import MODEL  # noqa: F401 (평가와 테스트가 intent.MODEL로 읽는다)
 
 MAX_TEXT = 200
-# evals/jev_intent 실측으로 정한 값(모델을 바꾸면 다시 잰다).
+# evals/jev_intent 실측으로 정한 값(모델이나 화면 목록을 바꾸면 다시 잰다).
 # 화면 확률이 GO 이상이면 바로 이동하고, SUGGEST 이상이면 후보를 보여 준다.
 # 종목·전략 같은 인자는 확률이 ARG_MIN 이상일 때만 싣는다. 애매한 인자는 틀리게 싣는 것보다 빼는 편이 낫다.
-GO = 0.85
+# 2026-09-27 공시 화면 추가 뒤 127문장 재측정: 0.85에서 바로 이동 오답 1건(i082, 0.86), 0.90에서 0건(자동 77%).
+GO = 0.9
 SUGGEST = 0.4
 ARG_MIN = 0.85
 
@@ -27,6 +28,7 @@ ARG_MIN = 0.85
 SCREENS: dict[str, tuple[str | None, str]] = {
     "dashboard": ("/index.html", "시장 전체 요약을 보는 첫 화면(대시보드, 홈, 메인)"),
     "stock": ("/trade/stock.html", "국내 주식 한 종목의 시세·차트·호가를 보거나 모의 주문하는 화면"),
+    "disclosures": ("/events.html", "금융감독원 DART 공시 목록·공시 유형·위험 공시를 보는 화면(공시 레이더, 관심 종목 공시)"),
     "coin": ("/trade/order.html", "코인 한 종목의 시세·차트·호가를 보거나 모의 주문하는 화면"),
     "arbitrage": ("/arbitrage.html", "거래소 간 코인 가격 차이, 김치 프리미엄(김프), 차익 계산 화면"),
     "alternatives": ("/trade/alternatives.html", "선물·금·은·원자재·부동산 같은 대체자산 모의 거래 화면"),
@@ -41,7 +43,13 @@ SCREENS: dict[str, tuple[str | None, str]] = {
     "none": (None, "위 어느 화면과도 관련 없는 요청(잡담, 계정·비밀번호, 관리자 기능 등)"),
 }
 # 화면별로 URL에 싣는 인자. 여기에 없는 화면은 종목·전략 답을 쓰지 않는다.
-USES = {"stock": ("stock",), "coin": ("coin",), "arbitrage": ("coin",), "quant": ("stock", "coin", "strategy")}
+USES = {
+    "stock": ("stock",),
+    "disclosures": ("stock",),
+    "coin": ("coin",),
+    "arbitrage": ("coin",),
+    "quant": ("stock", "coin", "strategy"),
+}
 NONE = "none"
 
 
@@ -108,6 +116,7 @@ def _href(screen: str, stock: str | None, coin: str | None, strategy: str | None
         return None
     params = {
         "stock": {"symbol": stock},
+        "disclosures": {"symbol": stock},
         "coin": {"market": f"KRW-{coin}" if coin else None},
         "arbitrage": {"symbol": coin},
         "quant": {"symbol": stock or (f"KRW-{coin}" if coin else None), "strategy": strategy},

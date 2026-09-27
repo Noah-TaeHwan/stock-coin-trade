@@ -223,3 +223,10 @@ def test_oracle_model_scores_perfectly():
     cases = load_cases()
     summary = summarize(run(OracleClient(cases), cases, intent_api.candidates()))
     assert summary["full_accuracy"] == 1 and summary["go_errors"] == []
+
+
+def test_disclosure_radar_is_a_screen_that_takes_a_stock():
+    # 공시 레이더(S3)는 공개 사이트의 핵심 기능이다. "삼성전자 공시 보여줘"가 주식 화면으로 가면 안 된다.
+    assert intent.USES["disclosures"] == ("stock",)
+    assert intent._href("disclosures", "005930", None, None) == "/events.html?symbol=005930"
+    assert intent._href("disclosures", None, None, None) == "/events.html"
