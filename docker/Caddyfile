@@ -7,5 +7,8 @@
 # docker/real-ip.edge.conf로 이 값을 클라이언트 IP로 쓴다.
 {$SITE_ADDRESS} {
 	encode zstd gzip
+	# 공개 주소에서만 HTTPS를 고정한다(HSTS 1년). localhost 점검에 붙이면 브라우저가 기억해 로컬 개발을 막는다.
+	@remote not host localhost 127.0.0.1
+	header @remote Strict-Transport-Security "max-age=31536000"
 	reverse_proxy frontend:80
 }

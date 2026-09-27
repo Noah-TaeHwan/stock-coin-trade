@@ -37,8 +37,12 @@ passwords.dummy_hash()
 def me():
     member_id = session.get("member_id")
     # profile은 이 배포가 등록하지 않은 화면을 메뉴에서 숨기는 데, signupOpen은 가입 화면 안내에 쓴다.
+    # privacyVersion·jevEnabled는 명령 바가 동의 전에 문장을 서버로 보내지 않도록 쓴다(처리방침 4절).
     base = {"csrfToken": csrf_token(), "profile": current_app.config.get("APP_PROFILE", "local"),
-            "signupOpen": bool(current_app.config.get("SIGNUP_ENABLED", True))}
+            "signupOpen": bool(current_app.config.get("SIGNUP_ENABLED", True)),
+            "privacyVersion": PRIVACY_VERSION,
+            "jevEnabled": bool(current_app.config.get("JEV_ENABLED")),
+            "aiEnabled": bool(current_app.config.get("AI_ENABLED"))}
     if not member_id:
         return jsonify({"loggedIn": False, **base})
     with session_scope() as db:

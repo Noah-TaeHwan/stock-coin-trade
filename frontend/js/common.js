@@ -27,8 +27,9 @@ if (!window.__errorReporterInstalled) {
   });
 }
 
-// 공통 오프캔버스 메뉴에서 사용하는 Font Awesome 아이콘
-if (!document.getElementById('fontawesome-css')) {
+// 공통 오프캔버스 메뉴에서 사용하는 Font Awesome 아이콘.
+// 계정 화면(/member/)은 외부 자원을 불러오지 않는다(처리방침 5절, CSP). 아이콘만 빠지고 글자는 남는다.
+if (!location.pathname.startsWith('/member/') && !document.getElementById('fontawesome-css')) {
   const iconStylesheet = document.createElement('link');
   iconStylesheet.id = 'fontawesome-css';
   iconStylesheet.rel = 'stylesheet';
@@ -444,6 +445,11 @@ function publicNavGroups(groups) {
 
 // 기능키·명령 목록을 제자리에서 고친다(다른 코드가 같은 배열을 참조한다).
 let terminalIsPublic = false;
+/**
+ * initPage가 받은 /api/member/me 응답. 명령 바가 동의·Jev 상태를 확인하는 데 쓴다(없으면 null).
+ * @type {object|null}
+ */
+let terminalMe = null;
 function applyProfileToTerminal(user) {
   if (!isPublicProfile(user)) return;
   terminalIsPublic = true;
@@ -641,7 +647,7 @@ function saveJevConsent(version) {
  */
 function renderJevConsent(text, first, version) {
   const box = document.getElementById('term-cmd-help');
-  if (!box) { fallbackCommand(text, first); return; }
+  if (!box) return;  // 동의를 물을 곳이 없으면 아무 데도 보내지 않는다(검색 주소로도 넘기지 않는다)
   const line = (label, body) => {
     const row = document.createElement('div');
     const b = document.createElement('b');
@@ -677,6 +683,15 @@ function renderJevConsent(text, first, version) {
 }
 
 async function routeByIntent(text, first, consent = readJevConsent()) {
+  // 동의 전에는 문장을 이 서비스 서버로도 보내지 않는다(처리방침 4절 "어디로도 보내지 않습니다").
+  // /me를 받지 못해 동의 버전을 알 수 없으면 보내지 않고 도움말만 보인다.
+  if (!terminalMe?.privacyVersion) { renderTerminalHelp(); return; }
+  // Jev가 꺼져 있으면 해외 전송 자체가 없다. 이때는 이 사이트의 주식 검색으로 넘긴다(접속 기록 대상).
+  if (!terminalMe.jevEnabled) { fallbackCommand(text, first); return; }
+  if (consent !== terminalMe.privacyVersion) {
+    renderJevConsent(text, first, terminalMe.privacyVersion);
+    return;
+  }
   const input = document.getElementById('term-cmd-input');
   if (input) { input.disabled = true; input.placeholder = 'Jev가 명령을 해석하는 중…'; }
   let result = null;
@@ -1446,6 +1461,7 @@ function mountDocToc() {
 
 async function initPage({ requireAuth = false } = {}) {
   const user = await getCurrentUser();
+  terminalMe = user;
   if (requireAuth && !user?.loggedIn) {
     location.href = '/member/login.html';
     return null;
