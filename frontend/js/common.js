@@ -431,8 +431,9 @@ const PUBLIC_HIDDEN_HREFS = new Set([
 ]);
 const _hrefPath = href => String(href ?? '').split('?')[0];
 
+// 프로필을 모르면(/me 실패) 공개 사이트로 다룬다(applyProfileToTerminal·[data-local-only]와 같은 규칙).
 function isPublicProfile(user) {
-  return user?.profile === 'public';
+  return user?.profile !== 'local';
 }
 
 function publicNavGroups(groups) {
@@ -455,6 +456,8 @@ function applyProfileToTerminal(user) {
   // 프로필을 모르면(/me 실패) 공개 사이트처럼 안전하게 다룬다(코인 명령·경로를 열지 않는다).
   if (user?.profile === 'local') return;
   terminalIsPublic = true;
+  // AI가 꺼졌거나 모르면 AI 리서치는 "꺼져 있습니다"만 보이는 막다른 화면이다. 메뉴·기능키·명령·Jev 후보에서 뺀다.
+  if (user?.aiEnabled !== true) PUBLIC_HIDDEN_HREFS.add('/research-agent.html');
   const keep = item => !PUBLIC_HIDDEN_HREFS.has(_hrefPath(item.href));
   const ai = TERMINAL_FKEYS.find(f => f.code === 'AI');
   if (ai) { ai.label = 'AI 리서치'; ai.href = '/research-agent.html'; }
@@ -626,8 +629,8 @@ const INTENT_LABELS = {
 // 서버가 만든 주소라도 같은 사이트의 경로만 받는다.
 function intentPath(href) {
   const path = String(href ?? '');
-  if (!/^\/(?!\/)[\w\-./]*(\?[\w\-=&%]*)?$/.test(path)) return null;  // '//host'(외부 이동)는 거부
-  if (terminalMe?.aiEnabled === false && _hrefPath(path) === '/research-agent.html') return null;  // AI가 꺼지면 막다른 화면
+  // '//host'(외부 이동)와 '..'(브라우저가 정규화해 숨김 목록을 비껴가는 경로)는 거부
+  if (!/^\/(?!\/)[\w\-./]*(\?[\w\-=&%]*)?$/.test(path) || path.includes('..')) return null;
   return terminalIsPublic && PUBLIC_HIDDEN_HREFS.has(_hrefPath(path)) ? null : path;
 }
 
