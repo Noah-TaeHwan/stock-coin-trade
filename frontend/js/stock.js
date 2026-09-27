@@ -222,6 +222,7 @@ function renderAvgDownCalculator() {
   updateAvgDownResult();
 }
 
+/** 물타기 입력 수량으로 예상 비용과 잔액을 갱신한다. */
 function updateAvgDownResult() {
   const position = avgDownPosition();
   if (!position || currentStockPrice <= 0) return;
@@ -235,7 +236,7 @@ function updateAvgDownResult() {
   setText('avgDownCost', cost ? fmtKrw(cost) : '-');
   setText('avgDownNewAvg', qty > 0 ? fmtKrw(newAvg) : '-');
   setEl('avgDownDiff', qty > 0 ? `${avgDiff > 0 ? '+' : ''}${fmtKrw(avgDiff)}` : '-', colorByVal(avgDiff));
-  setEl('avgDownCashLeft', qty > 0 ? fmtKrw(lastCash - cost) : fmtKrw(lastCash), isAffordable ? undefined : 'var(--down)');
+  setEl('avgDownCashLeft', qty > 0 ? fmtKrw(lastCash - cost) : fmtKrw(lastCash), isAffordable ? 'var(--fg)' : 'var(--down)');
 
   const notice = document.getElementById('avgDownNotice');
   if (!notice) return;

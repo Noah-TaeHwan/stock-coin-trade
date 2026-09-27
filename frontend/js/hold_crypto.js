@@ -14,46 +14,43 @@ if (typeof Highcharts !== 'undefined') {
 
 /* ── 초기화: 보유자산 fetch → DOM 렌더 → WebSocket 연결 ──────── */
 (async () => {
-  await initPage({ requireAuth: true });
-
-  const res = await apiFetch('/api/trade/hold');
-  if (!res.ok) {
-    document.getElementById('holdCryptoTableBody').innerHTML =
-      '<tr><td colspan="7" class="px-4 py-6 text-center" style="color:var(--muted);">데이터를 불러올 수 없습니다.</td></tr>';
-    return;
+  const user = await initPage({ requireAuth: true });
+  if (!user) return;
+  const publicProfile = isPublicProfile(user);
+  let memberAsset, totalBuyKrw, holdCryptoList, marketArrayList;
+  if (publicProfile) {
+    ({ asset: memberAsset } = user);
+    totalBuyKrw = 0;
+    holdCryptoList = [];
+    marketArrayList = [];
+  } else {
+    const res = await apiFetch('/api/trade/hold');
+    if (!res.ok) {
+      document.getElementById('holdCryptoTableBody').innerHTML =
+        '<tr><td colspan="7" class="px-4 py-6 text-center" style="color:var(--muted);">데이터를 불러올 수 없습니다.</td></tr>';
+      return;
+    }
+    ({ memberAsset, totalBuyKrw, holdCryptoList, marketArrayList } = await res.json());
   }
-
-  const { memberAsset, totalBuyKrw, holdCryptoList, marketArrayList } = await res.json();
-
-  // 상단 통계 초기값 설정
-  setText('member_asset', fmt(memberAsset));
-  setText('total_buy_krw', fmt(totalBuyKrw));
 
   // 보유 코인 테이블 렌더
   renderHoldTable(holdCryptoList);
   loadCryptoVolatility(holdCryptoList);
-  await loadStockPortfolio();
-  await loadAlternativePortfolio();
+  const stock = await loadStockPortfolio();
+  const alternative = publicProfile ? { value: 0, cost: 0 } : await loadAlternativePortfolio();
   loadPortfolioAnalysis();
 
-  if (!holdCryptoList.length) {
-    setText('total_member_asset', fmt(memberAsset));
-    setText('total_evaluation_krw', '0');
-    setText('total_krw_of_return', '0');
-    setText('total_evaluation_rate_of_return', '0');
-    // 보유 코인이 없어도 KRW 자산 비중 차트는 표시한다.
-    await renderPortfolioChart([], [], memberAsset);
-    return;
-  }
-
-  // 웹소켓 연결 (평가금액 실시간 업데이트)
-  initWebSocket(marketArrayList, memberAsset, totalBuyKrw);
-
-  // 포트폴리오 차트
-  renderPortfolioChart(holdCryptoList, marketArrayList, memberAsset);
+  const portfolio = { cash: Number(memberAsset), cryptoCost: Number(totalBuyKrw), holdCryptoList, stock, alternative };
+  const evalMap = {};
+  if (holdCryptoList.length) updateHoldSummary(portfolio, evalMap);
+  if (holdCryptoList.length) initWebSocket(marketArrayList, portfolio, evalMap);
+  await renderPortfolioChart(marketArrayList, portfolio, evalMap);
 })();
 
 /* ── 주식 포트폴리오 / 섹터별 집계 ────────────────────────────── */
+/** 주식 표와 차트를 갱신하고 평가액 및 매입원가를 반환한다.
+ * @returns {Promise<{value:number,cost:number}|null>} 포지션 합계 또는 조회 실패
+ */
 async function loadStockPortfolio() {
   const tbody = document.getElementById('holdStockTableBody');
   try {
@@ -63,6 +60,7 @@ async function loadStockPortfolio() {
 
     const totalEval = positions.reduce((sum, pos) => sum + Number(pos.evalAmount || 0), 0);
     const totalPnl = positions.reduce((sum, pos) => sum + Number(pos.pnl || 0), 0);
+    const snapshot = { value: totalEval, cost: totalEval - totalPnl };
     setText('stockPositionCount', positions.length);
     setText('stockPortfolioEval', fmt(totalEval));
     setColorText('stockPortfolioPnl', totalPnl >= 0 ? '+' + fmt(totalPnl) : fmt(totalPnl), totalPnl);
@@ -71,7 +69,7 @@ async function loadStockPortfolio() {
     renderStockPortfolioCharts(positions, totalEval);
     if (!positions.length) {
       tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center" style="color:var(--muted);">보유 주식이 없습니다.</td></tr>';
-      return;
+      return snapshot;
     }
 
     tbody.innerHTML = positions.map(pos => {
@@ -92,29 +90,39 @@ async function loadStockPortfolio() {
         <td class="text-right">${volatilityBadgeHtml(pos.volatility)}</td>
       </tr>`;
     }).join('');
+    return snapshot;
   } catch {
     if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center" style="color:var(--muted);">주식 포트폴리오를 불러올 수 없습니다.</td></tr>';
+    return null;
   }
 }
 
 /* ── 선물·옵션·금속·부동산 포지션 ─────────────────────────────── */
+/** 대체자산 표를 갱신하고 평가액 및 매입원가를 반환한다.
+ * @returns {Promise<{value:number,cost:number}|null>} 포지션 합계 또는 조회 실패
+ */
 async function loadAlternativePortfolio() {
   const tbody = document.getElementById('alternativePositionBody');
-  if (!tbody) return;
+  if (!tbody) return null;
   try {
     const res = await apiFetch('/api/alternatives/positions?volatility=1');
     if (!res.ok) throw new Error('alternative positions unavailable');
     const { positions = [] } = await res.json();
+    const value = positions.reduce((sum, pos) => sum + Number(pos.evalAmount || 0), 0);
+    const cost = value - positions.reduce((sum, pos) => sum + Number(pos.pnl || 0), 0);
+    const snapshot = { value, cost };
     if (!positions.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center" style="color:var(--muted);">보유한 대체자산이 없습니다.</td></tr>';
-      return;
+      return snapshot;
     }
     tbody.innerHTML = positions.map(pos => {
       const pnl = Number(pos.pnl || 0);
       return `<tr><td><div class="font-bold" style="color:var(--fg);">${escapeHtml(pos.name)}</div><div class="text-xs" style="color:var(--accent);">${escapeHtml(pos.symbol)}</div></td><td><span class="badge badge-muted">${escapeHtml(pos.category)}</span></td><td class="text-right" style="color:var(--fg);">${Number(pos.quantity).toLocaleString('ko-KR')}${escapeHtml(pos.unit)}</td><td class="text-right" style="color:var(--fg);">${fmt(pos.avgPrice)}원</td><td class="text-right font-bold" style="color:var(--accent);">${fmt(pos.evalAmount)}원</td><td class="text-right font-bold" style="color:${priceColor(pnl)};">${pnl >= 0 ? '+' : ''}${fmt(pnl)}원</td><td class="text-right">${volatilityBadgeHtml(pos.volatility)}</td></tr>`;
     }).join('');
+    return snapshot;
   } catch {
     tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center" style="color:var(--muted);">대체자산 포트폴리오를 불러올 수 없습니다.</td></tr>';
+    return null;
   }
 }
 
@@ -323,8 +331,12 @@ function renderHoldTable(holdCryptoList) {
 }
 
 /* ── 업비트 웹소켓 (실시간 평가금액) ──────────────────────────── */
-function initWebSocket(marketArrayList, memberAsset, totalBuyKrw) {
-  const evalMap = {};
+/** 코인 시세 갱신을 보유자산 전체 합계와 코인 표에 반영한다.
+ * @param {string[]} marketArrayList 보유 코인 마켓 코드
+ * @param {Object} portfolio 보유자산 평가 스냅샷
+ * @param {Object<string, number>} evalMap 코인별 평가액
+ */
+function initWebSocket(marketArrayList, portfolio, evalMap) {
   const socket = new WebSocket(upbitWebSocketUrl());
 
   socket.onopen = () => {
@@ -340,22 +352,12 @@ function initWebSocket(marketArrayList, memberAsset, totalBuyKrw) {
       if (result.type !== 'ticker') return;
 
       const code      = result.code;
-      const nowPrice  = result.trade_price;
+      const nowPrice  = Number(result.trade_price);
+      if (!marketArrayList.includes(code) || !Number.isFinite(nowPrice) || nowPrice <= 0) return;
       const holdCount = parseFloat(document.getElementById(code + '-hold-count')?.textContent.replaceAll(',', '') || '0');
       const evalKrw   = Math.round(nowPrice * holdCount);
       evalMap[code]   = evalKrw;
-
-      const totalEval = Object.values(evalMap).reduce((a, b) => a + b, 0);
-      const totalAsset = memberAsset + totalEval;
-
-      setText('total_evaluation_krw', fmt(totalEval));
-      setText('total_member_asset',   fmt(totalAsset));
-
-      const totalReturn = totalEval - totalBuyKrw;
-      setColorText('total_krw_of_return', totalReturn > 0 ? '+' + fmt(totalReturn) : fmt(totalReturn), totalReturn);
-
-      const rate = totalBuyKrw > 0 ? (totalEval / totalBuyKrw) * 100 - 100 : 0;
-      setColorText('total_evaluation_rate_of_return', rate > 0 ? '+' + rate.toFixed(2) : rate.toFixed(2), rate);
+      updateHoldSummary(portfolio, evalMap);
 
       // 개별 코인 평가
       const buyKrwEl = document.getElementById(code + '-buy-total-krw');
@@ -376,36 +378,75 @@ function initWebSocket(marketArrayList, memberAsset, totalBuyKrw) {
 }
 
 /* ── 포트폴리오 차트 (Highcharts) ──────────────────────────────── */
-async function renderPortfolioChart(holdCryptoList, marketArrayList, memberAsset) {
+let holdAssetChart = null;
+
+/** 기존 코인 시세 API로 초기 평가액을 받아 요약을 그린다.
+ * @param {string[]} marketArrayList 보유 코인 마켓 코드
+ * @param {Object} portfolio 보유자산 평가 스냅샷
+ * @param {Object<string, number>} evalMap WebSocket과 공유하는 코인별 평가액
+ * @returns {Promise<Object<string, number>>} 코인별 초기 평가액
+ */
+async function renderPortfolioChart(marketArrayList, portfolio, evalMap) {
   try {
-    let upbitData = [];
     if (marketArrayList.length) {
       const marketListStr = marketArrayList.join(',');
       const upbitRes = await fetch('/upbit-api/ticker?markets=' + encodeURIComponent(marketListStr));
-      if (upbitRes.ok) upbitData = await upbitRes.json();
+      if (!upbitRes.ok) throw new Error('coin prices unavailable');
+      const upbitData = await upbitRes.json();
+      const priceMap = Object.fromEntries(upbitData.map(row => [row.market, Number(row.trade_price)]));
+      portfolio.holdCryptoList.forEach(holding => {
+        const price = priceMap[holding.marketCode];
+        if (!Number.isFinite(evalMap[holding.marketCode]) && Number.isFinite(price) && price > 0) {
+          evalMap[holding.marketCode] = Math.round(price * holding.holdCount);
+        }
+      });
     }
+  } catch {}
+  updateHoldSummary(portfolio, evalMap);
+  return evalMap;
+}
 
-    const priceMap = {};
-    upbitData.forEach(d => { priceMap[d.market.split('-')[1]] = d.trade_price; });
+/** 현금·주식·대체자산·코인을 같은 기준으로 합산해 요약과 비중 차트를 갱신한다.
+ * @param {Object} portfolio 보유자산 평가 스냅샷
+ * @param {Object<string, number>} evalMap 코인별 평가액
+ */
+function updateHoldSummary(portfolio, evalMap) {
+  const { cash, cryptoCost, holdCryptoList, stock, alternative } = portfolio;
+  setText('member_asset', fmt(cash));
+  const chartEl = document.getElementById('hold_asset_chart');
+  if (!stock || !alternative || holdCryptoList.some(holding => !Number.isFinite(evalMap[holding.marketCode]))) {
+    ['total_member_asset', 'total_buy_krw', 'total_evaluation_krw', 'total_krw_of_return', 'total_evaluation_rate_of_return']
+      .forEach(id => setText(id, '-'));
+    if (holdAssetChart) { holdAssetChart.destroy(); holdAssetChart = null; }
+    if (chartEl) chartEl.textContent = '일부 자산의 평가액을 불러올 수 없습니다.';
+    return;
+  }
 
-    let totalEval = 0;
-    const evalMap = {};
-    holdCryptoList.forEach(h => {
-      const price = priceMap[h.marketCodeOnlySymbol] || 0;
-      const eval_ = Math.round(price * h.holdCount);
-      evalMap[h.marketCodeOnlySymbol] = eval_;
-      totalEval += eval_;
-    });
+  const cryptoEval = holdCryptoList.reduce((sum, holding) => sum + evalMap[holding.marketCode], 0);
+  const invested = stock.value + alternative.value + cryptoEval;
+  const totalAsset = cash + invested;
+  const totalCost = stock.cost + alternative.cost + cryptoCost;
+  const pnl = invested - totalCost;
+  const rate = totalCost > 0 ? pnl / totalCost * 100 : 0;
+  setText('total_member_asset', fmt(totalAsset));
+  setText('total_buy_krw', fmt(totalCost));
+  setText('total_evaluation_krw', fmt(invested));
+  setColorText('total_krw_of_return', pnl > 0 ? '+' + fmt(pnl) : fmt(pnl), pnl);
+  setColorText('total_evaluation_rate_of_return', rate > 0 ? '+' + rate.toFixed(2) : rate.toFixed(2), rate);
 
-    const totalAsset = memberAsset + totalEval;
-    const chartData = holdCryptoList.map(h => ({
-      name: h.marketCodeOnlySymbol,
-      y: totalAsset > 0 ? (evalMap[h.marketCodeOnlySymbol] / totalAsset) * 100 : 0,
-    }));
-    chartData.push({ name: 'KRW', y: totalAsset > 0 ? (memberAsset / totalAsset) * 100 : 100 });
+  const chartData = [
+    { name: 'KRW', value: cash },
+    { name: '주식', value: stock.value },
+    { name: '대체자산', value: alternative.value },
+    ...holdCryptoList.map(holding => ({ name: holding.marketCodeOnlySymbol, value: evalMap[holding.marketCode] })),
+  ].filter(item => item.value > 0).map(item => ({ name: item.name, y: totalAsset > 0 ? item.value / totalAsset * 100 : 0 }));
 
+  if (typeof Highcharts === 'undefined' || !chartEl) return;
+  if (holdAssetChart) {
+    holdAssetChart.series[0].setData(chartData);
+  } else {
     const accentPalette = TERM_PALETTE;
-    Highcharts.chart('hold_asset_chart', {
+    holdAssetChart = Highcharts.chart('hold_asset_chart', {
       chart: { plotBackgroundColor:'transparent', backgroundColor:'transparent', type:'pie',
                style:{ fontFamily:"'Pretendard', sans-serif" } },
       title: { text:'보유 비중', align:'center', style:{ fontSize:'13px', fontWeight:'800' } },
@@ -416,7 +457,7 @@ async function renderPortfolioChart(holdCryptoList, marketArrayList, memberAsset
       credits: { enabled:false },
       series: [{ name:'비중', data:chartData }],
     });
-  } catch {}
+  }
 }
 
 /* ── 변동성 (수익률의 연환산 표준편차) ─────────────────────────── */
