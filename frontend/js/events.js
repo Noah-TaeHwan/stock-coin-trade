@@ -12,7 +12,11 @@ const disc = {
   kinds: {},        // 유형 id → 화면 이름(서버가 준다)
   items: [],
   range: null,      // 서버가 답한 {date, from, to}. date가 null이면 종목 최근 30일 모드
+  backtestable: new Set(),  // 퀀트 랩에 시세가 있는 종목(/api/quant/overview). 이 종목에만 백테스트 링크를 단다
 };
+
+/** 서버가 한 번에 주는 최대 건수(discQuery의 limit). 이만큼 받으면 더 있을 수 있다고 알린다. */
+const DISC_LIMIT = 500;
 let discTimer = null;
 
 const discEsc = escapeHtml;
@@ -47,7 +51,7 @@ function discQuery() {
   if (disc.watch) params.set('symbols', watchedSymbols().join(','));
   else if (/^\d{6}$/.test(disc.symbol)) params.set('symbol', disc.symbol);
   if (disc.riskOnly) params.set('risk', '1');
-  params.set('limit', '500');
+  params.set('limit', String(DISC_LIMIT));
   return `/api/disclosures?${params}`;
 }
 
@@ -111,7 +115,7 @@ function renderDisclosures(emptyText = '조건에 맞는 공시가 없습니다.
   const rows = disc.kind ? disc.items.filter(item => item.kind === disc.kind) : disc.items;
   const riskCount = disc.items.filter(item => item.risk).length;
   document.getElementById('discCount').textContent =
-    `${rows.length}건 표시 · 전체 ${disc.items.length}건 · 위험 ${riskCount}건`;
+    `${rows.length}건 표시 · 전체 ${disc.items.length}건${disc.items.length >= DISC_LIMIT ? '(최대 500건까지만 받음)' : ''} · 위험 ${riskCount}건`;
   // 날짜 없이 종목만 고르면 서버가 최근 30일을 준다(주말·휴일에도 비지 않게). 그때는 접수일 열을 보인다.
   const spanMode = Boolean(disc.range && !disc.range.date);
   document.getElementById('colDate').hidden = !spanMode;
@@ -131,7 +135,7 @@ function renderDisclosures(emptyText = '조건에 맞는 공시가 없습니다.
     return `<tr class="${item.risk ? 'is-risk' : ''}">
       ${spanMode ? `<td>${discEsc(item.date || '-')}</td>` : ''}
       <td>${discEsc(item.firstSeenKst || '-')}</td>
-      <td class="txt who">${discEsc(item.corpName)}<small>${discEsc(item.market || '')}${code ? ` · <a href="/events.html?symbol=${code}">${code}</a> · <a href="/quant.html?symbol=${code}" title="이 종목으로 백테스트(공개 사이트는 합성 학습 데이터)">백테스트</a>` : ''}</small></td>
+      <td class="txt who">${discEsc(item.corpName)}<small>${discEsc(item.market || '')}${code ? ` · <a href="/events.html?symbol=${code}">${code}</a>${disc.backtestable.has(code) ? ` · <a href="/quant.html?symbol=${code}" title="이 종목으로 백테스트(공개 사이트는 합성 학습 데이터)">백테스트</a>` : ''}` : ''}</small></td>
       <td class="txt">${title}${item.corrected ? '<small>정정 공시</small>' : ''}</td>
       <td class="txt">${discEsc(item.kindLabel || item.kind)}</td>
       <td>${item.risk ? '<span class="flag">⚠ 위험</span>' : '-'}</td>
@@ -227,6 +231,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   disc.watch = params.get('watch') === '1';
   await initPage();
   bindDiscEvents();
+  // 백테스트 링크는 시세가 있는 종목에만 단다(없으면 퀀트 랩에서 '시세가 부족합니다'로 끝난다).
+  try {
+    const res = await fetch('/api/quant/overview', { credentials: 'same-origin' });
+    if (res.ok) disc.backtestable = new Set(((await res.json()).symbols || []).filter(code => /^\d{6}$/.test(code)));
+  } catch (_) { /* 퀀트 DB가 없으면 링크를 달지 않는다 */ }
   await loadDisclosures();
   startDiscPolling();
 });

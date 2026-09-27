@@ -1,9 +1,10 @@
 """PostgreSQL-backed quant data browser and moving-average backtest API."""
 import os
+import re
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, has_app_context, jsonify, request
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from errors import error_response
@@ -74,10 +75,35 @@ def _regression(rows, factors):
             "r_squared": 1 - residual / total if total else 0.0, "observations": len(rows)}
 
 
+STOCK_CODE = re.compile(r"[0-9]{6}")
+
+
+def _require_public_stock(symbol: str) -> None:
+    """공개 사이트는 코인을 다루지 않는다(노아 결정). 앱 밖(CLI·테스트 대역)이나 local 프로필은 검사하지 않는다.
+
+    @param symbol 대문자로 정리한 종목 기호
+    @returns None. 공개 사이트에서 6자리 종목코드가 아니면 ValueError
+    """
+    if has_app_context() and current_app.config.get("APP_PROFILE") == "public" and not STOCK_CODE.fullmatch(symbol):
+        raise ValueError("공개 사이트는 6자리 국내 주식 종목코드만 다룹니다.")
+
+
+def visible_symbols(symbols, profile: str) -> list[str]:
+    """overview에 보일 종목 목록. 공개 사이트는 6자리 종목코드만 보인다.
+
+    @param symbols DB의 종목 기호 목록(None 가능)
+    @param profile APP_PROFILE 값
+    @returns 보일 종목 목록
+    """
+    listed = list(symbols or [])
+    return [s for s in listed if STOCK_CODE.fullmatch(s)] if profile == "public" else listed
+
+
 def _params():
     symbol = request.args.get("symbol", "005930").upper().strip()
     if not symbol or len(symbol) > 20 or not all(char.isalnum() or char in "-_" for char in symbol):
         raise ValueError("유효한 symbol을 입력하세요.")
+    _require_public_stock(symbol)
     limit = max(1, min(int(request.args.get("limit", 100)), 500))
     return symbol, limit
 
@@ -93,6 +119,7 @@ def overview():
                        (SELECT array_agg(symbol ORDER BY symbol) FROM (SELECT DISTINCT symbol FROM market_data) s) AS symbols
             """))
             row = _rows(result)[0]
+        row["symbols"] = visible_symbols(row.get("symbols"), current_app.config.get("APP_PROFILE", "local"))
         return jsonify(row)
     except SQLAlchemyError as exc:
         return jsonify({"message": f"퀀트 PostgreSQL에 연결할 수 없습니다: {exc.__class__.__name__}"}), 503
@@ -157,6 +184,7 @@ def _backtest_request(data):
     symbol = str(data.get("symbol", "005930")).upper().strip()
     if not symbol or len(symbol) > 20 or not all(char.isalnum() or char in "-_^" for char in symbol):
         raise ValueError("유효한 symbol을 입력하세요.")
+    _require_public_stock(symbol)
     strategy = str(data.get("strategy", "ma2050")).strip().lower()
     fast = int(data["fast"]) if data.get("fast") is not None else None
     slow = int(data["slow"]) if data.get("slow") is not None else None
