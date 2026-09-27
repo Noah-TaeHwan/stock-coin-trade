@@ -12,7 +12,7 @@
     @font-face { font-family:'Pretendard'; font-weight:800; font-display:swap; src:url('/fonts/Pretendard-ExtraBold.woff2') format('woff2'); }
   </style>
   <link rel="stylesheet" href="/css/style.css?v=20260926-consent">
-  <script src="https://code.highcharts.com/11.1.0/highcharts.js"></script>
+  <script src="/vendor/highcharts-11.1.0/highcharts.js"></script>
   <style>
     /* 탭 막대는 main(공용 app-shell-layout이 스크롤을 담당하는 유일한 영역) 안에서
        sticky로 고정하고, 탭을 전환해도 필요할 때만 그 안에서 스크롤되게 한다. */
@@ -33,8 +33,8 @@
     <button type="button" class="hold-tab active" data-tab="summary" onclick="switchHoldTab('summary')" role="tab" aria-selected="true" aria-controls="panel-summary">요약</button>
     <button type="button" class="hold-tab" data-tab="analysis" onclick="switchHoldTab('analysis')" role="tab" aria-selected="false" aria-controls="panel-analysis">✦ 포트폴리오 분석</button>
     <button type="button" class="hold-tab" data-tab="stock" onclick="switchHoldTab('stock')" role="tab" aria-selected="false" aria-controls="panel-stock">주식</button>
-    <button type="button" class="hold-tab" data-tab="crypto" onclick="switchHoldTab('crypto')" role="tab" aria-selected="false" aria-controls="panel-crypto">코인</button>
-    <button type="button" class="hold-tab" data-tab="alt" onclick="switchHoldTab('alt')" role="tab" aria-selected="false" aria-controls="panel-alt">대체자산</button>
+    <button type="button" class="hold-tab" data-tab="crypto" onclick="switchHoldTab('crypto')" role="tab" aria-selected="false" aria-controls="panel-crypto" data-local-only>코인</button>
+    <button type="button" class="hold-tab" data-tab="alt" onclick="switchHoldTab('alt')" role="tab" aria-selected="false" aria-controls="panel-alt" data-local-only>대체자산</button>
   </nav>
 
   <!-- 요약 -->
@@ -126,7 +126,7 @@
   </div>
 
   <!-- 보유 코인 -->
-  <div id="panel-crypto" class="hold-panel">
+  <div id="panel-crypto" class="hold-panel" data-local-only>
     <section class="glass-card overflow-hidden">
       <div class="px-3 py-1.5" style="border-bottom:1px solid var(--border);">
         <h3 class="text-base font-black" style="color:var(--fg);">보유 코인</h3>
@@ -153,7 +153,7 @@
   </div>
 
   <!-- 대체자산 포트폴리오 -->
-  <div id="panel-alt" class="hold-panel">
+  <div id="panel-alt" class="hold-panel" data-local-only>
     <section class="glass-card overflow-hidden">
       <div class="px-3 py-1.5 flex items-center justify-between" style="border-bottom:1px solid var(--border);">
         <div><h3 class="text-base font-black" style="color:var(--fg);">대체자산 포트폴리오</h3><p class="mt-1 text-xs" style="color:var(--muted);">선물 · 옵션 · 파생상품 · 금 · 은 · 부동산 지분</p></div>

@@ -9,6 +9,7 @@
 외부 HTTP 호출의 timeout 누락은 ruff S113(pyproject.toml)이 막는다.
 """
 
+import hashlib
 import json
 import re
 from collections import Counter
@@ -77,7 +78,13 @@ def shell_vars_glued_to_non_ascii(lines: list[str]) -> list[str]:
 
 
 def test_g1_no_new_innerhtml_assignments():
-    assert_ratchet("G1_innerHTML", count_matches(INNERHTML, ["frontend/**/*.js", "frontend/**/*.html"]))
+    vendor = ROOT / "frontend/vendor/highcharts-11.1.0/highcharts.js"
+    assert hashlib.sha256(vendor.read_bytes()).hexdigest() == (
+        "0bf12ca4143e044d50f874054d1a2fec814d5ea03d7a5caed83d3fe211c4902f"
+    )
+    matches = count_matches(INNERHTML, ["frontend/**/*.js", "frontend/**/*.html"])
+    matches.pop("frontend/vendor/highcharts-11.1.0/highcharts.js", None)
+    assert_ratchet("G1_innerHTML", matches)
 
 
 def test_g3_no_new_float_columns():

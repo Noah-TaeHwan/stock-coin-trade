@@ -186,6 +186,7 @@ def portfolio_analysis():
     member_id = session.get("member_id")
     if not member_id:
         return jsonify({"error": "UNAUTHORIZED", "message": "로그인이 필요합니다."}), 401
+    public_profile = current_app.config["APP_PROFILE"] == "public"
 
     with session_scope() as db:
         member = db.get(Member, member_id)
@@ -195,9 +196,11 @@ def portfolio_analysis():
         stock_positions = stock_trading.get_positions(db, member_id)
         stock_value = sum(p["evalAmount"] for p in stock_positions)
 
-        crypto_rows = db.query(HoldCrypto, UpbitMarket).join(
-            UpbitMarket, HoldCrypto.upbit_market_id == UpbitMarket.upbit_market_id
-        ).filter(HoldCrypto.member_id == member_id).all()
+        crypto_rows = []
+        if not public_profile:
+            crypto_rows = db.query(HoldCrypto, UpbitMarket).join(
+                UpbitMarket, HoldCrypto.upbit_market_id == UpbitMarket.upbit_market_id
+            ).filter(HoldCrypto.member_id == member_id).all()
         codes = sorted({market.market_code for _, market in crypto_rows})
         prices = {}
         if codes:
@@ -217,7 +220,7 @@ def portfolio_analysis():
             })
         crypto_value = sum(p["evalAmount"] for p in crypto_positions)
 
-        alternatives = get_alternative_positions(db, member_id)
+        alternatives = [] if public_profile else get_alternative_positions(db, member_id)
         alternative_value = sum(row["evalAmount"] for row in alternatives)
         leverage_value = sum(row["evalAmount"] for row in alternatives if row["category"] in LEVERAGED_ALT_CATEGORIES)
 
@@ -225,9 +228,12 @@ def portfolio_analysis():
         values = [
             {"name": "현금", "value": cash, "color": "#64748B"},
             {"name": "주식", "value": round(stock_value), "color": "#2563EB"},
-            {"name": "코인", "value": round(crypto_value), "color": "#7C3AED"},
-            {"name": "대체자산", "value": round(alternative_value), "color": "#D97706"},
         ]
+        if not public_profile:
+            values.extend([
+                {"name": "코인", "value": round(crypto_value), "color": "#7C3AED"},
+                {"name": "대체자산", "value": round(alternative_value), "color": "#D97706"},
+            ])
         total = sum(item["value"] for item in values)
         for item in values:
             item["weight"] = round(item["value"] / total * 100, 1) if total else 0
