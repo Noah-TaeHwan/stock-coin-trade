@@ -1,12 +1,9 @@
-# 공개 서버 가동 확인(S5). 30분마다 HTTPS로 핵심 주소를 부르고, 하나라도 실패하면 이 워크플로가 실패한다.
-# 하루 한 번(06:45 KST)은 서버의 DB 백업 타이머가 최근 26시간 안에 성공했는지 SSM으로 확인한다.
-# 예약 실행이 실패하면 GitHub이 저장소 관리자에게 알림 메일을 보낸다. 추가 비용·외부 서비스 없음.
+# 공개 서버 수동 점검. HTTPS로 핵심 주소 세 곳을 부르고, 하나라도 실패하면 이 워크플로가 실패한다.
+# 상시 감시(5분마다 사이트·매일 백업)는 AWS에서 돈다(infra/cloudformation/stockdesk.yaml의 Monitor* 자원).
+# 이 저장소는 포크라 GitHub 예약 실행이 한 번도 돌지 않았다(2026-09-27 확인). 그래서 schedule을 두지 않는다.
 name: Uptime
 
 on:
-  schedule:
-    - cron: "7,37 * * * *"
-    - cron: "45 21 * * *"
   workflow_dispatch:
 
 permissions:
@@ -18,7 +15,6 @@ concurrency:
 
 jobs:
   check:
-    if: github.event.schedule != '45 21 * * *'
     runs-on: ubuntu-24.04
     environment: production
     timeout-minutes: 10
@@ -45,35 +41,3 @@ jobs:
           check /api/disclosures '"attribution"' || failed=1
           check /privacy.html '개인정보 처리방침' || failed=1
           exit "$failed"
-
-  backup:
-    if: github.event.schedule == '45 21 * * *' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    environment: production
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      AWS_REGION: ${{ vars.AWS_REGION }}
-      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
-    steps:
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
-        with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-      - name: Last backup succeeded within 26 hours
-        run: |
-          # shellcheck disable=SC2016 # 이 스크립트는 서버에서 풀려야 하므로 여기서 펼치지 않는다
-          script='r=$(systemctl show -p Result --value stockdesk-backup.service); t=$(systemctl show -p ExecMainExitTimestamp --value stockdesk-backup.service); echo "result=$r last=$t"; [ "$r" = success ] && [ -n "$t" ] && [ $(( $(date +%s) - $(date -d "$t" +%s) )) -lt 93600 ]'
-          params=$(jq -n --arg s "$script" '{commands: [$s]}')
-          command_id=$(aws ssm send-command --instance-ids "$EC2_INSTANCE_ID" --document-name AWS-RunShellScript \
-            --comment "backup check" --parameters "$params" --query Command.CommandId --output text)
-          for _ in $(seq 1 30); do
-            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$EC2_INSTANCE_ID" \
-              --query Status --output text 2>/dev/null || echo Pending)
-            case "$status" in Pending|InProgress|Delayed) sleep 5 ;; *) break ;; esac
-          done
-          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$EC2_INSTANCE_ID" \
-            --query StandardOutputContent --output text
-          if [ "$status" != Success ]; then echo "::error::backup is failing or stale"; exit 1; fi
