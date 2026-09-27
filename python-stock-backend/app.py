@@ -356,7 +356,10 @@ def movers():
     sorted_q = sorted(quotes, key=lambda x: x.get("changeRate", 0), reverse=True)
     gainers  = sorted_q[:3]
     losers   = sorted_q[-3:][::-1]
-    return jsonify({"gainers": gainers, "losers": losers})
+    # 화면이 합성·시뮬레이션 값을 실제 시세로 보이지 않게 출처를 함께 준다(시세와 같은 출처).
+    labeled = next((q for q in get_dashboard_stock_quotes().values() if q.get("source")), {})
+    return jsonify({"gainers": gainers, "losers": losers,
+                    "source": labeled.get("source"), "attribution": labeled.get("attribution")})
 
 
 # ── Batch Prices (실시간 마켓 리스트용) ──────────────────────────────────────

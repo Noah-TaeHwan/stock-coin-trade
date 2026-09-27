@@ -49,6 +49,7 @@ if (!document.getElementById('gnb-core-style')) {
     .term-fkey{display:inline-flex;align-items:center;gap:6px;padding:0 10px;color:#C9CDD4;text-decoration:none;white-space:nowrap}
     .term-tape{position:relative;overflow:hidden;height:24px;background:#050608;border-top:1px solid #262B35}
     #oc-panel,#ai-panel{background:#0B0D11;color:#E8E6E3}
+    html:not([data-profile="local"]) [data-local-only]{display:none!important}
   `;
   document.head.appendChild(gnbStyle);
 }
@@ -278,7 +279,7 @@ function renderHeader(user) {
        </div>`
     : `<div class="term-user">
          <button type="button" class="term-icon-btn" data-action="go" data-href="/member/login.html">로그인</button>
-         <button type="button" class="term-icon-btn term-btn-primary" data-action="go" data-href="/member/register.html">회원가입</button>
+         ${user?.signupOpen === false ? '' : '<button type="button" class="term-icon-btn term-btn-primary" data-action="go" data-href="/member/register.html">회원가입</button>'}
        </div>`;
 
   const isLoggedIn = !!user?.loggedIn;
@@ -346,7 +347,7 @@ function renderHeader(user) {
       <p>거래·자산관리·분석 도구는 로그인 후 이용할 수 있습니다.</p>
       <div class="oc-guest-actions">
         <button type="button" data-action="go" data-href="/member/login.html">로그인</button>
-        <button type="button" data-action="go" data-href="/member/register.html">회원가입</button>
+        ${user?.signupOpen === false ? '' : '<button type="button" data-action="go" data-href="/member/register.html">회원가입</button>'}
       </div>
     </div>`;
 
@@ -376,7 +377,7 @@ function renderHeader(user) {
         <a class="term-brand" href="/index.html" aria-label="Noah Trading Desk 대시보드">NOAH TD <small>TERMINAL</small></a>
         <form class="term-cmd" role="search">
           <span class="term-cmd-prompt" aria-hidden="true">&gt;</span>
-          <input name="cmd" id="term-cmd-input" autocomplete="off" spellcheck="false" aria-label="명령 또는 종목 입력" placeholder="명령·종목 입력 (예: 005930, BTC, HOLD, HELP) · / 키">
+          <input name="cmd" id="term-cmd-input" autocomplete="off" spellcheck="false" aria-label="명령 또는 종목 입력" placeholder="명령·종목 입력 (예: 005930, ${terminalIsPublic ? 'DISC' : 'BTC'}, HOLD, HELP) · / 키">
           <button type="submit" class="term-go">GO</button>
           <div class="term-cmd-help" id="term-cmd-help" role="listbox" aria-label="명령 목록"></div>
         </form>
@@ -451,7 +452,8 @@ let terminalIsPublic = false;
  */
 let terminalMe = null;
 function applyProfileToTerminal(user) {
-  if (!isPublicProfile(user)) return;
+  // 프로필을 모르면(/me 실패) 공개 사이트처럼 안전하게 다룬다(코인 명령·경로를 열지 않는다).
+  if (user?.profile === 'local') return;
   terminalIsPublic = true;
   const keep = item => !PUBLIC_HIDDEN_HREFS.has(_hrefPath(item.href));
   const ai = TERMINAL_FKEYS.find(f => f.code === 'AI');
@@ -556,7 +558,7 @@ function renderTerminalHelp(filter = '') {
   const rows = TERMINAL_COMMANDS.filter(c => !q || c.codes.some(code => code.startsWith(q)) || c.label.toUpperCase().includes(q));
   box.innerHTML = rows.length
     ? rows.map(c => `<div data-cmd="${c.codes[0]}"><b>${c.codes.join(' · ')}</b><span>${c.label}</span></div>`).join('')
-    : '<div><b>—</b><span>일치하는 명령이 없습니다. 6자리 종목코드나 코인 심볼도 입력할 수 있습니다.</span></div>';
+    : '<div><b>—</b><span>일치하는 명령이 없습니다. 6자리 종목코드' + (terminalIsPublic ? '' : '나 코인 심볼') + '도 입력할 수 있습니다.</span></div>';
   box.classList.add('open');
 }
 
@@ -578,7 +580,8 @@ function runTerminalCommand(raw) {
   const stockCode = text.match(/\b\d{6}\b/)?.[0];
   if (stockCode) { location.href = `/trade/stock.html?symbol=${stockCode}`; return; }
 
-  const marketArg = tokens.find(t => /^KRW-[A-Z0-9]{2,10}$/.test(t));
+  // 공개 사이트는 코인을 다루지 않으므로 KRW-마켓 입력도 코인 화면으로 보내지 않는다.
+  const marketArg = !terminalIsPublic && tokens.find(t => /^KRW-[A-Z0-9]{2,10}$/.test(t));
   if (marketArg) { location.href = `/trade/order.html?market=${marketArg}`; return; }
 
   if (command) {
@@ -608,7 +611,7 @@ function runTerminalCommand(raw) {
 }
 
 function fallbackCommand(text, first) {
-  if (/^[A-Z0-9]{2,10}$/.test(first)) { location.href = `/trade/order.html?market=KRW-${first}`; return; }
+  if (!terminalIsPublic && /^[A-Z0-9]{2,10}$/.test(first)) { location.href = `/trade/order.html?market=KRW-${first}`; return; }
   location.href = `/trade/stock.html?q=${encodeURIComponent(text)}`;
 }
 
@@ -736,7 +739,13 @@ function startTerminalClock() {
 }
 
 const TAPE_COINS = ['KRW-BTC', 'KRW-ETH', 'KRW-XRP', 'KRW-SOL', 'KRW-DOGE'];
-const tapeState = { index: [], stocks: [], coins: [] };
+/**
+ * 실제 시세가 아닌 출처의 화면 이름표(서버 응답의 source 값). stock.js 배지와 같은 표기다.
+ * @type {Record<string, string>}
+ */
+const DATA_SOURCE_LABELS = { synthetic: '합성 데이터', simulated: '시뮬레이션' };
+
+const tapeState = { index: [], stocks: [], coins: [], sourceLabel: '' };
 
 function tapeItem({ code, price, rate, digits = 0 }) {
   const n = Number(rate);
@@ -752,7 +761,9 @@ function renderTickerTape() {
   if (!track) return;
   const items = [...tapeState.index, ...tapeState.coins, ...tapeState.stocks];
   if (!items.length) return;
-  const html = items.map(tapeItem).join('');
+  // 합성 데이터면 띠 맨 앞에 알린다(실제 시세로 오해하지 않게).
+  const note = tapeState.sourceLabel ? `<span class="badge badge-muted">${escapeHtml(tapeState.sourceLabel)} · 실제 시세 아님</span>` : '';
+  const html = note + items.map(tapeItem).join('');
   track.innerHTML = html + html;
   track.style.setProperty('--tape-duration', `${Math.max(40, items.length * 5)}s`);
 }
@@ -763,6 +774,7 @@ async function refreshTapeIndex() {
     if (!res.ok) return;
     const data = await res.json();
     tapeState.index = ['KOSPI', 'KOSDAQ'].filter(k => data?.[k]).map(k => ({ code: k, price: data[k].price, rate: data[k].changeRate, digits: 2 }));
+    tapeState.sourceLabel ||= ['KOSPI', 'KOSDAQ'].map(k => DATA_SOURCE_LABELS[data?.[k]?.source]).find(Boolean) || '';
     renderTickerTape();
   } catch (_) {}
 }
@@ -772,6 +784,7 @@ async function refreshTapeStocks() {
     const res = await apiFetch('/api/stocks/prices');
     if (!res.ok) return;
     const data = await res.json();
+    tapeState.sourceLabel ||= Object.values(data?.prices ?? {}).map(p => DATA_SOURCE_LABELS[p.source]).find(Boolean) || '';
     tapeState.stocks = Object.values(data?.prices ?? {}).slice(0, 12)
       .map(p => ({ code: p.name, price: p.price, rate: p.changeRate }));
     renderTickerTape();
@@ -794,9 +807,10 @@ async function refreshTapeCoins() {
 function startTickerTape() {
   if (!document.getElementById('term-tape') || window.__termTapeStarted) return;
   window.__termTapeStarted = true;
-  refreshTapeIndex(); refreshTapeCoins(); refreshTapeStocks();
+  refreshTapeIndex(); refreshTapeStocks();
   setInterval(refreshTapeIndex, 60_000);
-  setInterval(refreshTapeCoins, 10_000);
+  // 공개 사이트는 코인을 다루지 않는다(업비트 중계도 없다).
+  if (!terminalIsPublic) { refreshTapeCoins(); setInterval(refreshTapeCoins, 10_000); }
   setInterval(refreshTapeStocks, 30_000);
 }
 
@@ -1462,6 +1476,8 @@ function mountDocToc() {
 async function initPage({ requireAuth = false } = {}) {
   const user = await getCurrentUser();
   terminalMe = user;
+  // 코인처럼 공개 사이트에서 뺀 요소([data-local-only])는 local로 확인될 때만 보인다(깜빡임 없이 숨김).
+  document.documentElement.dataset.profile = user?.profile || 'unknown';
   if (requireAuth && !user?.loggedIn) {
     location.href = '/member/login.html';
     return null;

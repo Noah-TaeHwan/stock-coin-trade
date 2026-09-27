@@ -136,13 +136,22 @@ def _public_client():
 
 
 def test_backtests_only_use_sources_the_registry_allows_in_this_profile(client):
-    body = {"symbol": "SRCUPBIT", "strategy": "rsi", "start": "2025-01-01", "end": "2025-12-31"}
-    _store("SRCUPBIT", "upbit")  # enabled for local, off for public (terms not checked)
+    # 공개 사이트는 6자리 종목코드만 받으므로, 출처 규정 검사는 6자리 가상 종목(990001)으로 본다.
+    body = {"symbol": "990001", "strategy": "rsi", "start": "2025-01-01", "end": "2025-12-31"}
+    _store("990001", "upbit")  # enabled for local, off for public (terms not checked)
     assert client.post("/api/quant/backtests", json=body).status_code in (200, 201)
     blocked = _public_client().post("/api/quant/backtests", json=body)
     assert blocked.status_code == 403 and "upbit" in blocked.get_json()["message"]
     _store("SRCMYST", "mystery_feed")  # not in the registry at all
     assert client.post("/api/quant/backtests", json={**body, "symbol": "SRCMYST"}).status_code == 403
+
+
+def test_public_backtests_refuse_coin_symbols_before_loading_bars(client):
+    _store("SRCUPBIT", "upbit")
+    body = {"symbol": "SRCUPBIT", "strategy": "rsi", "start": "2025-01-01", "end": "2025-12-31"}
+    assert client.post("/api/quant/backtests", json=body).status_code in (200, 201)  # local keeps coins
+    refused = _public_client().post("/api/quant/backtests", json=body)
+    assert refused.status_code == 400 and "6자리" in refused.get_json()["message"]
 
 
 def test_the_seeded_sample_data_is_allowed_in_public():

@@ -49,7 +49,9 @@ function metricsTable(metrics, benchmark) {
 function receiptBlock(data) {
   const r = data.receipt, short = value => esc(String(value || '').slice(0, 12));
   const costs = r.params.costs;
-  return `<details class="bt-receipt"><summary>계산 영수증 <code title="${esc(r.receiptId)}">${short(r.receiptId)}</code>${data.reused ? ' · 같은 입력의 기존 실행' : ''}</summary><dl>
+  // 계산에 쓴 시세가 합성 데이터면 영수증을 펼치지 않아도 보이게 알린다.
+  const synthetic = (r.sources || []).some(source => String(source).startsWith('synthetic'));
+  return `${synthetic ? '<p class="bt-source"><span class="badge badge-muted">합성 데이터 · 실제 시세 아님</span></p>' : ''}<details class="bt-receipt"><summary>계산 영수증 <code title="${esc(r.receiptId)}">${short(r.receiptId)}</code>${data.reused ? ' · 같은 입력의 기존 실행' : ''}</summary><dl>
     <dt>영수증 ID</dt><dd><code>${esc(r.receiptId)}</code></dd>
     <dt>엔진</dt><dd>${esc(r.engineVersion)} · git <code>${short(r.gitSha)}</code></dd>
     <dt>입력 봉</dt><dd>${esc(r.barCount)}개 · ${esc(r.firstBar.slice(0,10))} ~ ${esc(r.lastBar.slice(0,10))} · sha256 <code title="${esc(r.inputSha256)}">${short(r.inputSha256)}</code></dd>
@@ -74,6 +76,9 @@ function drawCharts(host, curve) {
   ddChart.timeScale().subscribeVisibleLogicalRangeChange(range => range && equityChart.timeScale().setVisibleLogicalRange(range));
   charts.set(host, [equityChart, ddChart]);
 }
+/** /api/quant/overview가 알려 준 백테스트 데이터가 있는 종목(데이터 부족 안내에 쓴다). @type {string[]} */
+let quantSymbols = [];
+
 async function run(strategy='ma2050', output=$('[data-backtest]'), detail=null) {
   const symbol=$('[data-symbol]').value.trim().toUpperCase() || '005930'; output.textContent='백테스트 실행 및 거래 로그 저장 중…';
   // 전략 버튼은 각 전략의 기본 기간을 쓰고, 기본 실행만 MA 20/50을 명시한다.
@@ -89,7 +94,7 @@ async function run(strategy='ma2050', output=$('[data-backtest]'), detail=null) 
       ${detail ? `<dl><dt>매매 규칙</dt><dd>${esc(data.strategy?.rule || detail.rule)}</dd><dt>주의할 점</dt><dd>${esc(detail.risk)}</dd></dl>` : ''}
       <p class="backtest-meaning"><b>결과 해석:</b> ${esc(explanation)} 신호는 종가에 내고 다음 날 시가에 체결하며, 수수료·슬리피지를 매 체결에 반영했습니다.</p>${receiptBlock(data)}`;
     drawCharts(output.querySelector('[data-bt-charts]'), data.equity);
-  } catch (error) { output.innerHTML=`<span class="error">${esc(error.message)}</span>`; }
+  } catch (error) { output.innerHTML=`<span class="error">${esc(error.message)}</span>${/시세가 부족/.test(error.message) && quantSymbols.length ? `<p class="guide-note">백테스트 데이터가 있는 종목: ${esc(quantSymbols.join(' · '))}</p>` : ''}`; }
 }
 document.addEventListener('DOMContentLoaded', async () => {
   await initPage();
@@ -121,5 +126,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   const presetKey=preset.get('strategy');
   const presetButton=presetKey === 'ma2050' ? $('[data-run]') : presetKey && document.querySelector(`[data-strategy="${CSS.escape(presetKey)}"]`);
   if (presetButton) { presetButton.classList.add('active'); presetButton.scrollIntoView({block:'center'}); presetButton.focus(); }
-  try { const response=await fetch('/api/quant/overview'), data=await response.json(); if (!response.ok) throw new Error(data.message); $('[data-quant-stats]').innerHTML=`<b>연결됨</b><span>OHLCV ${Number(data.market_rows).toLocaleString()}건</span><span>전략 ${data.strategy_count}개</span><span>거래 로그 ${data.trade_count}건</span><span>${esc((data.symbols || []).join(' · '))}</span>`; } catch (error) { $('[data-quant-stats]').innerHTML=`<b class="error">${esc(error.message || 'PostgreSQL에 연결할 수 없습니다.')}</b>`; }
+  try { const response=await fetch('/api/quant/overview'), data=await response.json(); quantSymbols=data.symbols || []; if (!response.ok) throw new Error(data.message); $('[data-quant-stats]').innerHTML=`<b>연결됨</b><span>OHLCV ${Number(data.market_rows).toLocaleString()}건</span><span>전략 ${data.strategy_count}개</span><span>거래 로그 ${data.trade_count}건</span><span>${esc((data.symbols || []).join(' · '))}</span>`; } catch (error) { $('[data-quant-stats]').innerHTML=`<b class="error">${esc(error.message || 'PostgreSQL에 연결할 수 없습니다.')}</b>`; }
 });
