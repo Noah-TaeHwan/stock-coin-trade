@@ -618,7 +618,7 @@ function fallbackCommand(text, first) {
 /* ── 자연어 명령(Jev) ─────────────────────────────────────────────────────── */
 // 화면 이름은 서버 문자열이 아니라 이 표에서 가져온다.
 const INTENT_LABELS = {
-  dashboard: '대시보드', stock: '주식', coin: '코인', arbitrage: '코인 차익·김프', alternatives: '대체자산',
+  dashboard: '대시보드', stock: '주식', disclosures: '공시 레이더', coin: '코인', arbitrage: '코인 차익·김프', alternatives: '대체자산',
   holdings: '보유자산', history: '거래이력', avg_down: '물타기 계산기', quant: '퀀트 랩(백테스트)',
   research: 'AI 리서치', knowledge: '지식 검색', analysis: '투자 분석 학습', openapi: '플랫폼 Open API',
 };
@@ -627,6 +627,7 @@ const INTENT_LABELS = {
 function intentPath(href) {
   const path = String(href ?? '');
   if (!/^\/(?!\/)[\w\-./]*(\?[\w\-=&%]*)?$/.test(path)) return null;  // '//host'(외부 이동)는 거부
+  if (terminalMe?.aiEnabled === false && _hrefPath(path) === '/research-agent.html') return null;  // AI가 꺼지면 막다른 화면
   return terminalIsPublic && PUBLIC_HIDDEN_HREFS.has(_hrefPath(path)) ? null : path;
 }
 
