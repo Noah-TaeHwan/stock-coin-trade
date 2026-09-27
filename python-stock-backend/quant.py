@@ -78,6 +78,10 @@ def _regression(rows, factors):
 STOCK_CODE = re.compile(r"[0-9]{6}")
 
 
+class PublicSymbolRefused(ValueError):
+    """공개 사이트가 코인 등 6자리 종목코드가 아닌 기호를 거절할 때. 사용자에게 문구를 그대로 보인다."""
+
+
 def _require_public_stock(symbol: str) -> None:
     """공개 사이트는 코인을 다루지 않는다(노아 결정). 앱 밖(CLI·테스트 대역)이나 local 프로필은 검사하지 않는다.
 
@@ -85,7 +89,7 @@ def _require_public_stock(symbol: str) -> None:
     @returns None. 공개 사이트에서 6자리 종목코드가 아니면 ValueError
     """
     if has_app_context() and current_app.config.get("APP_PROFILE") == "public" and not STOCK_CODE.fullmatch(symbol):
-        raise ValueError("공개 사이트는 6자리 국내 주식 종목코드만 다룹니다.")
+        raise PublicSymbolRefused("공개 사이트는 6자리 국내 주식 종목코드만 다룹니다.")
 
 
 def visible_symbols(symbols, profile: str) -> list[str]:
@@ -376,6 +380,8 @@ def run_backtest():
         return jsonify({"message": str(exc)}), 404
     except SourceBlocked as exc:
         return jsonify({"message": str(exc)}), 403
+    except PublicSymbolRefused as exc:
+        return jsonify({"message": str(exc)}), 400
     except (ValueError, TypeError, KeyError) as exc:
         return error_response("백테스트 실행 실패: 요청 값을 확인하세요.", exc, 400, key="message")
     except SQLAlchemyError as exc:
