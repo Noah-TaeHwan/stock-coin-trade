@@ -202,13 +202,15 @@ def _reject_cross_site_requests():
 
 
 def _reject_non_object_json():
-    """JSON 본문이 객체가 아니면 핸들러 전에 400으로 거절한다.
+    """JSON 본문이 객체가 아니면(배열·문자열·null·깨진 JSON) 핸들러 전에 400으로 거절한다.
 
     핸들러들은 `request.get_json(silent=True) or {}` 뒤 `.get`을 부르므로, 배열 본문이 오면 500이 났다.
-    배열을 받는 API는 없다. 깨진 JSON(None)은 핸들러가 빈 객체로 다루므로 그대로 둔다.
+    배열을 받는 API는 없다. 본문이 비어 있으면(JSON 헤더만 붙은 로그아웃 등) 그대로 통과시킨다.
     @returns 거절 응답 또는 None
     """
-    if request.is_json and not isinstance(request.get_json(silent=True), (dict, type(None))):
+    if not request.is_json or not request.get_data(cache=True):
+        return None
+    if not isinstance(request.get_json(silent=True), dict):
         return jsonify({"message": "JSON 객체 본문이 필요합니다."}), 400
     return None
 
@@ -241,10 +243,11 @@ def _record_failed_response(response):
     if getattr(g, "api_usage_started_at", None) is not None:
         record_api_usage(response, g.api_usage_started_at)
     # 429는 기록하지 않는다. 제한에 걸린 요청마다 행을 쓰면 제한이 DB 쓰기를 막지 못한다.
-    # 경로가 없는 4xx(없는 주소, 이 배포에서 끈 기능)도 기록하지 않는다. 방문자 IP가 오류 기록(90일)에
-    # 쌓이고, 요청 제한이 없는 404를 두드려 DB 쓰기를 늘릴 수 있기 때문이다. 5xx는 늘 기록한다.
-    unrouted_client_error = request.endpoint is None and response.status_code < 500
-    if (response.status_code >= 400 and response.status_code != 429 and not unrouted_client_error
+    # 경로가 없는 404(없는 주소, 이 배포에서 끈 기능)도 기록하지 않는다. 방문자 IP가 오류 기록(90일)에
+    # 쌓이고, 요청 제한이 없는 404를 두드려 DB 쓰기를 늘릴 수 있기 때문이다. 경로는 있는데 방식이 틀린
+    # 405도 endpoint가 없지만 주소 탐색 신호라 기록한다. 5xx는 늘 기록한다.
+    unrouted_not_found = request.endpoint is None and response.status_code == 404
+    if (response.status_code >= 400 and response.status_code != 429 and not unrouted_not_found
             and not request.path.startswith("/api/error-analysis/")):
         try:
             body = response.get_json(silent=True) or {}

@@ -285,3 +285,24 @@ def test_error_without_a_message_is_logged_with_the_status_text():
     with mock.patch.object(app_module, "record_error") as record:
         application.test_client().get("/api/test-empty-404")
     assert record.call_args.kwargs["message"] == "404 NOT FOUND"
+
+
+@pytest.mark.parametrize("raw", ["null", "{bad", "[1"])
+def test_null_or_broken_json_body_is_rejected(public_client, raw):
+    response = public_client.post("/api/member/login", data=raw, content_type="application/json")
+    assert response.status_code == 400
+    assert response.get_json() == {"message": "JSON 객체 본문이 필요합니다."}
+
+
+def test_empty_json_body_still_reaches_the_handler(public_client):
+    # 본문 없이 JSON 형식 헤더만 붙인 요청(로그아웃 등)은 막지 않는다.
+    assert public_client.post("/api/member/logout", content_type="application/json").status_code == 200
+
+
+def test_method_not_allowed_is_still_written_to_the_error_log(public_client):
+    # 405는 경로가 있는데 방식이 틀린 요청이라 endpoint가 없어도 기록한다(주소 탐색 신호).
+    with mock.patch.object(app_module, "record_error") as record:
+        response = public_client.post("/health")
+    assert response.status_code == 405
+    record.assert_called_once()
+    assert record.call_args.kwargs["status"] == 405
