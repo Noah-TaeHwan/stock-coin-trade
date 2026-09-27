@@ -54,4 +54,32 @@
 
 ## 최종 상태
 
-로컬의 실제 보유 데이터·모달 조작과 최종 혼합 자산·시세 응답 순서 검증을 완료했다. 공개 사이트 반영 결과는 실제 배포 후 별도 기록한다. 이 기록은 당시의 실패·부분 판정을 보존하며 운영 완료와 구분한다.
+**남아 있던 보유자산 차트·물타기 모달 검증을 완료하고 수정 사항을 공개 반영했다.** 이전 단계의 실패·부분 판정은 위에 보존했다.
+
+### 공개 반영
+
+- [PR #48](https://github.com/Noah-TaeHwan/stock-coin-trade/pull/48): 원본 `94b0ae4c75d7ea20d6f29b0fdde1f8b6719dd10d`, 병합 `8b97b918769f6c49aa63304c2eabeeba53c7642e`.
+- [필수 CI 3개](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/runs/36311656976): 단위·린트·JS·의존성, MariaDB/PostgreSQL 통합, Compose·이미지 빌드 모두 성공.
+- 배포 전 DB 백업: `s3://stockdesk-releasebucket-gf74rqgmybe0/backups/20260927T101047Z`. SSM `14b56b6b-b513-4d0f-a71a-9bf00551c1be`, Success/exit 0.
+- [배포 실행](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/runs/36311817216): 19:12:56 KST 시작, 19:16:08 KST 최종 성공. 배포 SSM `3f4bc5db-e276-444f-a270-edb5c91eca79`, exit 0, 위 병합 SHA 적용.
+- 공개 프런트 4개 파일(hold HTML, 요약 JS, 주식 JS, vendor)의 HTTPS SHA-256이 최종 소스와 모두 일치했다.
+
+### 실제 운영 확인
+
+Ego Browser 작업 공간 29와 별도 쿠키의 공용 데모 세션으로 확인했다. 공용 데모의 주문·현금·포지션은 변경하지 않았다.
+
+| 항목 | 결과 |
+|---|---|
+| 배포 전 실제 보유 화면 | 차트 SVG 없음, 현금·총자산 `-` |
+| 배포 후 390·768px | Highcharts 11.1.0, 차트 SVG 생성, 문서폭이 요청 폭과 일치 |
+| 현재 공용 데모 | 주식 0건, 현금·총자산 100,000,000원, 주식 평가액 0원, 비중 KRW 100% |
+| 실제 분석 API | allocation이 현금·주식 2항목이며 totalAsset이 현금+주식 평가액과 일치 |
+| 공개 미지원 탭 | 코인·대체자산 탭 숨김 |
+| 별도 API 세션 | 데모 로그인 후 읽기 검증, 자체 세션 로그아웃 200 |
+| 브라우저 정리 | 작업 공간 완료 후 닫음. 기존 데모 쿠키·다른 세션은 보존 |
+
+운영 공용 데모는 빈 주식 포지션으로 확인했다. 보유 주식이 있는 합산·물타기 손실 계산은 위 격리 검증 계정의 실제 모의 매수/명시적 손실 fixture에서 확인했고, 운영에는 같은 바이트를 제공한다. 운영 데이터에 시험 주문을 넣었다고 주장하지 않는다.
+
+운영 PNG 캡처는 Ego의 `Page.captureScreenshot` 시간 초과와 native viewport 캡처 오류로 저장하지 못했다. 실제 DOM·SVG·차트 series·API·가로폭 원본은 보존했고, 로컬 검증 PNG는 리더가 직접 확인했다. 캡처 복구 진단 중 도구의 viewport가 195×422로 바뀐 관측은 `live-chart-layout.json`에 별도로 남겼으며, 앞선 390·768px 측정과 혼합하지 않는다.
+
+운영 증거는 이 worktree의 `.verify-artifacts/publication/`에 있다: `backup-result.json`, `pr48-merged.json`, `pr48-ci.json`, `deploy-final.json`, `deploy-ssm-result.json`, `live-api-result.json`, `live-before.json`, `live-holdings.json`, `live-holdings-snapshot.txt`, `live-source-hashes.json`, `live-chart-layout.json`, `ego-finished.json`.
