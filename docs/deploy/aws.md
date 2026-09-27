@@ -65,6 +65,23 @@ sudo docker compose -p stockdesk exec python-backend flask --app app create-admi
 sudo docker compose -p stockdesk exec python-backend flask --app app create-invite --label <이름> --max-requests 20
 ```
 
+공시 레이더는 수집을 시작한 날부터의 공시만 가진다. 종목 조회의 "최근 30일"이 비어 보이지 않게, 새 서버에서는 최근 30일 영업일을 한 번 채운다(같은 공시는 다시 넣지 않는다).
+
+```bash
+sudo docker exec stockdesk-worker-1 python -c "
+from datetime import date, timedelta
+from dart_radar import collect
+d = date.today() - timedelta(days=30)
+while d < date.today():
+    if d.weekday() < 5:
+        print(collect(full=True, day=d), flush=True)
+    d += timedelta(days=1)
+"
+```
+
+- 2026-09-27 실측: 영업일 17일, 6,721건을 채웠다. DART 호출은 119회였다. Jev 판정은 535회(규칙으로 못 가른 약 8%)로, 약 $0.04가 들었다.
+- Jev 비용은 명령 바와 같은 월 예산 원장에서 빠진다.
+
 ## 6. DB 백업과 복구 확인
 
 `scripts/ec2/`의 두 스크립트는 릴리스 묶음에 함께 실려 호스트의 `/opt/stockdesk/releases/<sha>/scripts/ec2/`에 있다. SSM Run Command나 Session Manager에서 root로 실행한다.
