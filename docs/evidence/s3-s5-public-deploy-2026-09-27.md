@@ -15,6 +15,8 @@ PR #33~#36을 교차 검토하고 main에 합친 뒤(`9a6eca3`) 공개 서버에
 
 단위 468 passed(교차 검토 반영 뒤, `sct-test:dev`).
 
+> **정정(2026-09-27).** #36의 "30분마다 가동 확인"과 "매일 백업 성공 확인"은 예약 실행이 한 번도 돌지 않았다. 이 저장소는 포크라 GitHub가 예약 실행(`schedule`)을 돌리지 않는다(`event=schedule` 실행 0건). 3절의 확인은 수동 실행 결과다. 감시는 PR #42에서 AWS(5분마다 Lambda + CloudWatch 경보 + 메일)로 옮겼다. 기록: [검증 후속 수정](verify-followup-2026-09-27.md).
+
 ## 2. 교차 검토
 
 **Codex**(읽기 전용, 네 PR 합친 diff): Critical 0, High 1, Medium 3, Low 1. 모두 #36에서 고쳤다.
