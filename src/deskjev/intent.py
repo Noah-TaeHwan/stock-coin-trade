@@ -29,7 +29,10 @@ ARG_MIN = 0.85
 SCREENS: dict[str, tuple[str | None, str]] = {
     "dashboard": ("/index.html", "시장 전체 요약을 보는 첫 화면(대시보드, 홈, 메인)"),
     "stock": ("/trade/stock.html", "국내 주식 한 종목의 시세·차트·호가를 보거나 모의 주문하는 화면"),
-    "disclosures": ("/events.html", "금융감독원 DART 공시 목록·공시 유형·위험 공시를 보는 화면(공시 레이더, 관심 종목 공시)"),
+    "disclosures": (
+        "/events.html",
+        "금융감독원 DART 공시 목록·공시 유형·위험 공시를 보는 화면(공시 레이더, 관심 종목 공시)",
+    ),
     "coin": ("/trade/order.html", "코인 한 종목의 시세·차트·호가를 보거나 모의 주문하는 화면"),
     "arbitrage": ("/arbitrage.html", "거래소 간 코인 가격 차이, 김치 프리미엄(김프), 차익 계산 화면"),
     "alternatives": ("/trade/alternatives.html", "선물·금·은·원자재·부동산 같은 대체자산 모의 거래 화면"),
