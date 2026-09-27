@@ -33,8 +33,13 @@ for _tag in ("!Ref", "!Sub", "!GetAtt", "!Select", "!GetAZs", "!If", "!Equals", 
 
 
 @pytest.fixture(scope="module")
-def resources():
-    return yaml.load(TEMPLATE.read_text(), Loader=_CfnLoader)["Resources"]
+def template():
+    return yaml.load(TEMPLATE.read_text(), Loader=_CfnLoader)
+
+
+@pytest.fixture(scope="module")
+def resources(template):
+    return template["Resources"]
 
 
 def test_only_web_ports_are_open(resources):
@@ -297,3 +302,52 @@ def test_restored_counts_must_match_the_backup_manifest(tmp_path, restored, mani
         timeout=30,
     )
     assert (result.returncode == 0) is ok, result.stdout
+
+
+# ── Stack updates must not replace the host; the monitor is least-privilege ──
+
+
+def test_template_is_ascii_only():
+    # CloudFormation stored the old template with every non-ASCII character as "??".
+    assert TEMPLATE.read_bytes().isascii()
+
+
+def test_ami_is_pinned_so_a_stack_update_cannot_replace_the_host(template):
+    ami = template["Parameters"]["AmiId"]
+    assert ami["Type"] == "AWS::EC2::Image::Id" and "Default" not in ami
+
+
+def test_backups_are_scheduled_for_deletion_well_before_the_35_days_the_policy_promises(resources):
+    rules = {r["Id"]: r for r in resources["ReleaseBucket"]["Properties"]["LifecycleConfiguration"]["Rules"]}
+    # S3 rounds each step up to the next UTC midnight (21 + 1 + 7 + 1 = 30) and deletes asynchronously,
+    # so the schedule keeps several days of room under 35.
+    current = rules["expire-backups"]["ExpirationInDays"]
+    noncurrent = rules["old-versions"]["NoncurrentVersionExpiration"]["NoncurrentDays"]
+    assert current + noncurrent <= 28
+
+
+def test_site_address_has_no_default(template):
+    assert "Default" not in template["Parameters"]["SiteAddress"]
+
+
+def test_monitor_code_compiles_and_names_its_handler(resources):
+    code = resources["MonitorFunction"]["Properties"]["Code"]["ZipFile"]
+    compile(code, "index.py", "exec")
+    assert resources["MonitorFunction"]["Properties"]["Handler"] == "index.handler"
+    assert "ReservedConcurrentExecutions" not in resources["MonitorFunction"]["Properties"]
+
+
+def test_monitor_role_can_only_list_backups_and_write_its_own_metrics(resources):
+    statements = resources["MonitorRole"]["Properties"]["Policies"][0]["PolicyDocument"]["Statement"]
+    actions = {a for st in statements for a in ([st["Action"]] if isinstance(st["Action"], str) else st["Action"])}
+    assert "s3:GetObject" not in actions and not any(a.endswith("*") for a in actions)
+    by_action = {(st["Action"] if isinstance(st["Action"], str) else st["Action"][0]): st for st in statements}
+    assert by_action["cloudwatch:PutMetricData"]["Condition"] == {"StringEquals": {"cloudwatch:namespace": "Stockdesk"}}
+    assert by_action["s3:ListBucket"]["Condition"] == {"StringLike": {"s3:prefix": "backups/*"}}
+
+
+def test_alarms_mail_on_alarm_and_recovery_and_treat_silence_as_failure(resources):
+    for name in ("SiteDownAlarm", "BackupStaleAlarm"):
+        alarm = resources[name]["Properties"]
+        assert alarm["AlarmActions"] == alarm["OKActions"] == [{"!Ref": "AlertTopic"}]
+        assert alarm["TreatMissingData"] == "breaching" and alarm["Namespace"] == "Stockdesk"

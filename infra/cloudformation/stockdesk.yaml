@@ -16,9 +16,12 @@ Parameters:
       knowledge-search embedding model is loaded. t3.medium (4 GiB) leaves room for
       MariaDB/PostgreSQL growth; t3.small (2 GiB) works with the swap file.
   AmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
-    Description: Latest Amazon Linux 2023 (SSM Agent preinstalled).
+    Type: AWS::EC2::Image::Id
+    Description: >-
+      Amazon Linux 2023 image for the host, pinned. Do not use the SSM "latest" path here: CloudFormation
+      re-resolves it on every stack update and a new AMI would replace the only host. On an existing stack pass
+      the running instance's ImageId; for a new stack read
+      /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 once and pass that id.
   RootVolumeGiB:
     Type: Number
     Default: 20
@@ -68,12 +71,18 @@ Parameters:
     Default: /stock-coin-trade/prod
     AllowedPattern: "^/[A-Za-z0-9_./-]+[^/]$"
     Description: SSM Parameter Store path holding the app's secrets (SecureString), read by deploy.sh.
+  SiteAddress:
+    Type: String
+    AllowedPattern: "^[a-z0-9.-]+$"
+    Description: >-
+      Public host name the monitor checks over HTTPS (same value as the GitHub SITE_ADDRESS variable; change
+      both when the domain changes).
 
 Conditions:
   CreateOidcProvider: !Equals [!Ref CreateGitHubOidcProvider, "true"]
 
 Resources:
-  # ── Network ───────────────────────────────────────────────────────────────
+  # -- Network -----------------------------------------------------------------
   Vpc:
     Type: AWS::EC2::VPC
     Properties:
@@ -131,7 +140,7 @@ Resources:
       SecurityGroupEgress:
         - {IpProtocol: "-1", CidrIp: 0.0.0.0/0, Description: "Updates, ECR, SSM, ACME, Anthropic API"}
 
-  # ── Images, releases, logs ────────────────────────────────────────────────
+  # -- Images, releases, logs --------------------------------------------------
   FrontendRepository:
     Type: AWS::ECR::Repository
     Properties:
@@ -177,7 +186,9 @@ Resources:
       LifecycleConfiguration:
         Rules:
           - {Id: expire-releases, Status: Enabled, Prefix: releases/, ExpirationInDays: 90}
-          - {Id: expire-backups, Status: Enabled, Prefix: backups/, ExpirationInDays: 35}
+          # 21 days + 7 noncurrent days, each rounded up to the next UTC midnight: scheduled for deletion by
+          # about day 30. S3 deletes asynchronously, so this leaves room under the privacy policy's 35 days.
+          - {Id: expire-backups, Status: Enabled, Prefix: backups/, ExpirationInDays: 21}
           - {Id: old-versions, Status: Enabled, NoncurrentVersionExpiration: {NoncurrentDays: 7}}
 
   ReleaseBucketTlsOnly:
@@ -202,7 +213,7 @@ Resources:
       LogGroupName: !Sub "/${AWS::StackName}/app"
       RetentionInDays: !Ref LogRetentionDays
 
-  # ── Host ──────────────────────────────────────────────────────────────────
+  # -- Host --------------------------------------------------------------------
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -328,7 +339,7 @@ Resources:
       Domain: vpc
       InstanceId: !Ref Host
 
-  # ── Cost guard ────────────────────────────────────────────────────────────
+  # -- Cost guard --------------------------------------------------------------
   MonthlyBudget:
     Type: AWS::Budgets::Budget
     Properties:
@@ -343,7 +354,7 @@ Resources:
         - Notification: {NotificationType: FORECASTED, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE}
           Subscribers: [{SubscriptionType: EMAIL, Address: !Ref BudgetEmail}]
 
-  # ── CI deploy identity (GitHub Actions OIDC) ──────────────────────────────
+  # -- CI deploy identity (GitHub Actions OIDC) --------------------------------
   GitHubOidcProvider:
     Type: AWS::IAM::OIDCProvider
     Condition: CreateOidcProvider
@@ -401,6 +412,142 @@ Resources:
                 Effect: Allow
                 Action: [ssm:GetCommandInvocation, ssm:ListCommandInvocations]
                 Resource: "*"
+
+  # -- Uptime and backup monitor (outside the host) -------------------------------
+  # GitHub scheduled workflows never ran on this fork, so the check lives here. Every 5 minutes a small
+  # Lambda fetches three public URLs and measures the age of the newest completed backup (counts.tsv is
+  # uploaded last). Two alarms mail BudgetEmail on ALARM and on OK; a silent monitor also alarms.
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      # No SSE with alias/aws/sns: CloudWatch alarms cannot publish to a topic encrypted with that key.
+      Subscription: [{Protocol: email, Endpoint: !Ref BudgetEmail}]
+
+  MonitorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 14
+
+  MonitorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: monitor
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !GetAtt MonitorLogGroup.Arn
+              - Effect: Allow
+                Action: cloudwatch:PutMetricData
+                Resource: "*"
+                Condition: {StringEquals: {cloudwatch:namespace: Stockdesk}}
+              # Listing keys and timestamps only; the role cannot read the database dumps.
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt ReleaseBucket.Arn
+                Condition: {StringLike: {s3:prefix: backups/*}}
+
+  MonitorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.13
+      Handler: index.handler
+      Timeout: 60
+      Role: !GetAtt MonitorRole.Arn
+      LoggingConfig: {LogGroup: !Ref MonitorLogGroup}
+      Environment:
+        Variables: {SITE: !Ref SiteAddress, BUCKET: !Ref ReleaseBucket}
+      Code:
+        ZipFile: |
+          import os, time, urllib.request
+          import boto3
+
+          # "\uac1c\uc778\uc815\ubcf4 \ucc98\ub9ac\ubc29\uce68" is the privacy page title (kept ASCII in the template).
+          CHECKS = (("/health", '"status"'), ("/api/disclosures?limit=1", '"attribution"'),
+                    ("/privacy.html", "\uac1c\uc778\uc815\ubcf4 \ucc98\ub9ac\ubc29\uce68"))
+
+
+          def ok(url, needle):
+              try:
+                  with urllib.request.urlopen(url, timeout=10) as r:
+                      return r.status == 200 and needle in r.read().decode("utf-8", "replace")
+              except Exception as e:
+                  print("FAIL", url, repr(e))
+                  return False
+
+
+          def handler(event, context):
+              # {"site": "..."} is a dry run against another host: it reports but writes no metric.
+              site = event.get("site") or os.environ["SITE"]
+              up = all([ok(f"https://{site}{path}", needle) for path, needle in CHECKS])
+              age = None  # a failed listing writes no backup datapoint (one blip must not alarm for an hour)
+              try:
+                  # ponytail: one page (<=1000 keys); 21 days x 3 files stays far below. Paginate if that changes.
+                  rows = boto3.client("s3").list_objects_v2(Bucket=os.environ["BUCKET"], Prefix="backups/").get("Contents", [])
+                  done = [o["LastModified"].timestamp() for o in rows if o["Key"].endswith("/counts.tsv")]
+                  age = (time.time() - max(done)) / 3600 if done else 9999.0
+              except Exception as e:
+                  print("FAIL backups", repr(e))
+              if "site" not in event:
+                  data = [{"MetricName": "SiteUp", "Value": 1.0 if up else 0.0}]
+                  if age is not None:
+                      data.append({"MetricName": "BackupAgeHours", "Value": age})
+                  boto3.client("cloudwatch").put_metric_data(Namespace="Stockdesk", MetricData=data)
+              return {"siteUp": up, "backupAgeHours": None if age is None else round(age, 1)}
+
+  MonitorSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(5 minutes)
+      Targets: [{Id: monitor, Arn: !GetAtt MonitorFunction.Arn}]
+
+  MonitorInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MonitorFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MonitorSchedule.Arn
+
+  # Fires when each of two consecutive 10-minute periods has at least one failed check (Minimum < 1).
+  SiteDownAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Public site checks failed (health, disclosures API, privacy page).
+      Namespace: Stockdesk
+      MetricName: SiteUp
+      Statistic: Minimum
+      Period: 600
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlertTopic]
+      OKActions: [!Ref AlertTopic]
+
+  # The daily backup runs at 19:30 UTC (+ up to 10 min random delay); 27 hours allows for that.
+  BackupStaleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: No completed database backup (counts.tsv) in the last 27 hours.
+      Namespace: Stockdesk
+      MetricName: BackupAgeHours
+      Statistic: Maximum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 27
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlertTopic]
+      OKActions: [!Ref AlertTopic]
 
 Outputs:
   InstanceId:
