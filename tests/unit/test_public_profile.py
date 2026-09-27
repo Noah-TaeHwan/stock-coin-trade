@@ -180,3 +180,14 @@ def test_crawl_route_reports_an_unsafe_redirect(client):
 def test_me_reports_the_profile_so_the_menu_can_hide_unregistered_screens(client, public_app):
     assert client.get("/api/member/me").get_json()["profile"] == "local"
     assert public_app.test_client().get("/api/member/me").get_json()["profile"] == "public"
+
+
+def test_me_tells_the_command_bar_whether_it_may_send_text(client, public_app):
+    # 명령 바는 이 값으로, 동의 전에는 문장을 서버에 보내지 않고 그 자리에서 동의를 묻는다(처리방침 4절).
+    from accounts import PRIVACY_VERSION
+
+    body = client.get("/api/member/me").get_json()
+    assert body["privacyVersion"] == PRIVACY_VERSION
+    assert body["jevEnabled"] is False and body["aiEnabled"] is False
+    public_app.config.update(JEV_ENABLED=True)
+    assert public_app.test_client().get("/api/member/me").get_json()["jevEnabled"] is True
