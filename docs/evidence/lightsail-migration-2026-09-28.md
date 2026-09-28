@@ -7,7 +7,7 @@
 | 항목 | 이전 | 이후 |
 |---|---|---|
 | 서버 | EC2 t3.small(stockdesk) + t3.micro(랩), 탄력적 IP 2개, EBS 80 GB | Lightsail `small_3_0` 1대(2 GB, 60 GB, 고정 IP 포함) |
-| 월 비용(서울 온디맨드 가격 API 기준 추정) | 약 $44 | $12 + 보관 스냅샷 약 $1 미만 |
+| 월 비용(서울 온디맨드 가격 API 기준 추정) | 약 $44 | $12(부가세 별도) |
 | 이미지 | ECR | 서버 로컬 태그(`stockdesk/*:<SHA>`) |
 | 배포 | GitHub OIDC → ECR → SSM, 자동 롤백 | 수동(`docker save`로 전송 → `compose up`) |
 | 감시·백업 | Lambda 5분 감시, CloudWatch 경보 2개, 매일 S3 백업 | 없음(월 $15 계정 예산 알림만) |
@@ -35,7 +35,7 @@
 ## 정리한 AWS 자원
 
 - CloudFormation `stockdesk` 스택 삭제(EC2, EIP, VPC, IAM 역할, Lambda, 경보, SNS, 예산). ECR 저장소 2개는 먼저 지웠다.
-- 템플릿 정책대로 남은 것: 데이터 볼륨 스냅샷 `snap-066b099629482bb6a`, S3 `stockdesk-releasebucket-gf74rqgmybe0`(릴리스·백업, 수명 주기 만료), 로그 그룹 `/stockdesk/app`.
+- 템플릿 정책대로 남은 것: 데이터 볼륨 스냅샷 `snap-066b099629482bb6a`(같은 날 삭제, 아래), S3 `stockdesk-releasebucket-gf74rqgmybe0`(릴리스·백업, 수명 주기 만료), 로그 그룹 `/stockdesk/app`.
 - 랩 EC2: 디스크 스냅샷 `snap-0b8602f7327b814b6`을 만든 뒤 인스턴스 종료, 탄력적 IP `54.116.230.120` 반납.
 - 정리 후 전 리전 EC2 0대, EIP 0개, EBS 볼륨 0개. 새 계정 예산 `portfolio-monthly`($15, 실제 80%·예측 100% 메일).
 
@@ -44,4 +44,4 @@
 - 옛 주소 `43-201-225-127.sslip.io`는 더 이상 열리지 않는다. 이전 검증 기록의 주소는 당시 기록이라 고치지 않았다.
 - GitHub Deploy·Uptime 워크플로는 지운 자원을 가리키므로 쓰지 않는다.
 - 자동 백업·감시가 없다. 서버가 죽으면 알림이 오지 않는다.
-- 두 스냅샷은 되돌리기용 보관분이다. 한두 주 문제가 없으면 지워도 된다.
+- 되돌리기용으로 남겼던 두 스냅샷(`snap-066b099629482bb6a`, `snap-0b8602f7327b814b6`)은 사용자 요청으로 같은 날 삭제했다. 전 리전 스냅샷 0개를 확인했다. 옛 EC2로 되돌릴 수단은 없고, DB는 S3 `backups/`의 덤프(수명 주기 만료 전까지)와 새 서버 데이터가 전부다.
