@@ -1,0 +1,24 @@
+# Lightsail 단일 서버용: 로컬 태그 이미지를 쓰고, Caddy가 금융상식 랩(호스트 8000)도 함께 HTTPS로 중계한다.
+x-backend-image: &backend-image stockdesk/python-backend:${IMAGE_TAG:?set IMAGE_TAG}
+services:
+  frontend:
+    image: stockdesk/frontend:${IMAGE_TAG:?set IMAGE_TAG}
+    build: !reset null
+  init:
+    image: *backend-image
+    build: !reset null
+  python-backend:
+    image: *backend-image
+    build: !reset null
+  worker:
+    image: *backend-image
+    build: !reset null
+  caddy:
+    environment:
+      LAB_ADDRESS: ${LAB_ADDRESS:?set LAB_ADDRESS}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes: !override
+      - ./docker/Caddyfile.lightsail:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
