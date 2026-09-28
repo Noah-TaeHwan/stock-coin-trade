@@ -1,5 +1,7 @@
 # AWS 공개 데모 배포 절차
 
+> **2026-09-28 폐기.** 비용을 줄이려고 공개 데모를 Lightsail 한 대로 옮기고 이 문서의 CloudFormation 스택을 지웠다. 지금 운영은 [Lightsail 운영](lightsail.md), 이전 과정은 [이전 기록](../evidence/lightsail-migration-2026-09-28.md)을 따른다. 아래는 EC2 구성을 다시 올릴 때를 위한 기록이다.
+
 [ADR-0003](../adr/0003-aws-demo-topology.md)의 구성을 처음 올리는 순서다. 명령은 `ap-northeast-2`를 예로 든다.
 
 ## 1. 스택 만들기

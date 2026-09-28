@@ -41,7 +41,7 @@ flowchart LR
   - `PYTHONPATH=src python -m quantlab.research --symbol 005930 --start 2016-01-01 --end 2025-12-31`
   - `PYTHONPATH=src python -m deskagent.eval --mode oracle`
 - **MCP**: `PYTHONPATH=src python -m deskmcp.server` — [Noah Desk MCP](#noah-desk-mcp--모의계좌백테스트를-mcp-도구로)
-- **공개 데모**: <https://43-201-225-127.sslip.io> (AWS 서울, 2026-09-25 배포, [배포 기록](docs/evidence/aws-deploy-2026-09-25.md)). 도메인을 사기 전까지 sslip.io 호스트명을 쓴다. AI 리서치는 꺼 두었고 나중에 초대 코드로 연다.
+- **공개 데모**: <https://13-124-251-180.sslip.io> (AWS Lightsail 서울, 2026-09-28 EC2에서 이전, [이전 기록](docs/evidence/lightsail-migration-2026-09-28.md)). 데모 계정 `test@test.com` / `test1234` 또는 로그인 화면의 **데모로 로그인**. 도메인을 사기 전까지 sslip.io 호스트명을 쓴다. AI 리서치는 꺼 두었고 나중에 초대 코드로 연다.
 - **데이터**: 공개 화면과 리포트의 시세는 모두 합성 데이터다. 실제 시장 성과가 아니며, 소스별 약관 상태는 [데이터 소스](docs/data-sources.md)에 있다.
 
 ## Noah가 만든 것
@@ -220,7 +220,7 @@ Nginx는 `/api/*`, `/openapi/*`를 Flask로 프록시합니다. 브라우저에�
 postgresql+psycopg://<QUANT_DB_USER>:<QUANT_DB_PASSWORD>@postgres:5432/<QUANT_DB_NAME>
 ```
 
-공개 데모는 `compose.public.yml` + `compose.edge.yml`(Caddy HTTPS) + `compose.aws.yml`(ECR 이미지·CloudWatch 로그)을 EC2 한 대에 올리는 구성입니다. 인프라는 `infra/cloudformation/stockdesk.yaml`, 배포는 GitHub OIDC → ECR → SSM Run Command → `scripts/ec2/deploy.sh`(헬스 체크 실패 시 자동 롤백)입니다([ADR-0003](docs/adr/0003-aws-demo-topology.md), [배포 절차](docs/deploy/aws.md)). 2026-09-25에 실제로 배포했습니다(https://43-201-225-127.sslip.io, [배포 기록](docs/evidence/aws-deploy-2026-09-25.md)). 예전 `docker-compose.prod.yml`은 키·socket 마운트를 물려받으므로 공개 배포에 쓰지 않습니다.
+공개 데모는 `compose.public.yml` + `compose.edge.yml`(Caddy HTTPS) + `compose.lightsail.yml`(로컬 태그 이미지, 두 번째 포트폴리오 중계)을 Lightsail 한 대(2 GB, 월 $12)에 올리는 구성입니다([운영 절차](docs/deploy/lightsail.md)). 2026-09-25~27에는 같은 앱을 EC2로 운영했습니다. 인프라는 `infra/cloudformation/stockdesk.yaml`, 배포는 GitHub OIDC → ECR → SSM Run Command → `scripts/ec2/deploy.sh`(헬스 체크 실패 시 자동 롤백)였고([ADR-0003](docs/adr/0003-aws-demo-topology.md), [배포 절차](docs/deploy/aws.md), [배포 기록](docs/evidence/aws-deploy-2026-09-25.md)), 2026-09-28에 비용을 줄이려고 Lightsail로 옮겼습니다([이전 기록](docs/evidence/lightsail-migration-2026-09-28.md)). 예전 `docker-compose.prod.yml`은 키·socket 마운트를 물려받으므로 공개 배포에 쓰지 않습니다.
 
 ### 세션 API
 
