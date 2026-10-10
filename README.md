@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/workflows/ci.yml/badge.svg)](https://github.com/Noah-TaeHwan/stock-coin-trade/actions/workflows/ci.yml)
 
-원본 저장소 [edumgt/stock-coin-trade](https://github.com/edumgt/stock-coin-trade)(주식·코인 모의투자와 Open API 실습 플랫폼)를 포크했다. 그 위에 **데이터 출처, 백테스트 계산, AI 답변의 숫자를 모두 추적할 수 있는** 퀀트 리서치 데스크를 만든 개인 포트폴리오다. 원본 기능은 [아래 절](#원본-기능-edumgt)에 따로 정리했다.
+[원본 저장소](https://github.com/edumgt/stock-coin-trade)(주식·코인 모의투자와 Open API 실습 플랫폼)를 포크해 확장했다. 그 위에 **데이터 출처, 백테스트 계산, AI 답변의 숫자를 모두 추적할 수 있는** 퀀트 리서치 데스크를 만든 개인 포트폴리오다. 원본 기능은 [아래 절](#원본-저장소의-기능)에 따로 정리했다.
 
 ## 세 층의 영수증
 
@@ -72,7 +72,7 @@ flowchart LR
 
 원본 코드 수정 허락은 [기록 문서](docs/provenance/PERMISSION.md)에 정리한다. 모든 검증 기록은 [색인](docs/evidence/README.md)에 있고, 설계 결정은 [ADR-0001 앱 팩토리](docs/adr/0001-app-factory.md), [ADR-0002 의존성 lock](docs/adr/0002-dependency-lock.md), [ADR-0003 AWS 구성](docs/adr/0003-aws-demo-topology.md)이다.
 
-## 원본 기능 (edumgt)
+## 원본 저장소의 기능
 
 원본 앱은 Flask REST API와 Vanilla JavaScript로 만든 주식·암호화폐 모의투자 및 OpenAPI 학습 플랫폼입니다. 국내 주식·코인 모의 주문, 대체자산 실습, 외부 연동용 Open API, 증권사·Alpaca Paper API 연습 화면을 제공합니다.
 
@@ -102,16 +102,16 @@ flowchart LR
   - `Alpaca Test`: Alpaca Paper 계정 상태
 - (선택) VS Code·Codex용 한투 공식 KIS MCP 서버 연동 — 자세한 내용은 아래 "KIS MCP" 절 참고
 
-## 4일 Open API 실습 커리큘럼
+## Open API 실습 안내 (원본 저장소)
 
-외부 플랫폼 가입·키 발급은 오전에, 이 웹앱의 안전한 조회·모의 실습은 오후에 진행하는 4일 과정입니다. Key·Secret·계좌번호는 제출물에 포함하지 않습니다.
+원본 저장소에 있던 Open API 실습 안내입니다. 단계마다 외부 플랫폼 가입·키 발급을 먼저 하고, 이 웹앱에서 안전한 조회·모의 실습을 합니다. Key·Secret·계좌번호는 저장소나 공유 파일에 넣지 않습니다.
 
-| 일차 | 오전 | 오후 | 문서 |
+| 단계 | 외부 준비 | 이 웹앱에서 | 문서 |
 |---|---|---|---|
-| 1일차 | KIS 모의투자·API 신청 | Testbed 조회와 모의 주문→정정→취소 | [01.md](curriculum/01.md) |
-| 2일차 | KB Open API 신청·키 발급 | 운영 시세·호가·차트 읽기 전용 조회 | [02.md](curriculum/02.md) |
-| 3일차 | Alpaca Paper 계정·키 발급 | Paper 계정·시세와 주문→취소 흐름 | [03.md](curriculum/03.md) |
-| 4일차 | Binance·Korbit 공개/개인 API 권한 구분 | 공개 시세·호가와 통합 보안 점검 | [04.md](curriculum/04.md) |
+| 1 | KIS 모의투자·API 신청 | Testbed 조회와 모의 주문→정정→취소 | [01.md](curriculum/01.md) |
+| 2 | KB Open API 신청·키 발급 | 운영 시세·호가·차트 읽기 전용 조회 | [02.md](curriculum/02.md) |
+| 3 | Alpaca Paper 계정·키 발급 | Paper 계정·시세와 주문→취소 흐름 | [03.md](curriculum/03.md) |
+| 4 | Binance·Korbit 공개/개인 API 권한 구분 | 공개 시세·호가와 통합 보안 점검 | [04.md](curriculum/04.md) |
 
 ## 아키텍처
 
